@@ -8,6 +8,7 @@ import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
 import UserChatPage from './pages/UserChatPage';
 import AdminDashboard from './pages/AdminDashboard';
+import ActivityLogs from './pages/ActivityLogs';
 import AdminAnalysis from './pages/AdminAnalysis';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { DataProvider } from './context/DataContext';
@@ -34,7 +35,10 @@ function AppRoutes() {
         isAuthenticated && user?.role === 'admin' ? <AdminDashboard /> : <Navigate to="/login" replace />
       } />
       <Route path="/admin/logs" element={
-        isAuthenticated && user?.role === 'admin' ? <AdminDashboard /> : <Navigate to="/login" replace />
+        isAuthenticated && user?.role === 'admin' ? <ActivityLogs /> : <Navigate to="/login" replace />
+      } />
+      <Route path="/admin/current/:id" element={
+        isAuthenticated && user?.role === 'admin' ? <AdminAnalysis /> : <Navigate to="/login" replace />
       } />
       <Route path="/admin/current" element={
         isAuthenticated && user?.role === 'admin' ? <AdminAnalysis /> : <Navigate to="/login" replace />

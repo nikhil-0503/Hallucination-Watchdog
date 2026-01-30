@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { chatWithWatchdog, getSystemMetrics, getAuditLog } from '../services/api';
+import { chatWithWatchdog, getAllPrompts, getPromptById as fetchPromptById } from '../services/api';
 
 const DataContext = createContext();
 
@@ -14,66 +14,33 @@ export const useData = () => {
 export const DataProvider = ({ children }) => {
   const [prompts, setPrompts] = useState([]);
   const [currentPrompt, setCurrentPrompt] = useState(null);
-  const [systemMetrics, setSystemMetrics] = useState({
-    totalPrompts: 0,
-    blockedPrompts: 0,
-    averageConfidence: 0,
-    uptime: '0%',
-    responseTime: '0s'
-  });
-
   const [chatMessages, setChatMessages] = useState([]);
   const [isProcessing, setIsProcessing] = useState(false);
 
-  // Load initial data
+  // Load all prompts from backend
+  const loadPrompts = async () => {
+    try {
+      const records = await getAllPrompts();
+      setPrompts(records);
+    } catch (error) {
+      console.error('Error loading prompts:', error);
+    }
+  };
+
+  // Load initial data on mount
   useEffect(() => {
-    loadSystemMetrics();
-    loadAuditLog();
+    loadPrompts();
   }, []);
 
-  const loadSystemMetrics = async () => {
+  const getPromptById = async (id) => {
     try {
-      const metrics = await getSystemMetrics();
-      setSystemMetrics(metrics);
+      const record = await fetchPromptById(id);
+      setCurrentPrompt(record);
+      return record;
     } catch (error) {
-      console.error('Error loading system metrics:', error);
+      console.error('Error loading prompt:', error);
+      return null;
     }
-  };
-
-  const loadAuditLog = async () => {
-    try {
-      const auditData = await getAuditLog();
-      setPrompts(auditData);
-    } catch (error) {
-      console.error('Error loading audit log:', error);
-    }
-  };
-
-  const addPrompt = (prompt, response, confidence, status, flagged, hallucinations) => {
-    const newPrompt = {
-      id: prompts.length + 1,
-      timestamp: new Date().toISOString().replace('T', ' ').slice(0, 19),
-      user: 'current.user@company.com',
-      prompt,
-      response,
-      confidence,
-      status,
-      flagged,
-      hallucinations,
-      processingTime: Math.random() * 3 + 0.5
-    };
-    setPrompts(prev => [newPrompt, ...prev]);
-    return newPrompt;
-  };
-
-  const updatePromptStatus = (id, newStatus) => {
-    setPrompts(prev => prev.map(prompt => 
-      prompt.id === id ? { ...prompt, status: newStatus } : prompt
-    ));
-  };
-
-  const getPromptById = (id) => {
-    return prompts.find(prompt => prompt.id === parseInt(id));
   };
 
   const submitUserPrompt = async (message, userRole = 'user') => {
@@ -89,19 +56,23 @@ export const DataProvider = ({ children }) => {
     setChatMessages(prev => [...prev, userMessage]);
 
     try {
-      // Call WATCHDOG API
-      const aiResponse = await chatWithWatchdog(message, userRole);
-      setChatMessages(prev => [...prev, aiResponse]);
+      // Call WATCHDOG backend /api/chat
+      const response = await chatWithWatchdog(message, userRole);
       
-      // Add to prompts for admin view
-      addPrompt(
-        message, 
-        aiResponse.content, 
-        aiResponse.confidence || Math.random() * 100,
-        aiResponse.status,
-        aiResponse.status !== 'Safe',
-        aiResponse.status === 'BLOCK' ? Math.floor(Math.random() * 3) + 1 : 0
-      );
+      // Create AI message from response
+      const aiMessage = {
+        id: response.id,
+        type: response.action === 'BLOCK' ? 'system' : 'assistant',
+        content: response.user_output,
+        status: response.action,
+        confidence: response.confidence ? response.confidence * 100 : undefined,
+        timestamp: new Date()
+      };
+      
+      setChatMessages(prev => [...prev, aiMessage]);
+      
+      // Reload prompts to show new record in admin dashboard
+      loadPrompts();
     } catch (error) {
       console.error('Error processing prompt:', error);
       const errorMessage = {
@@ -124,17 +95,13 @@ export const DataProvider = ({ children }) => {
   const value = {
     prompts,
     currentPrompt,
-    systemMetrics,
     chatMessages,
     isProcessing,
     setCurrentPrompt,
-    addPrompt,
-    updatePromptStatus,
     getPromptById,
     submitUserPrompt,
     clearChat,
-    loadSystemMetrics,
-    loadAuditLog
+    loadPrompts
   };
 
   return (

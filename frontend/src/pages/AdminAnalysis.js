@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { 
   Shield, 
@@ -18,17 +18,33 @@ import {
   FileText
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useData } from '../context/DataContext';
+import { useNavigate, useParams } from 'react-router-dom';
+import ParticleBackground from '../components/ParticleBackground';
 
 const AdminAnalysis = () => {
   const [copiedField, setCopiedField] = useState(null);
+  const [prompt, setPrompt] = useState(null);
+  const [loading, setLoading] = useState(true);
   const { user, logout } = useAuth();
+  const { getPromptById } = useData();
   const navigate = useNavigate();
-  const location = useLocation();
-
-  // Get prompt from location state
-  const prompt = location.state?.prompt;
+  const { id } = useParams();
   const [activeNav, setActiveNav] = useState('analysis');
+
+  useEffect(() => {
+    const loadPrompt = async () => {
+      if (id) {
+        setLoading(true);
+        const data = await getPromptById(parseInt(id));
+        setPrompt(data);
+        setLoading(false);
+      } else {
+        setLoading(false);
+      }
+    };
+    loadPrompt();
+  }, [id, getPromptById]);
 
   const handleLogout = () => {
     logout();
@@ -45,10 +61,41 @@ const AdminAnalysis = () => {
     setTimeout(() => setCopiedField(null), 2000);
   };
 
+  if (loading) {
+    return (
+      <div className="admin-dashboard-layout" style={{position: 'relative'}}>
+        <ParticleBackground particleCount={40} />
+        <nav className="admin-navbar" style={{position: 'relative', zIndex: 100}}>
+          <div className="navbar-left">
+            <div className="navbar-logo">
+              <Shield size={24} />
+              <span>WATCHDOG</span>
+            </div>
+          </div>
+          <div className="navbar-right">
+            <div className="navbar-user">
+              <User size={16} />
+              <span className="user-name">{user?.name || user?.email}</span>
+              <span className="user-role">Administrator</span>
+            </div>
+          </div>
+        </nav>
+        <div className="admin-layout-container">
+          <main className="admin-main-content">
+            <div className="empty-state">
+              <p>Loading...</p>
+            </div>
+          </main>
+        </div>
+      </div>
+    );
+  }
+
   if (!prompt) {
     return (
-      <div className="admin-dashboard-layout">
-        <nav className="admin-navbar">
+      <div className="admin-dashboard-layout" style={{position: 'relative'}}>
+        <ParticleBackground particleCount={40} />
+        <nav className="admin-navbar" style={{position: 'relative', zIndex: 100}}>
           <div className="navbar-left">
             <div className="navbar-logo">
               <Shield size={24} />
@@ -134,39 +181,41 @@ const AdminAnalysis = () => {
     return 'var(--status-blocked)';
   };
 
+  const confidencePercent = Math.round(prompt.confidence * 100);
+
   const metrics = [
     {
       title: 'Confidence Level',
-      value: `${prompt.confidence}%`,
+      value: `${confidencePercent}%`,
       icon: <Target size={24} />,
-      color: getConfidenceColor(prompt.confidence),
+      color: getConfidenceColor(confidencePercent),
       description: 'AI response confidence rating',
       showBar: true,
-      barValue: prompt.confidence
+      barValue: confidencePercent
     },
     {
       title: 'RAG Verification',
-      value: prompt.ragStatus,
+      value: prompt.rag_status,
       icon: <Database size={24} />,
-      color: prompt.ragStatus === 'Yes' ? 'var(--color-success)' : 
-             prompt.ragStatus === 'Partial' ? 'var(--color-warning)' : 'var(--color-error)',
+      color: prompt.rag_status === 'VERIFIED' ? 'var(--color-success)' : 'var(--color-error)',
       description: 'Knowledge base verification status',
       showBar: false
     },
     {
       title: 'Contradiction Check',
-      value: prompt.contradictionCheck,
+      value: prompt.contradiction_check,
       icon: <FileCheck size={24} />,
-      color: prompt.contradictionCheck === 'Pass' ? 'var(--color-success)' : 'var(--color-error)',
+      color: prompt.contradiction_check === 'PASS' ? 'var(--color-success)' : 'var(--color-error)',
       description: 'Internal consistency verification',
       showBar: false
     }
   ];
 
   return (
-    <div className="admin-dashboard-layout">
+    <div className="admin-dashboard-layout" style={{position: 'relative'}}>
+      <ParticleBackground particleCount={40} />
       {/* Top Navbar */}
-      <nav className="admin-navbar">
+      <nav className="admin-navbar" style={{position: 'relative', zIndex: 100}}>
         <div className="navbar-left">
           <div className="navbar-logo">
             <Shield size={24} />
@@ -279,21 +328,21 @@ const AdminAnalysis = () => {
                 <Calendar size={16} style={{ color: '#CCCCCC' }} />
                 <div>
                   <div style={{ fontSize: '0.75rem', color: '#999999', textTransform: 'uppercase' }}>Timestamp</div>
-                  <div style={{ fontSize: '0.9rem', color: '#FFFFFF', marginTop: '0.25rem' }}>{prompt.timestamp}</div>
+                  <div style={{ fontSize: '0.9rem', color: '#FFFFFF', marginTop: '0.25rem' }}>{new Date(prompt.timestamp).toLocaleString()}</div>
                 </div>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                <User size={16} style={{ color: '#CCCCCC' }} />
+                <AlertTriangle size={16} style={{ color: '#CCCCCC' }} />
                 <div>
-                  <div style={{ fontSize: '0.75rem', color: '#999999', textTransform: 'uppercase' }}>User</div>
-                  <div style={{ fontSize: '0.9rem', color: '#FFFFFF', marginTop: '0.25rem' }}>{prompt.user}</div>
+                  <div style={{ fontSize: '0.75rem', color: '#999999', textTransform: 'uppercase' }}>Action</div>
+                  <div style={{ fontSize: '0.9rem', color: '#FFFFFF', marginTop: '0.25rem' }}>{prompt.action}</div>
                 </div>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                <Clock size={16} style={{ color: '#CCCCCC' }} />
+                <Target size={16} style={{ color: '#CCCCCC' }} />
                 <div>
-                  <div style={{ fontSize: '0.75rem', color: '#999999', textTransform: 'uppercase' }}>Processing</div>
-                  <div style={{ fontSize: '0.9rem', color: '#FFFFFF', marginTop: '0.25rem' }}>{prompt.processingTime.toFixed(1)}s</div>
+                  <div style={{ fontSize: '0.75rem', color: '#999999', textTransform: 'uppercase' }}>Risk Score</div>
+                  <div style={{ fontSize: '0.9rem', color: '#FFFFFF', marginTop: '0.25rem' }}>{prompt.risk_score}</div>
                 </div>
               </div>
             </div>
@@ -436,7 +485,7 @@ const AdminAnalysis = () => {
                     GPT Answer
                   </h3>
                   <motion.button
-                    onClick={() => handleCopy(prompt.response, 'response')}
+                    onClick={() => handleCopy(prompt.gpt_raw_answer, 'response')}
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     style={{
@@ -467,7 +516,7 @@ const AdminAnalysis = () => {
                   maxHeight: '300px',
                   overflowY: 'auto'
                 }}>
-                  {prompt.response}
+                  {prompt.gpt_raw_answer}
                 </div>
               </motion.div>
             </div>

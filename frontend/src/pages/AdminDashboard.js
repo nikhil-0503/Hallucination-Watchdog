@@ -20,6 +20,7 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
 import { useNavigate } from 'react-router-dom';
+import ParticleBackground from '../components/ParticleBackground';
 
 const AdminDashboard = () => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -44,8 +45,8 @@ const AdminDashboard = () => {
   };
 
   const handleViewDetails = (prompt) => {
-    // Navigate to /admin/current and pass the prompt data via location state
-    navigate('/admin/current', { state: { prompt } });
+    // Navigate to /admin/current/:id using the prompt ID
+    navigate(`/admin/current/${prompt.id}`);
   };
 
   // Helper to check if a date is within the time range
@@ -76,10 +77,10 @@ const AdminDashboard = () => {
   const filteredPrompts = useMemo(() => {
     let filtered = prompts.filter(prompt => {
       const matchesSearch = prompt.prompt.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          prompt.user.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          prompt.response.toLowerCase().includes(searchQuery.toLowerCase());
+                          prompt.gpt_raw_answer.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          prompt.user_visible_answer.toLowerCase().includes(searchQuery.toLowerCase());
       
-      const matchesStatus = statusFilter === 'all' || prompt.status === statusFilter;
+      const matchesStatus = statusFilter === 'all' || prompt.action === statusFilter;
       const matchesTimeRange = isWithinTimeRange(prompt.timestamp, timeRange);
       
       return matchesSearch && matchesStatus && matchesTimeRange;
@@ -115,9 +116,10 @@ const AdminDashboard = () => {
   };
 
   return (
-    <div className="admin-dashboard-layout">
+    <div className="admin-dashboard-layout" style={{position: 'relative'}}>
+      <ParticleBackground particleCount={40} />
       {/* Top Navbar */}
-      <nav className="admin-navbar">
+      <nav className="admin-navbar" style={{position: 'relative', zIndex: 100}}>
         <div className="navbar-left">
           <div className="navbar-logo">
             <Shield size={24} />
@@ -210,9 +212,9 @@ const AdminDashboard = () => {
                   className="control-select"
                 >
                   <option value="all">All Status</option>
-                  <option value="Safe">Safe</option>
-                  <option value="Warning">Warning</option>
-                  <option value="Blocked">Blocked</option>
+                  <option value="ALLOW">ALLOW</option>
+                  <option value="WARN">WARN</option>
+                  <option value="BLOCK">BLOCK</option>
                 </select>
 
                 <select
@@ -285,10 +287,10 @@ const AdminDashboard = () => {
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -20 }}
                         transition={{ duration: 0.3, delay: index * 0.02 }}
-                        className={`table-row ${prompt.flagged ? 'flagged' : ''}`}
+                        className="table-row"
                       >
                         <td className="cell-timestamp">
-                          <span className="timestamp-badge">{prompt.timestamp}</span>
+                          <span className="timestamp-badge">{new Date(prompt.timestamp).toLocaleString()}</span>
                         </td>
                         <td className="cell-prompt">
                           <div className="text-truncate" title={prompt.prompt}>
@@ -299,10 +301,10 @@ const AdminDashboard = () => {
                           </div>
                         </td>
                         <td className="cell-response">
-                          <div className="text-truncate" title={prompt.response}>
-                            {prompt.response.length > 60 
-                              ? `${prompt.response.substring(0, 60)}...`
-                              : prompt.response
+                          <div className="text-truncate" title={prompt.gpt_raw_answer}>
+                            {prompt.gpt_raw_answer.length > 60 
+                              ? `${prompt.gpt_raw_answer.substring(0, 60)}...`
+                              : prompt.gpt_raw_answer
                             }
                           </div>
                         </td>
@@ -311,27 +313,27 @@ const AdminDashboard = () => {
                             <div className="confidence-bar">
                               <motion.div 
                                 className="confidence-fill"
-                                style={{ backgroundColor: getConfidenceColor(prompt.confidence) }}
+                                style={{ backgroundColor: getConfidenceColor(prompt.confidence * 100) }}
                                 initial={{ width: 0 }}
-                                animate={{ width: `${prompt.confidence}%` }}
+                                animate={{ width: `${prompt.confidence * 100}%` }}
                                 transition={{ duration: 0.8, delay: 0.3 + index * 0.02 }}
                               />
                             </div>
-                            <span style={{ color: getConfidenceColor(prompt.confidence) }}>
-                              {prompt.confidence}%
+                            <span style={{ color: getConfidenceColor(prompt.confidence * 100) }}>
+                              {Math.round(prompt.confidence * 100)}%
                             </span>
                           </div>
                         </td>
                         <td className="cell-rag">
                           <span 
-                            className={`badge badge-${prompt.ragStatus.toLowerCase()}`}
+                            className={`badge badge-${prompt.rag_status.toLowerCase()}`}
                           >
-                            {prompt.ragStatus}
+                            {prompt.rag_status}
                           </span>
                         </td>
                         <td className="cell-contradiction">
                           <div className="status-indicator">
-                            {prompt.contradictionCheck === 'Pass' ? (
+                            {prompt.contradiction_check === 'PASS' ? (
                               <>
                                 <CheckCircle size={14} className="icon-safe" />
                                 <span className="text-safe">Pass</span>

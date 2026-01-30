@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Container, Row, Col, Card, Form, Button, ButtonGroup } from 'react-bootstrap';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import ParticleBackground from '../components/ParticleBackground';
 
 const LoginPage = () => {
   const [email, setEmail] = useState('');
@@ -22,149 +22,128 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="auth-container min-vh-100 d-flex align-items-center justify-content-center py-5" style={{background: '#000000'}}>
-      <Container>
-        <Row className="justify-content-center">
-          <Col xs={12} md={8} lg={6} xl={4}>
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, ease: [0.4, 0.0, 0.2, 1] }}
-            >
-              <Card className="shadow-lg border-0" style={{backgroundColor: '#1A1A1A', borderRadius: '16px'}}>
-                <Card.Body className="p-5">
-                  <div className="text-center mb-4">
-                    <motion.div
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      transition={{ delay: 0.2, type: "spring", stiffness: 300, damping: 20 }}
-                    >
-                      <i className="fas fa-shield-alt fs-1 text-white mb-3" style={{color: '#CCCCCC'}}></i>
-                    </motion.div>
-                    <h1 className="fs-2 fw-bold text-white mb-1" style={{letterSpacing: '2px'}}>WATCHDOG</h1>
-                    <p className="text-muted mb-1" style={{color: '#999999'}}>Enterprise AI Safety Platform</p>
-                    <h2 className="fs-4 fw-semibold text-white mb-0">Sign in to WATCHDOG</h2>
-                  </div>
+    <div className="auth-container">
+      <ParticleBackground particleCount={80} />
+      
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="auth-card"
+      >
+        <div className="auth-header">
+          <motion.div
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ delay: 0.2, type: "spring" }}
+            className="auth-icon"
+          >
+            <i className="fas fa-shield-alt"></i>
+          </motion.div>
+          <h1 className="auth-title">WATCHDOG</h1>
+          <p className="auth-subtitle">Enterprise AI Safety Platform</p>
+        </div>
 
-                  <div className="mb-4">
-                    <ButtonGroup className="w-100" size="lg">
-                      <Button 
-                        variant={selectedRole === 'user' ? 'light' : 'outline-light'}
-                        onClick={() => setSelectedRole('user')}
-                        className="d-flex align-items-center justify-content-center gap-2"
-                        style={selectedRole === 'user' ? {backgroundColor: '#CCCCCC', borderColor: '#CCCCCC', color: '#000000'} : {color: '#CCCCCC', backgroundColor: '#1A1A1A', border: '1px solid #333333'}}
-                      >
-                        <i className="fas fa-user"></i>
-                        User
-                      </Button>
-                      <Button 
-                        variant={selectedRole === 'admin' ? 'light' : 'outline-light'}
-                        onClick={() => setSelectedRole('admin')}
-                        className="d-flex align-items-center justify-content-center gap-2"
-                        style={selectedRole === 'admin' ? {backgroundColor: '#CCCCCC', borderColor: '#CCCCCC', color: '#000000'} : {color: '#CCCCCC', backgroundColor: '#1A1A1A', border: '1px solid #333333'}}
-                      >
-                        <i className="fas fa-shield-alt"></i>
-                        Admin
-                      </Button>
-                    </ButtonGroup>
-                  </div>
+        <div className="role-selector">
+          <motion.div
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={() => setSelectedRole('user')}
+            className={`role-btn ${selectedRole === 'user' ? 'active' : ''}`}
+          >
+            <i className="fas fa-user"></i>
+            <span>User</span>
+          </motion.div>
+          <motion.div
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={() => setSelectedRole('admin')}
+            className={`role-btn ${selectedRole === 'admin' ? 'active' : ''}`}
+          >
+            <i className="fas fa-shield-alt"></i>
+            <span>Admin</span>
+          </motion.div>
+        </div>
 
-                  <Form onSubmit={handleSubmit}>
-                    <Form.Group className="mb-3">
-                      <Form.Label className="text-white fw-medium">Email</Form.Label>
-                      <Form.Control
-                        type="email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        placeholder="Enter your email"
-                        required
-                        size="lg"
-                        style={{
-                          backgroundColor: '#0A0A0A',
-                          border: '1px solid #333333',
-                          color: '#CCCCCC'
-                        }}
-                        className="custom-form-control"
-                      />
-                    </Form.Group>
+        <form onSubmit={handleSubmit}>
+          <div className="form-group">
+            <label className="form-label">Email Address</label>
+            <motion.input
+              whileFocus={{ scale: 1.01 }}
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Enter your email"
+              className="form-control"
+              required
+            />
+          </div>
 
-                    <Form.Group className="mb-4">
-                      <Form.Label className="text-white fw-medium">Password</Form.Label>
-                      <Form.Control
-                        type="password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        placeholder="Enter your password"
-                        required
-                        size="lg"
-                        style={{
-                          backgroundColor: '#0A0A0A',
-                          border: '1px solid #333333',
-                          color: '#CCCCCC'
-                        }}
-                        className="custom-form-control"
-                      />
-                    </Form.Group>
+          <div className="form-group">
+            <label className="form-label">Password</label>
+            <motion.input
+              whileFocus={{ scale: 1.01 }}
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Enter your password"
+              className="form-control"
+              required
+            />
+          </div>
 
-                    <motion.div
-                      whileHover={{ scale: 1.01, y: -1 }}
-                      whileTap={{ scale: 0.99 }}
-                    >
-                      <Button
-                        type="submit"
-                        size="lg"
-                        className="w-100 fw-medium d-flex align-items-center justify-content-center gap-2"
-                        disabled={isLoading}
-                        style={{
-                          backgroundColor: '#CCCCCC',
-                          borderColor: '#CCCCCC',
-                          color: '#000000',
-                          padding: '12px'
-                        }}
-                      >
-                        {isLoading ? (
-                          <div className="spinner-border spinner-border-sm" role="status">
-                            <span className="visually-hidden">Loading...</span>
-                          </div>
-                        ) : (
-                          <>
-                            <i className="fas fa-sign-in-alt"></i>
-                            Sign In
-                          </>
-                        )}
-                      </Button>
-                    </motion.div>
-                  </Form>
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            type="submit"
+            className="btn btn-primary btn-lg w-100"
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <>
+                <div className="spinner"></div>
+                <span>Signing in...</span>
+              </>
+            ) : (
+              <>
+                <i className="fas fa-sign-in-alt"></i>
+                <span>Sign In</span>
+              </>
+            )}
+          </motion.button>
+        </form>
 
-                  <div className="text-center mt-4">
-                    <a 
-                      href="/signup" 
-                      className="text-decoration-none fw-medium"
-                      style={{color: '#CCCCCC'}}
-                    >
-                      Create a user account
-                    </a>
-                  </div>
+        <div className="text-center" style={{ marginTop: 'var(--space-6)' }}>
+          <a href="/signup" style={{ color: 'var(--color-text-tertiary)', textDecoration: 'none' }}>
+            Don't have an account? <strong style={{ color: 'var(--color-brand-blue-light)' }}>Sign up</strong>
+          </a>
+        </div>
 
-                  <motion.div 
-                    className="text-center mt-4 p-3 rounded"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: 0.8 }}
-                    style={{backgroundColor: '#0A0A0A'}}
-                  >
-                    <p className="small mb-2 fw-bold" style={{color: '#999999'}}>Demo Credentials</p>
-                    <div className="small" style={{color: '#CCCCCC'}}>
-                      <div className="mb-1"><strong style={{color: '#FFFFFF'}}>Admin:</strong> admin@watchdog.ai / admin123</div>
-                      <div><strong style={{color: '#FFFFFF'}}>User:</strong> user@test.com / user123</div>
-                    </div>
-                  </motion.div>
-                </Card.Body>
-              </Card>
-            </motion.div>
-          </Col>
-        </Row>
-      </Container>
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.6 }}
+          style={{
+            marginTop: 'var(--space-6)',
+            padding: 'var(--space-4)',
+            background: 'rgba(15, 23, 42, 0.5)',
+            borderRadius: 'var(--radius-lg)',
+            border: '1px solid var(--color-border)'
+          }}
+        >
+          <p style={{ fontSize: '0.875rem', color: 'var(--color-text-tertiary)', marginBottom: 'var(--space-2)', textAlign: 'center' }}>
+            <strong>Demo Credentials</strong>
+          </p>
+          <div style={{ fontSize: '0.875rem', color: 'var(--color-text-secondary)' }}>
+            <div style={{ marginBottom: 'var(--space-2)' }}>
+              <strong style={{ color: 'var(--color-brand-blue-light)' }}>Admin:</strong> admin@watchdog.ai / admin123
+            </div>
+            <div>
+              <strong style={{ color: 'var(--color-brand-blue-light)' }}>User:</strong> user@test.com / user123
+            </div>
+          </div>
+        </motion.div>
+      </motion.div>
     </div>
   );
 };

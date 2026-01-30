@@ -1,240 +1,215 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Send, 
-  Shield, 
-  LogOut, 
-  User, 
-  AlertTriangle, 
-  CheckCircle, 
-  XCircle
-} from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
-import { useNavigate } from 'react-router-dom';
+import ParticleBackground from '../components/ParticleBackground';
 
 const UserChatPage = () => {
-  const [message, setMessage] = useState('');
+  const [prompt, setPrompt] = useState('');
+  const [messages, setMessages] = useState([]);
   const messagesEndRef = useRef(null);
   const { user, logout } = useAuth();
-  const { chatMessages, isProcessing, submitUserPrompt } = useData();
+  const { submitUserPrompt, isLoading } = useData();
   const navigate = useNavigate();
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [chatMessages]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!message.trim() || isProcessing) return;
-    
-    await submitUserPrompt(message.trim(), user?.role || 'user');
-    setMessage('');
+    if (!prompt.trim() || isLoading) return;
+
+    const userMessage = {
+      id: Date.now(),
+      role: 'user',
+      content: prompt,
+      timestamp: new Date()
+    };
+
+    setMessages(prev => [...prev, userMessage]);
+    const currentPrompt = prompt;
+    setPrompt('');
+
+    try {
+      const response = await submitUserPrompt(currentPrompt);
+      
+      const assistantMessage = {
+        id: Date.now() + 1,
+        role: 'assistant',
+        content: response.safe_output || response.message || 'Response received',
+        timestamp: new Date(),
+        action: response.action
+      };
+
+      setMessages(prev => [...prev, assistantMessage]);
+    } catch (error) {
+      const errorMessage = {
+        id: Date.now() + 1,
+        role: 'assistant',
+        content: 'Sorry, something went wrong. Please try again.',
+        timestamp: new Date(),
+        isError: true
+      };
+      setMessages(prev => [...prev, errorMessage]);
+    }
   };
 
   const handleLogout = () => {
     logout();
-    navigate('/login');
-  };
-
-  const getStatusIcon = (status) => {
-    switch (status) {
-      case 'Safe':
-        return <CheckCircle size={16} className="status-safe" />;
-      case 'Warning':
-        return <AlertTriangle size={16} className="status-warning" />;
-      case 'Blocked':
-        return <XCircle size={16} className="status-blocked" />;
-      default:
-        return null;
-    }
-  };
-
-  const renderMessage = (msg, index) => {
-    if (msg.type === 'system' && msg.status === 'Blocked') {
-      // Critical behavior: BLOCKED responses show only this message
-      return (
-        <motion.div
-          key={msg.id}
-          className="message system"
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3, delay: index * 0.05 }}
-        >
-          <div className="message-content">
-            The output cannot be displayed.
-          </div>
-        </motion.div>
-      );
-    }
-
-    return (
-      <motion.div
-        key={msg.id}
-        className={`message ${msg.type}`}
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3, delay: index * 0.05 }}
-      >
-        <div className="message-content">
-          {msg.content}
-        </div>
-        
-        {msg.confidence !== undefined && msg.status !== 'Blocked' && (
-          <div className="message-footer">
-            <div className="status-indicator">
-              {getStatusIcon(msg.status)}
-              <span className={`status-${msg.status.toLowerCase()}`}>
-                {msg.status}
-              </span>
-            </div>
-          </div>
-        )}
-      </motion.div>
-    );
+    navigate('/');
   };
 
   return (
-    <div className="chat-container">
-      <header className="chat-header">
-        <div className="header-left">
-          <Shield className="logo-icon-small" />
-          <div>
-            <h1>WATCHDOG Chat</h1>
-            <p>AI-Protected Interface</p>
+    <div style={{ position: 'relative', minHeight: '100vh', background: 'var(--color-bg-primary)' }}>
+      <ParticleBackground particleCount={60} />
+      
+      <div style={{ position: 'relative', zIndex: 10 }}>
+        {/* Navbar */}
+        <motion.div
+          initial={{ y: -20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          className="navbar"
+          style={{ margin: 'var(--space-6)' }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-4)' }}>
+            <div className="sidebar-brand-icon">
+              <i className="fas fa-shield-alt"></i>
+            </div>
+            <div>
+              <h1 className="navbar-title">WATCHDOG Chat</h1>
+              <p style={{ margin: 0, fontSize: '0.875rem', color: 'var(--color-text-tertiary)' }}>
+                AI Safety Platform
+              </p>
+            </div>
           </div>
-        </div>
-        
-        <div className="header-right">
-          <div className="user-info">
-            <User size={16} />
-            <span>{user?.name || user?.email}</span>
-          </div>
-          <motion.button
-            className="logout-button"
-            onClick={handleLogout}
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            transition={{ type: "spring", stiffness: 400, damping: 10 }}
-          >
-            <LogOut size={16} />
-            Logout
-          </motion.button>
-        </div>
-      </header>
-
-      <div className="chat-main">
-        <div className="messages-container">
-          <AnimatePresence>
-            {chatMessages.length === 0 ? (
-              <motion.div 
-                className="welcome-message"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, ease: [0.4, 0.0, 0.2, 1] }}
-              >
-                <Shield size={48} />
-                <h2>Welcome to WATCHDOG</h2>
-                <p>Your AI-protected conversation starts here. All responses are automatically analyzed for safety and accuracy.</p>
-                <div className="safety-indicators">
-                  <motion.div 
-                    className="indicator"
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.3, duration: 0.5 }}
-                  >
-                    <CheckCircle size={16} className="status-safe" />
-                    <span>Safe responses are delivered</span>
-                  </motion.div>
-                  <motion.div 
-                    className="indicator"
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.4, duration: 0.5 }}
-                  >
-                    <AlertTriangle size={16} className="status-warning" />
-                    <span>Warnings for low confidence</span>
-                  </motion.div>
-                  <motion.div 
-                    className="indicator"
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.5, duration: 0.5 }}
-                  >
-                    <XCircle size={16} className="status-blocked" />
-                    <span>Unsafe outputs are blocked</span>
-                  </motion.div>
-                </div>
-              </motion.div>
-            ) : (
-              chatMessages.map((msg, index) => renderMessage(msg, index))
-            )}
-          </AnimatePresence>
-          
-          {isProcessing && (
-            <motion.div 
-              className="typing-indicator"
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.9 }}
-              transition={{ duration: 0.3 }}
-            >
-              <div className="typing-dots">
-                <motion.div
-                  animate={{ y: [0, -8, 0] }}
-                  transition={{ duration: 0.6, repeat: Infinity, delay: 0 }}
-                />
-                <motion.div
-                  animate={{ y: [0, -8, 0] }}
-                  transition={{ duration: 0.6, repeat: Infinity, delay: 0.2 }}
-                />
-                <motion.div
-                  animate={{ y: [0, -8, 0] }}
-                  transition={{ duration: 0.6, repeat: Infinity, delay: 0.4 }}
-                />
+          <div className="navbar-actions">
+            <div className="user-info">
+              <div className="user-avatar">
+                {user?.email?.[0].toUpperCase() || 'U'}
               </div>
-              <span>WATCHDOG analyzing...</span>
-            </motion.div>
-          )}
-          
-          <div ref={messagesEndRef} />
-        </div>
-
-        <form onSubmit={handleSubmit} className="chat-input-form">
-          <div className="input-container">
-            <input
-              type="text"
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              placeholder="Type your message..."
-              disabled={isProcessing}
-              className="chat-input"
-            />
+              <div>
+                <div className="user-name">{user?.email}</div>
+                <div className="user-role">User</div>
+              </div>
+            </div>
             <motion.button
-              type="submit"
-              disabled={!message.trim() || isProcessing}
-              className="send-button"
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              transition={{ type: "spring", stiffness: 400, damping: 10 }}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={handleLogout}
+              className="btn btn-outline btn-sm"
             >
-              {isProcessing ? (
-                <motion.div
-                  animate={{ rotate: 360 }}
-                  transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                >
-                  <Shield size={20} />
-                </motion.div>
-              ) : (
-                <Send size={20} />
-              )}
+              <i className="fas fa-sign-out-alt"></i>
+              Logout
             </motion.button>
           </div>
-        </form>
+        </motion.div>
+
+        {/* Chat Container */}
+        <div className="chat-container" style={{ padding: '0 var(--space-6) var(--space-6)' }}>
+          {/* Messages */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.2 }}
+            className="chat-messages"
+          >
+            {messages.length === 0 ? (
+              <div className="empty-state">
+                <div className="empty-state-icon">
+                  <i className="fas fa-comments"></i>
+                </div>
+                <div className="empty-state-title">Start a Conversation</div>
+                <div className="empty-state-description">
+                  Ask anything - WATCHDOG will analyze and ensure safe responses
+                </div>
+              </div>
+            ) : (
+              <AnimatePresence>
+                {messages.map((msg) => (
+                  <motion.div
+                    key={msg.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0 }}
+                    className={`message ${msg.role}`}
+                  >
+                    <div className="message-avatar">
+                      {msg.role === 'user' ? (
+                        <i className="fas fa-user"></i>
+                      ) : (
+                        <i className="fas fa-robot"></i>
+                      )}
+                    </div>
+                    <div className="message-content">
+                      <div className="message-header">
+                        <span className="message-sender">
+                          {msg.role === 'user' ? 'You' : 'WATCHDOG AI'}
+                        </span>
+                        <span className="message-time">
+                          {msg.timestamp.toLocaleTimeString()}
+                        </span>
+                      </div>
+                      <div className="message-text">
+                        {msg.content}
+                        {msg.action && (
+                          <div style={{ marginTop: 'var(--space-3)' }}>
+                            <span className={`badge badge-${msg.action === 'ALLOW' ? 'success' : msg.action === 'WARN' ? 'warning' : 'error'}`}>
+                              {msg.action}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            )}
+            <div ref={messagesEndRef} />
+          </motion.div>
+
+          {/* Input */}
+          <motion.form
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            onSubmit={handleSubmit}
+            className="chat-input-container"
+          >
+            <textarea
+              value={prompt}
+              onChange={(e) => setPrompt(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSubmit(e);
+                }
+              }}
+              placeholder="Type your message... (Shift+Enter for new line)"
+              className="chat-input"
+              rows={1}
+              disabled={isLoading}
+            />
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              type="submit"
+              className="chat-send-btn"
+              disabled={isLoading || !prompt.trim()}
+            >
+              {isLoading ? (
+                <div className="spinner" style={{ width: '24px', height: '24px' }}></div>
+              ) : (
+                <i className="fas fa-paper-plane"></i>
+              )}
+            </motion.button>
+          </motion.form>
+        </div>
       </div>
     </div>
   );

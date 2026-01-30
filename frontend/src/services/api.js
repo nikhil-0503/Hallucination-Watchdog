@@ -66,30 +66,33 @@ export async function analyzePrompt(prompt, domain = 'general') {
  * - Users get safe response only
  * - Admins get full metadata
  */
-export async function chatWithWatchdog(prompt, userRole = 'user') {
-  const analysis = await analyzePrompt(prompt);
-  
-  if (userRole === 'admin') {
-    // Admin gets full analysis data
-    return {
-      id: Date.now(),
-      type: 'assistant',
-      content: analysis.response,
-      confidence: analysis.risk_score,
-      status: analysis.final_action,
-      metadata: analysis.metadata,
-      timestamp: new Date(),
-    };
-  } else {
-    // User gets safe response only
-    return {
-      id: Date.now(),
-      type: analysis.final_action === 'BLOCK' ? 'system' : 'assistant',
-      content: analysis.response,
-      status: analysis.final_action,
-      timestamp: new Date(),
-    };
-  }
+export async function chatWithWatchdog(prompt, userRole = 'user', domain = 'general') {
+  return apiRequest('/api/chat', {
+    method: 'POST',
+    body: JSON.stringify({
+      prompt,
+      role: userRole,
+      domain,
+    }),
+  });
+}
+
+/**
+ * Get all prompt records (admin only)
+ */
+export async function getAllPrompts() {
+  return apiRequest('/api/prompts', {
+    method: 'GET',
+  });
+}
+
+/**
+ * Get single prompt by ID (admin only)
+ */
+export async function getPromptById(promptId) {
+  return apiRequest(`/api/prompts/${promptId}`, {
+    method: 'GET',
+  });
 }
 
 /**
