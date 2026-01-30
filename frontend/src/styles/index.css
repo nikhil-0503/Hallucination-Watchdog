@@ -1,0 +1,6 @@
+/* Import Bootstrap CSS */
+@import 'bootstrap/dist/css/bootstrap.min.css';
+@import '@fortawesome/fontawesome-free/css/all.min.css';
+
+/* Import beautiful enterprise design from App.css */
+@import './App.css';
