@@ -6,32 +6,29 @@ import {
   LogOut, 
   User, 
   AlertTriangle,
-  CheckCircle,
-  XCircle,
   Copy,
   Download,
   Clock,
   Calendar,
-  TrendingUp,
   Database,
   FileCheck,
-  Activity,
   Zap,
-  Target
+  Target,
+  BarChart3,
+  FileText
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { useData } from '../context/DataContext';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 const AdminAnalysis = () => {
   const [copiedField, setCopiedField] = useState(null);
   const { user, logout } = useAuth();
-  const { prompts } = useData();
   const navigate = useNavigate();
-  const { promptId } = useParams();
+  const location = useLocation();
 
-  // Find the specific prompt
-  const prompt = prompts.find(p => p.id === promptId);
+  // Get prompt from location state
+  const prompt = location.state?.prompt;
+  const [activeNav, setActiveNav] = useState('analysis');
 
   const handleLogout = () => {
     logout();
@@ -50,51 +47,91 @@ const AdminAnalysis = () => {
 
   if (!prompt) {
     return (
-      <div className="admin-container">
-        <div className="empty-state">
-          <AlertTriangle size={48} />
-          <h3>Prompt not found</h3>
-          <p>The requested prompt analysis could not be loaded</p>
-          <motion.button
-            className="back-button"
-            onClick={handleBack}
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-          >
-            <ArrowLeft size={16} />
-            Back to Dashboard
-          </motion.button>
+      <div className="admin-dashboard-layout">
+        <nav className="admin-navbar">
+          <div className="navbar-left">
+            <div className="navbar-logo">
+              <Shield size={24} />
+              <span>WATCHDOG</span>
+            </div>
+          </div>
+          <div className="navbar-right">
+            <div className="navbar-user">
+              <User size={16} />
+              <span className="user-name">{user?.name || user?.email}</span>
+              <span className="user-role">Administrator</span>
+            </div>
+            <motion.button
+              className="navbar-logout"
+              onClick={handleLogout}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <LogOut size={16} />
+            </motion.button>
+          </div>
+        </nav>
+
+        <div className="admin-layout-container">
+          <aside className="admin-sidebar">
+            <nav className="sidebar-nav">
+              <motion.button
+                className={`nav-item ${activeNav === 'dashboard' ? 'active' : ''}`}
+                onClick={() => { setActiveNav('dashboard'); navigate('/admin/dashboard'); }}
+                whileHover={{ x: 4 }}
+                whileTap={{ x: 2 }}
+              >
+                <BarChart3 size={18} />
+                <span>Dashboard</span>
+              </motion.button>
+              
+              <motion.button
+                className={`nav-item ${activeNav === 'logs' ? 'active' : ''}`}
+                onClick={() => { setActiveNav('logs'); navigate('/admin/dashboard'); }}
+                whileHover={{ x: 4 }}
+                whileTap={{ x: 2 }}
+              >
+                <FileText size={18} />
+                <span>Activity Logs</span>
+              </motion.button>
+              
+              <motion.button
+                className={`nav-item ${activeNav === 'analysis' ? 'active' : ''}`}
+                onClick={() => { setActiveNav('analysis'); navigate('/admin/current'); }}
+                whileHover={{ x: 4 }}
+                whileTap={{ x: 2 }}
+              >
+                <AlertTriangle size={18} />
+                <span>Current Prompt</span>
+              </motion.button>
+            </nav>
+          </aside>
+
+          <main className="admin-main-content">
+            <div className="empty-state">
+              <AlertTriangle size={48} />
+              <h3>No prompt selected</h3>
+              <p>Click on a prompt in the Activity Logs to view its analysis</p>
+              <motion.button
+                className="action-button"
+                onClick={handleBack}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                <ArrowLeft size={16} />
+                Back to Dashboard
+              </motion.button>
+            </div>
+          </main>
         </div>
       </div>
     );
   }
 
-  const getStatusIcon = (status) => {
-    switch (status) {
-      case 'Safe':
-        return <CheckCircle className="status-safe" />;
-      case 'Warning':
-        return <AlertTriangle className="status-warning" />;
-      case 'Blocked':
-        return <XCircle className="status-blocked" />;
-      default:
-        return <Activity />;
-    }
-  };
-
   const getConfidenceColor = (confidence) => {
     if (confidence >= 80) return 'var(--status-safe)';
     if (confidence >= 50) return 'var(--status-warning)';
     return 'var(--status-blocked)';
-  };
-
-  const getRagStatusColor = (status) => {
-    switch (status) {
-      case 'Yes': return 'var(--status-safe)';
-      case 'Partial': return 'var(--status-warning)';
-      case 'No': return 'var(--status-blocked)';
-      default: return 'var(--text-tertiary)';
-    }
   };
 
   const metrics = [
@@ -104,7 +141,6 @@ const AdminAnalysis = () => {
       icon: <Target size={24} />,
       color: getConfidenceColor(prompt.confidence),
       description: 'AI response confidence rating',
-      details: `Based on language model certainty and response coherence. Score: ${prompt.confidence}/100`,
       showBar: true,
       barValue: prompt.confidence
     },
@@ -112,223 +148,385 @@ const AdminAnalysis = () => {
       title: 'RAG Verification',
       value: prompt.ragStatus,
       icon: <Database size={24} />,
-      color: getRagStatusColor(prompt.ragStatus),
+      color: prompt.ragStatus === 'Yes' ? 'var(--color-success)' : 
+             prompt.ragStatus === 'Partial' ? 'var(--color-warning)' : 'var(--color-error)',
       description: 'Knowledge base verification status',
-      details: prompt.ragStatus === 'Yes' 
-        ? 'Response verified against knowledge base'
-        : prompt.ragStatus === 'Partial'
-        ? 'Partially verified against knowledge base'
-        : 'No verification found in knowledge base',
       showBar: false
     },
     {
       title: 'Contradiction Check',
       value: prompt.contradictionCheck,
       icon: <FileCheck size={24} />,
-      color: prompt.contradictionCheck === 'Pass' ? 'var(--status-safe)' : 'var(--status-blocked)',
+      color: prompt.contradictionCheck === 'Pass' ? 'var(--color-success)' : 'var(--color-error)',
       description: 'Internal consistency verification',
-      details: prompt.contradictionCheck === 'Pass'
-        ? 'No contradictions detected in response'
-        : 'Contradictions found in response logic',
       showBar: false
     }
   ];
 
   return (
-    <div className="admin-container">
-      <header className="admin-header">
-        <div className="header-left">
-          <motion.button
-            className="back-button"
-            onClick={handleBack}
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-          >
-            <ArrowLeft size={16} />
-          </motion.button>
-          <Shield className="logo-icon-small" />
-          <div>
-            <h1>Prompt Analysis</h1>
-            <p>Deep inspection and verification results</p>
+    <div className="admin-dashboard-layout">
+      {/* Top Navbar */}
+      <nav className="admin-navbar">
+        <div className="navbar-left">
+          <div className="navbar-logo">
+            <Shield size={24} />
+            <span>WATCHDOG</span>
           </div>
         </div>
-        
-        <div className="header-right">
-          <div className="user-info">
+        <div className="navbar-right">
+          <div className="navbar-user">
             <User size={16} />
-            <span>{user?.name || user?.email}</span>
-            <span className="admin-badge">Administrator</span>
+            <span className="user-name">{user?.name || user?.email}</span>
+            <span className="user-role">Administrator</span>
           </div>
           <motion.button
-            className="logout-button"
+            className="navbar-logout"
             onClick={handleLogout}
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
           >
             <LogOut size={16} />
-            Logout
           </motion.button>
         </div>
-      </header>
+      </nav>
 
-      <div className="analysis-container">
-        <div className="analysis-header">
-          <div className="prompt-meta">
-            <div className="meta-item">
-              <Calendar size={16} />
-              <span>{prompt.timestamp}</span>
-            </div>
-            <div className="meta-item">
-              <User size={16} />
-              <span>{prompt.user}</span>
-            </div>
-            <div className="meta-item">
-              <Clock size={16} />
-              <span>{prompt.processingTime.toFixed(1)}s processing</span>
-            </div>
-            <div className="meta-item">
-              {getStatusIcon(prompt.status)}
-              <span style={{ color: prompt.status === 'Safe' ? 'var(--status-safe)' : 
-                           prompt.status === 'Warning' ? 'var(--status-warning)' : 
-                           'var(--status-blocked)' }}>
-                {prompt.status}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        <div className="metrics-grid">
-          {metrics.map((metric, index) => (
-            <motion.div
-              key={metric.title}
-              className="analysis-metric"
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: index * 0.1, ease: [0.4, 0.0, 0.2, 1] }}
-            >
-              <div className="metric-header">
-                <div className="metric-icon" style={{ color: metric.color }}>
-                  {metric.icon}
-                </div>
-                <div className="metric-info">
-                  <h3>{metric.title}</h3>
-                  <p>{metric.description}</p>
-                </div>
-              </div>
-              
-              <motion.div 
-                className="metric-value"
-                style={{ color: metric.color }}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.3 + index * 0.1 }}
-              >
-                {metric.value}
-              </motion.div>
-
-              {metric.showBar && (
-                <div className="metric-bar">
-                  <motion.div 
-                    className="metric-bar-fill"
-                    style={{ backgroundColor: metric.color }}
-                    initial={{ width: 0 }}
-                    animate={{ width: `${metric.barValue}%` }}
-                    transition={{ duration: 0.8, delay: 0.5 + index * 0.1, ease: [0.4, 0.0, 0.2, 1] }}
-                  />
-                </div>
-              )}
-              
-              <div className="metric-details">
-                {metric.details}
-              </div>
-            </motion.div>
-          ))}
-        </div>
-
-        <div className="content-grid">
-          <motion.div
-            className="content-section"
-            initial={{ opacity: 0, x: -30 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.6, delay: 0.4, ease: [0.4, 0.0, 0.2, 1] }}
-          >
-            <div className="section-header">
-              <h3>User Prompt</h3>
-              <div className="section-actions">
-                <motion.button
-                  className="copy-button"
-                  onClick={() => handleCopy(prompt.prompt, 'prompt')}
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  style={{ color: copiedField === 'prompt' ? 'var(--status-safe)' : 'var(--text-secondary)' }}
-                >
-                  <Copy size={16} />
-                  {copiedField === 'prompt' ? 'Copied!' : 'Copy'}
-                </motion.button>
-              </div>
-            </div>
-            <div className="content-box">
-              <div className="content-text">
-                {prompt.prompt}
-              </div>
-            </div>
-          </motion.div>
-
-          <motion.div
-            className="content-section"
-            initial={{ opacity: 0, x: 30 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.6, delay: 0.5, ease: [0.4, 0.0, 0.2, 1] }}
-          >
-            <div className="section-header">
-              <h3>GPT Raw Answer</h3>
-              <div className="section-actions">
-                <motion.button
-                  className="copy-button"
-                  onClick={() => handleCopy(prompt.response, 'response')}
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  style={{ color: copiedField === 'response' ? 'var(--status-safe)' : 'var(--text-secondary)' }}
-                >
-                  <Copy size={16} />
-                  {copiedField === 'response' ? 'Copied!' : 'Copy'}
-                </motion.button>
-              </div>
-            </div>
-            <div className="content-box">
-              <div className="content-text">
-                {prompt.response}
-              </div>
-            </div>
-          </motion.div>
-        </div>
-
-        <motion.div
-          className="analysis-footer"
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.8 }}
-        >
-          <div className="footer-actions">
+      {/* Main Layout Container */}
+      <div className="admin-layout-container">
+        {/* Left Sidebar */}
+        <aside className="admin-sidebar">
+          <nav className="sidebar-nav">
             <motion.button
-              className="action-button secondary"
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
+              className={`nav-item ${activeNav === 'dashboard' ? 'active' : ''}`}
+              onClick={() => { setActiveNav('dashboard'); navigate('/admin/dashboard'); }}
+              whileHover={{ x: 4 }}
+              whileTap={{ x: 2 }}
             >
-              <Download size={16} />
-              Export Analysis
+              <BarChart3 size={18} />
+              <span>Dashboard</span>
             </motion.button>
             
             <motion.button
-              className="action-button secondary"
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
+              className={`nav-item ${activeNav === 'logs' ? 'active' : ''}`}
+              onClick={() => { setActiveNav('logs'); navigate('/admin/dashboard'); }}
+              whileHover={{ x: 4 }}
+              whileTap={{ x: 2 }}
             >
-              <Zap size={16} />
-              Re-analyze
+              <FileText size={18} />
+              <span>Activity Logs</span>
             </motion.button>
-          </div>
-        </motion.div>
+            
+            <motion.button
+              className={`nav-item ${activeNav === 'analysis' ? 'active' : ''}`}
+              onClick={() => { setActiveNav('analysis'); navigate('/admin/current'); }}
+              whileHover={{ x: 4 }}
+              whileTap={{ x: 2 }}
+            >
+              <AlertTriangle size={18} />
+              <span>Current Prompt</span>
+            </motion.button>
+          </nav>
+        </aside>
+
+        {/* Main Content Area */}
+        <main className="admin-main-content">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+          >
+            {/* Header with Back Button */}
+            <div style={{ marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+              <motion.button
+                onClick={handleBack}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                style={{
+                  background: '#1A1A1A',
+                  border: '1px solid #2A2A2A',
+                  color: '#FFFFFF',
+                  padding: '0.5rem',
+                  borderRadius: '6px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer'
+                }}
+              >
+                <ArrowLeft size={18} />
+              </motion.button>
+              <div>
+                <h2 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 600, color: '#FFFFFF' }}>
+                  Prompt Analysis
+                </h2>
+                <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.875rem', color: '#999999' }}>
+                  Detailed inspection and verification results
+                </p>
+              </div>
+            </div>
+
+            {/* Meta Information */}
+            <div style={{
+              background: '#1A1A1A',
+              border: '1px solid #2A2A2A',
+              borderRadius: '8px',
+              padding: '1.5rem',
+              marginBottom: '2rem',
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+              gap: '1.5rem'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <Calendar size={16} style={{ color: '#CCCCCC' }} />
+                <div>
+                  <div style={{ fontSize: '0.75rem', color: '#999999', textTransform: 'uppercase' }}>Timestamp</div>
+                  <div style={{ fontSize: '0.9rem', color: '#FFFFFF', marginTop: '0.25rem' }}>{prompt.timestamp}</div>
+                </div>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <User size={16} style={{ color: '#CCCCCC' }} />
+                <div>
+                  <div style={{ fontSize: '0.75rem', color: '#999999', textTransform: 'uppercase' }}>User</div>
+                  <div style={{ fontSize: '0.9rem', color: '#FFFFFF', marginTop: '0.25rem' }}>{prompt.user}</div>
+                </div>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <Clock size={16} style={{ color: '#CCCCCC' }} />
+                <div>
+                  <div style={{ fontSize: '0.75rem', color: '#999999', textTransform: 'uppercase' }}>Processing</div>
+                  <div style={{ fontSize: '0.9rem', color: '#FFFFFF', marginTop: '0.25rem' }}>{prompt.processingTime.toFixed(1)}s</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Metrics Grid */}
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+              gap: '1.5rem',
+              marginBottom: '2rem'
+            }}>
+              {metrics.map((metric, index) => (
+                <motion.div
+                  key={metric.title}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: index * 0.1 }}
+                  style={{
+                    background: '#1A1A1A',
+                    border: '1px solid #2A2A2A',
+                    borderRadius: '8px',
+                    padding: '1.5rem'
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
+                    <div style={{ color: metric.color }}>
+                      {metric.icon}
+                    </div>
+                    <div>
+                      <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 600, color: '#FFFFFF' }}>
+                        {metric.title}
+                      </h3>
+                      <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.875rem', color: '#999999' }}>
+                        {metric.description}
+                      </p>
+                    </div>
+                  </div>
+                  <motion.div
+                    style={{ fontSize: '1.875rem', fontWeight: 700, color: metric.color, marginBottom: '1rem' }}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.2 + index * 0.1 }}
+                  >
+                    {metric.value}
+                  </motion.div>
+                  {metric.showBar && (
+                    <div style={{
+                      height: '6px',
+                      background: '#2A2A2A',
+                      borderRadius: '3px',
+                      overflow: 'hidden'
+                    }}>
+                      <motion.div
+                        style={{
+                          height: '100%',
+                          background: metric.color,
+                          borderRadius: '3px'
+                        }}
+                        initial={{ width: 0 }}
+                        animate={{ width: `${metric.barValue}%` }}
+                        transition={{ duration: 0.8, delay: 0.4 + index * 0.1 }}
+                      />
+                    </div>
+                  )}
+                </motion.div>
+              ))}
+            </div>
+
+            {/* Prompt and Response Sections */}
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: '1fr 1fr',
+              gap: '1.5rem',
+              marginBottom: '2rem'
+            }}>
+              <motion.div
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.6, delay: 0.3 }}
+                style={{
+                  background: '#1A1A1A',
+                  border: '1px solid #2A2A2A',
+                  borderRadius: '8px',
+                  padding: '1.5rem'
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                  <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 600, color: '#FFFFFF' }}>
+                    User Prompt
+                  </h3>
+                  <motion.button
+                    onClick={() => handleCopy(prompt.prompt, 'prompt')}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    style={{
+                      background: 'transparent',
+                      border: '1px solid #2A2A2A',
+                      color: copiedField === 'prompt' ? '#10B981' : '#CCCCCC',
+                      padding: '0.5rem 1rem',
+                      borderRadius: '6px',
+                      fontSize: '0.875rem',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem'
+                    }}
+                  >
+                    <Copy size={14} />
+                    {copiedField === 'prompt' ? 'Copied!' : 'Copy'}
+                  </motion.button>
+                </div>
+                <div style={{
+                  background: '#000000',
+                  border: '1px solid #2A2A2A',
+                  borderRadius: '6px',
+                  padding: '1rem',
+                  color: '#CCCCCC',
+                  fontSize: '0.9rem',
+                  lineHeight: '1.6',
+                  maxHeight: '300px',
+                  overflowY: 'auto'
+                }}>
+                  {prompt.prompt}
+                </div>
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.6, delay: 0.4 }}
+                style={{
+                  background: '#1A1A1A',
+                  border: '1px solid #2A2A2A',
+                  borderRadius: '8px',
+                  padding: '1.5rem'
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                  <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 600, color: '#FFFFFF' }}>
+                    GPT Answer
+                  </h3>
+                  <motion.button
+                    onClick={() => handleCopy(prompt.response, 'response')}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    style={{
+                      background: 'transparent',
+                      border: '1px solid #2A2A2A',
+                      color: copiedField === 'response' ? '#10B981' : '#CCCCCC',
+                      padding: '0.5rem 1rem',
+                      borderRadius: '6px',
+                      fontSize: '0.875rem',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem'
+                    }}
+                  >
+                    <Copy size={14} />
+                    {copiedField === 'response' ? 'Copied!' : 'Copy'}
+                  </motion.button>
+                </div>
+                <div style={{
+                  background: '#000000',
+                  border: '1px solid #2A2A2A',
+                  borderRadius: '6px',
+                  padding: '1rem',
+                  color: '#CCCCCC',
+                  fontSize: '0.9rem',
+                  lineHeight: '1.6',
+                  maxHeight: '300px',
+                  overflowY: 'auto'
+                }}>
+                  {prompt.response}
+                </div>
+              </motion.div>
+            </div>
+
+            {/* Footer Actions */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.6 }}
+              style={{
+                display: 'flex',
+                gap: '1rem',
+                justifyContent: 'center'
+              }}
+            >
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                style={{
+                  background: '#1A1A1A',
+                  border: '1px solid #2A2A2A',
+                  color: '#CCCCCC',
+                  padding: '0.75rem 1.5rem',
+                  borderRadius: '6px',
+                  fontSize: '0.9rem',
+                  fontWeight: 500,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem'
+                }}
+              >
+                <Download size={16} />
+                Export Analysis
+              </motion.button>
+              
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                style={{
+                  background: '#1A1A1A',
+                  border: '1px solid #2A2A2A',
+                  color: '#CCCCCC',
+                  padding: '0.75rem 1.5rem',
+                  borderRadius: '6px',
+                  fontSize: '0.9rem',
+                  fontWeight: 500,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem'
+                }}
+              >
+                <Zap size={16} />
+                Re-analyze
+              </motion.button>
+            </motion.div>
+          </motion.div>
+        </main>
       </div>
     </div>
   );

@@ -7,8 +7,7 @@ import {
   User, 
   AlertTriangle, 
   CheckCircle, 
-  XCircle,
-  MessageSquare
+  XCircle
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
@@ -18,7 +17,7 @@ const UserChatPage = () => {
   const [message, setMessage] = useState('');
   const messagesEndRef = useRef(null);
   const { user, logout } = useAuth();
-  const { chatMessages, isProcessing, submitUserPrompt, clearChat } = useData();
+  const { chatMessages, isProcessing, submitUserPrompt } = useData();
   const navigate = useNavigate();
 
   useEffect(() => {

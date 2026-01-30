@@ -12,29 +12,25 @@ import {
   XCircle,
   Eye,
   Calendar,
-  Clock,
-  TrendingUp,
-  TrendingDown,
-  Activity,
-  Database,
-  FileCheck,
   BarChart3,
-  FileText
+  FileText,
+  Database,
+  FileCheck
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
 import { useNavigate } from 'react-router-dom';
 
-const AdminDashboard = () => {
+const ActivityLogs = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [timeRange, setTimeRange] = useState('today');
+  const [timeRange, setTimeRange] = useState('all');
   const [sortBy, setSortBy] = useState('timestamp');
   const [sortOrder, setSortOrder] = useState('desc');
-  const [activeNav, setActiveNav] = useState('dashboard');
+  const [activeNav, setActiveNav] = useState('logs');
   
   const { user, logout } = useAuth();
-  const { prompts, systemMetrics } = useData();
+  const { prompts } = useData();
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -47,8 +43,32 @@ const AdminDashboard = () => {
     setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc');
   };
 
-  const handleViewDetails = (promptId) => {
-    navigate(`/admin/analysis/${promptId}`);
+  const handleViewDetails = (prompt) => {
+    navigate('/admin/current', { state: { prompt } });
+  };
+
+  // Helper to check if a date is within the time range
+  const isWithinTimeRange = (timestampStr, range) => {
+    const promptDate = new Date(timestampStr);
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const promptDay = new Date(promptDate.getFullYear(), promptDate.getMonth(), promptDate.getDate());
+    
+    switch (range) {
+      case 'today':
+        return promptDay.getTime() === today.getTime();
+      case 'week':
+        const weekAgo = new Date(today);
+        weekAgo.setDate(weekAgo.getDate() - 7);
+        return promptDay >= weekAgo;
+      case 'month':
+        const monthAgo = new Date(today);
+        monthAgo.setMonth(monthAgo.getMonth() - 1);
+        return promptDay >= monthAgo;
+      case 'all':
+      default:
+        return true;
+    }
   };
 
   // Filter and sort prompts
@@ -59,8 +79,9 @@ const AdminDashboard = () => {
                           prompt.response.toLowerCase().includes(searchQuery.toLowerCase());
       
       const matchesStatus = statusFilter === 'all' || prompt.status === statusFilter;
+      const matchesTimeRange = isWithinTimeRange(prompt.timestamp, timeRange);
       
-      return matchesSearch && matchesStatus;
+      return matchesSearch && matchesStatus && matchesTimeRange;
     });
 
     // Sort
@@ -84,53 +105,13 @@ const AdminDashboard = () => {
     });
 
     return filtered;
-  }, [prompts, searchQuery, statusFilter, sortBy, sortOrder]);
+  }, [prompts, searchQuery, statusFilter, sortBy, sortOrder, timeRange]);
 
   const getConfidenceColor = (confidence) => {
     if (confidence >= 80) return 'var(--status-safe)';
     if (confidence >= 50) return 'var(--status-warning)';
     return 'var(--status-blocked)';
   };
-
-  const getRagStatusColor = (status) => {
-    switch (status) {
-      case 'Yes': return 'var(--status-safe)';
-      case 'Partial': return 'var(--status-warning)';
-      case 'No': return 'var(--status-blocked)';
-      default: return 'var(--text-tertiary)';
-    }
-  };
-
-  const statsCards = [
-    {
-      title: 'Total Prompts',
-      value: systemMetrics.totalPrompts.toLocaleString(),
-      icon: <Activity size={24} />,
-      change: '+12%',
-      trend: 'up'
-    },
-    {
-      title: 'Blocked Prompts',
-      value: systemMetrics.blockedPrompts.toLocaleString(),
-      icon: <XCircle size={24} />,
-      change: '-8%',
-      trend: 'down'
-    },
-    {
-      title: 'Avg Confidence',
-      value: `${systemMetrics.averageConfidence}%`,
-      icon: <TrendingUp size={24} />,
-      change: '+2%',
-      trend: 'up'
-    },
-    {
-      title: 'System Uptime',
-      value: systemMetrics.uptime,
-      icon: <Shield size={24} />,
-      change: systemMetrics.responseTime,
-      trend: 'neutral'
-    }
-  ];
 
   return (
     <div className="admin-dashboard-layout">
@@ -168,7 +149,7 @@ const AdminDashboard = () => {
           <nav className="sidebar-nav">
             <motion.button
               className={`nav-item ${activeNav === 'dashboard' ? 'active' : ''}`}
-              onClick={() => setActiveNav('dashboard')}
+              onClick={() => { setActiveNav('dashboard'); navigate('/admin/dashboard'); }}
               whileHover={{ x: 4 }}
               whileTap={{ x: 2 }}
             >
@@ -178,7 +159,7 @@ const AdminDashboard = () => {
             
             <motion.button
               className={`nav-item ${activeNav === 'logs' ? 'active' : ''}`}
-              onClick={() => setActiveNav('logs')}
+              onClick={() => { setActiveNav('logs'); navigate('/admin/logs'); }}
               whileHover={{ x: 4 }}
               whileTap={{ x: 2 }}
             >
@@ -188,7 +169,7 @@ const AdminDashboard = () => {
             
             <motion.button
               className={`nav-item ${activeNav === 'analysis' ? 'active' : ''}`}
-              onClick={() => setActiveNav('analysis')}
+              onClick={() => { setActiveNav('analysis'); navigate('/admin/current'); }}
               whileHover={{ x: 4 }}
               whileTap={{ x: 2 }}
             >
@@ -200,49 +181,16 @@ const AdminDashboard = () => {
 
         {/* Main Content Area */}
         <main className="admin-main-content">
-          {/* Stats Cards */}
-          <div className="stats-container">
-            {statsCards.map((stat, index) => (
-              <motion.div
-                key={stat.title}
-                className="stat-card"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, delay: index * 0.05 }}
-              >
-                <div className="stat-top">
-                  <div className="stat-icon-wrapper">
-                    {stat.icon}
-                  </div>
-                  <div className={`stat-trend trend-${stat.trend}`}>
-                    {stat.trend === 'up' && <TrendingUp size={14} />}
-                    {stat.trend === 'down' && <TrendingDown size={14} />}
-                    <span>{stat.change}</span>
-                  </div>
-                </div>
-                <motion.div 
-                  className="stat-value"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.2 + index * 0.05 }}
-                >
-                  {stat.value}
-                </motion.div>
-                <div className="stat-label">{stat.title}</div>
-              </motion.div>
-            ))}
-          </div>
-
           {/* Content Card */}
           <motion.div
             className="content-card"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.3 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
           >
             {/* Card Header with Controls */}
             <div className="card-header">
-              <h2 className="card-title">Prompt Activity</h2>
+              <h2 className="card-title">Activity Logs</h2>
               
               <div className="card-controls">
                 <div className="search-box">
@@ -303,7 +251,7 @@ const AdminDashboard = () => {
                 className="data-table"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                transition={{ duration: 0.5, delay: 0.4 }}
+                transition={{ duration: 0.5, delay: 0.3 }}
               >
                 <thead>
                   <tr>
@@ -398,7 +346,7 @@ const AdminDashboard = () => {
                         <td className="cell-actions">
                           <motion.button
                             className="action-button"
-                            onClick={() => handleViewDetails(prompt.id)}
+                            onClick={() => handleViewDetails(prompt)}
                             whileHover={{ scale: 1.15 }}
                             whileTap={{ scale: 0.9 }}
                             title="View details"
@@ -412,7 +360,7 @@ const AdminDashboard = () => {
                 </tbody>
               </motion.table>
               
-              {filteredPrompts.length === 0 && (
+              {filteredPrompts.length === 0 && prompts.length > 0 && (
                 <motion.div 
                   className="empty-state"
                   initial={{ opacity: 0 }}
@@ -432,4 +380,4 @@ const AdminDashboard = () => {
   );
 };
 
-export default AdminDashboard;
+export default ActivityLogs;

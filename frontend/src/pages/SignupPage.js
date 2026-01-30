@@ -76,11 +76,11 @@ const SignupPage = () => {
   };
 
   const getPasswordStrength = (password) => {
-    if (password.length === 0) return { strength: 0, label: '', color: 'var(--border-subtle)' };
-    if (password.length < 6) return { strength: 1, label: 'Weak', color: 'var(--status-blocked)' };
-    if (password.length < 8) return { strength: 2, label: 'Fair', color: 'var(--status-warning)' };
-    if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(password)) return { strength: 2, label: 'Fair', color: 'var(--status-warning)' };
-    return { strength: 3, label: 'Strong', color: 'var(--status-safe)' };
+    if (password.length === 0) return { strength: 0, label: '', color: '#666666' };
+    if (password.length < 6) return { strength: 1, label: 'Weak', color: '#FF4444' };
+    if (password.length < 8) return { strength: 2, label: 'Fair', color: '#FFA500' };
+    if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(password)) return { strength: 2, label: 'Fair', color: '#FFA500' };
+    return { strength: 3, label: 'Strong', color: '#10B981' };
   };
 
   const passwordStrength = getPasswordStrength(formData.password);
@@ -311,25 +311,25 @@ const SignupPage = () => {
           <ul>
             <motion.li 
               className={formData.password.length >= 8 ? 'met' : ''}
-              animate={{ color: formData.password.length >= 8 ? 'var(--status-safe)' : 'var(--text-tertiary)' }}
+              animate={{ color: formData.password.length >= 8 ? '#10B981' : '#999999' }}
             >
               At least 8 characters
             </motion.li>
             <motion.li 
               className={/[A-Z]/.test(formData.password) ? 'met' : ''}
-              animate={{ color: /[A-Z]/.test(formData.password) ? 'var(--status-safe)' : 'var(--text-tertiary)' }}
+              animate={{ color: /[A-Z]/.test(formData.password) ? '#10B981' : '#999999' }}
             >
               One uppercase letter
             </motion.li>
             <motion.li 
               className={/[a-z]/.test(formData.password) ? 'met' : ''}
-              animate={{ color: /[a-z]/.test(formData.password) ? 'var(--status-safe)' : 'var(--text-tertiary)' }}
+              animate={{ color: /[a-z]/.test(formData.password) ? '#10B981' : '#999999' }}
             >
               One lowercase letter
             </motion.li>
             <motion.li 
               className={/\d/.test(formData.password) ? 'met' : ''}
-              animate={{ color: /\d/.test(formData.password) ? 'var(--status-safe)' : 'var(--text-tertiary)' }}
+              animate={{ color: /\d/.test(formData.password) ? '#10B981' : '#999999' }}
             >
               One number
             </motion.li>

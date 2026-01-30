@@ -33,7 +33,10 @@ function AppRoutes() {
       <Route path="/admin/dashboard" element={
         isAuthenticated && user?.role === 'admin' ? <AdminDashboard /> : <Navigate to="/login" replace />
       } />
-      <Route path="/admin/analysis/:promptId" element={
+      <Route path="/admin/logs" element={
+        isAuthenticated && user?.role === 'admin' ? <AdminDashboard /> : <Navigate to="/login" replace />
+      } />
+      <Route path="/admin/current" element={
         isAuthenticated && user?.role === 'admin' ? <AdminAnalysis /> : <Navigate to="/login" replace />
       } />
       <Route path="/" element={<Navigate to="/login" replace />} />

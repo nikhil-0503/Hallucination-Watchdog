@@ -22,7 +22,7 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="auth-container min-vh-100 d-flex align-items-center justify-content-center py-5" style={{background: 'linear-gradient(135deg, var(--color-primary-900), var(--color-primary-700))'}}>
+    <div className="auth-container min-vh-100 d-flex align-items-center justify-content-center py-5" style={{background: '#000000'}}>
       <Container>
         <Row className="justify-content-center">
           <Col xs={12} md={8} lg={6} xl={4}>
@@ -31,7 +31,7 @@ const LoginPage = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, ease: [0.4, 0.0, 0.2, 1] }}
             >
-              <Card className="shadow-lg border-0" style={{backgroundColor: 'var(--color-primary-800)', borderRadius: '16px'}}>
+              <Card className="shadow-lg border-0" style={{backgroundColor: '#1A1A1A', borderRadius: '16px'}}>
                 <Card.Body className="p-5">
                   <div className="text-center mb-4">
                     <motion.div
@@ -39,29 +39,29 @@ const LoginPage = () => {
                       animate={{ scale: 1 }}
                       transition={{ delay: 0.2, type: "spring", stiffness: 300, damping: 20 }}
                     >
-                      <i className="fas fa-shield-alt fs-1 text-primary mb-3" style={{color: 'var(--color-accent)'}}></i>
+                      <i className="fas fa-shield-alt fs-1 text-white mb-3" style={{color: '#CCCCCC'}}></i>
                     </motion.div>
-                    <h1 className="fs-2 fw-bold text-primary mb-1" style={{color: 'var(--color-accent)', letterSpacing: '2px'}}>WATCHDOG</h1>
-                    <p className="text-muted mb-1">Enterprise AI Safety Platform</p>
+                    <h1 className="fs-2 fw-bold text-white mb-1" style={{letterSpacing: '2px'}}>WATCHDOG</h1>
+                    <p className="text-muted mb-1" style={{color: '#999999'}}>Enterprise AI Safety Platform</p>
                     <h2 className="fs-4 fw-semibold text-white mb-0">Sign in to WATCHDOG</h2>
                   </div>
 
                   <div className="mb-4">
                     <ButtonGroup className="w-100" size="lg">
                       <Button 
-                        variant={selectedRole === 'user' ? 'primary' : 'outline-light'}
+                        variant={selectedRole === 'user' ? 'light' : 'outline-light'}
                         onClick={() => setSelectedRole('user')}
                         className="d-flex align-items-center justify-content-center gap-2"
-                        style={selectedRole === 'user' ? {backgroundColor: 'var(--color-accent)', borderColor: 'var(--color-accent)'} : {}}
+                        style={selectedRole === 'user' ? {backgroundColor: '#CCCCCC', borderColor: '#CCCCCC', color: '#000000'} : {color: '#CCCCCC', backgroundColor: '#1A1A1A', border: '1px solid #333333'}}
                       >
                         <i className="fas fa-user"></i>
                         User
                       </Button>
                       <Button 
-                        variant={selectedRole === 'admin' ? 'primary' : 'outline-light'}
+                        variant={selectedRole === 'admin' ? 'light' : 'outline-light'}
                         onClick={() => setSelectedRole('admin')}
                         className="d-flex align-items-center justify-content-center gap-2"
-                        style={selectedRole === 'admin' ? {backgroundColor: 'var(--color-accent)', borderColor: 'var(--color-accent)'} : {}}
+                        style={selectedRole === 'admin' ? {backgroundColor: '#CCCCCC', borderColor: '#CCCCCC', color: '#000000'} : {color: '#CCCCCC', backgroundColor: '#1A1A1A', border: '1px solid #333333'}}
                       >
                         <i className="fas fa-shield-alt"></i>
                         Admin
@@ -80,9 +80,9 @@ const LoginPage = () => {
                         required
                         size="lg"
                         style={{
-                          backgroundColor: 'var(--color-primary-700)',
-                          border: '1px solid var(--color-primary-600)',
-                          color: 'white'
+                          backgroundColor: '#0A0A0A',
+                          border: '1px solid #333333',
+                          color: '#CCCCCC'
                         }}
                         className="custom-form-control"
                       />
@@ -98,9 +98,9 @@ const LoginPage = () => {
                         required
                         size="lg"
                         style={{
-                          backgroundColor: 'var(--color-primary-700)',
-                          border: '1px solid var(--color-primary-600)',
-                          color: 'white'
+                          backgroundColor: '#0A0A0A',
+                          border: '1px solid #333333',
+                          color: '#CCCCCC'
                         }}
                         className="custom-form-control"
                       />
@@ -116,8 +116,9 @@ const LoginPage = () => {
                         className="w-100 fw-medium d-flex align-items-center justify-content-center gap-2"
                         disabled={isLoading}
                         style={{
-                          backgroundColor: 'var(--color-accent)',
-                          borderColor: 'var(--color-accent)',
+                          backgroundColor: '#CCCCCC',
+                          borderColor: '#CCCCCC',
+                          color: '#000000',
                           padding: '12px'
                         }}
                       >
@@ -139,7 +140,7 @@ const LoginPage = () => {
                     <a 
                       href="/signup" 
                       className="text-decoration-none fw-medium"
-                      style={{color: 'var(--color-accent)'}}
+                      style={{color: '#CCCCCC'}}
                     >
                       Create a user account
                     </a>
@@ -150,12 +151,12 @@ const LoginPage = () => {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ delay: 0.8 }}
-                    style={{backgroundColor: 'rgba(11, 15, 20, 0.5)'}}
+                    style={{backgroundColor: '#0A0A0A'}}
                   >
-                    <p className="small text-muted mb-2 fw-bold">Demo Credentials</p>
-                    <div className="small text-light">
-                      <div className="mb-1"><strong style={{color: 'var(--color-accent)'}}>Admin:</strong> admin@watchdog.ai / admin123</div>
-                      <div><strong style={{color: 'var(--color-accent)'}}>User:</strong> user@test.com / user123</div>
+                    <p className="small mb-2 fw-bold" style={{color: '#999999'}}>Demo Credentials</p>
+                    <div className="small" style={{color: '#CCCCCC'}}>
+                      <div className="mb-1"><strong style={{color: '#FFFFFF'}}>Admin:</strong> admin@watchdog.ai / admin123</div>
+                      <div><strong style={{color: '#FFFFFF'}}>User:</strong> user@test.com / user123</div>
                     </div>
                   </motion.div>
                 </Card.Body>
