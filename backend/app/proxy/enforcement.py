@@ -10,10 +10,12 @@ from typing import Dict, Tuple
 import sys
 import os
 
-# Add backend root to path to import risk_engine
-sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
+# Add backend root to path for sibling modules
+backend_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+if backend_root not in sys.path:
+    sys.path.insert(0, backend_root)
 
-from schemas import ActionType, RiskReport, RiskSignals
+from ..schemas import ActionType, RiskReport, RiskSignals
 from risk_engine.analyzer import analyze
 from policies.policy_engine import enforce_policy
 from audit.audit_logger import log_decision

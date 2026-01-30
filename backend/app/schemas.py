@@ -40,6 +40,22 @@ class AnalyzeRequest(BaseModel):
         }
 
 
+class ChatRequest(BaseModel):
+    """Request schema for /chat endpoint"""
+    prompt: str = Field(..., min_length=1, description="User prompt")
+    role: str = Field(default="user", description="User role: 'user' or 'admin'")
+    domain: DomainType = Field(default=DomainType.GENERAL, description="Content domain")
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "prompt": "What are the side effects of ibuprofen?",
+                "role": "user",
+                "domain": "general"
+            }
+        }
+
+
 # ============================================
 # INTERNAL SCHEMAS (Risk Engine Interface)
 # ============================================
@@ -88,3 +104,38 @@ class AnalyzeResponse(BaseModel):
                 "explanation": "Unverified medical claims detected with moderate confidence"
             }
         }
+
+
+class ChatResponse(BaseModel):
+    """Response schema for /chat endpoint"""
+    id: int = Field(..., description="Unique record ID")
+    user_output: str = Field(..., description="Safe response for user display")
+    action: ActionType = Field(..., description="Enforcement action")
+    
+    # Admin-only fields (included only for admin role)
+    timestamp: Optional[str] = Field(default=None)
+    prompt: Optional[str] = Field(default=None)
+    gpt_raw_answer: Optional[str] = Field(default=None)
+    confidence: Optional[float] = Field(default=None)
+    rag_status: Optional[str] = Field(default=None)
+    contradiction_check: Optional[str] = Field(default=None)
+    risk_score: Optional[int] = Field(default=None)
+    explanation: Optional[str] = Field(default=None)
+    metadata: Optional[Dict] = Field(default=None)
+
+
+class PromptRecord(BaseModel):
+    """Complete prompt record schema"""
+    id: int
+    timestamp: str
+    prompt: str
+    gpt_raw_answer: str
+    user_visible_answer: str
+    confidence: float
+    rag_status: str
+    contradiction_check: str
+    action: str
+    risk_score: int
+    explanation: str
+    metadata: Optional[Dict] = None
+
