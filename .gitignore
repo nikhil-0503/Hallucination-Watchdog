@@ -1,15 +1,23 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
 # dependencies
-/node_modules
+node_modules/
+**/node_modules/
 /.pnp
 .pnp.js
+
+# environment variables
+.env
+.env.*
+!.env.example
 
 # testing
 /coverage
 
 # production
 /build
+build/
+dist/
 
 # misc
 .DS_Store
@@ -18,6 +26,36 @@
 .env.test.local
 .env.production.local
 
+# logs
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+*.log
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+pip-log.txt
+pip-delete-this-directory.txt
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db

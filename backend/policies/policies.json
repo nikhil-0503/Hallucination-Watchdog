@@ -1,0 +1,5 @@
+{
+  "general": { "warn": 50, "block": 80 },
+  "health":  { "warn": 30, "block": 60 },
+  "finance": { "warn": 40, "block": 70 }
+}
