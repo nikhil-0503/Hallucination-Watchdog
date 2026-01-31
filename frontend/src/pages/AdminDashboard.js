@@ -304,7 +304,7 @@ const AdminDashboard = () => {
                                 transition={{ duration: 0.8, delay: 0.3 + index * 0.02 }}
                               />
                             </div>
-                            <span style={{ color: getConfidenceColor(prompt.confidence * 100) }}>
+                            <span>
                               {Math.round(prompt.confidence * 100)}%
                             </span>
                           </div>

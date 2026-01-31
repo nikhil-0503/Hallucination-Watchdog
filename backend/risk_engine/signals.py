@@ -15,6 +15,131 @@ from typing import List, Dict, Optional, Tuple
 
 
 # ============================================================================
+# DANGEROUS PROMPT DETECTION (AUTO-BLOCK) - HIGHEST PRIORITY
+# ============================================================================
+
+# Critical: Check for dangerous intent BEFORE anything else
+DANGEROUS_KEYWORDS = [
+    # Violence & Harm
+    r'\b(kill|murder|assassinate|harm|hurt|attack|assault|stab|shoot)\s+(people|person|someone|human|myself)',
+    r'\bhow\s+to\s+(kill|murder|harm|hurt)',
+    
+    # Weapons & Explosives
+    r'\b(make|build|create|construct)\s+(bomb|explosive|weapon|grenade|molotov)',
+    r'\bhow\s+to\s+(make|build)\s+.{0,20}(bomb|explosive|weapon)',
+    r'\b(pipe\s+bomb|pressure\s+cooker\s+bomb|nail\s+bomb)',
+    
+    # Medical Danger
+    r'\bhow\s+to\s+(perform|do)\s+(surgery|operation|amputation)',
+    r'\b(surgery|operation)\s+(for|on|to\s+treat)\s+.{0,30}(heart|brain|organ)',
+    r'\bhow\s+to\s+.{0,20}(surgery|amputation|dissect)',
+    
+    # Illegal Activity
+    r'\bhow\s+to\s+(hack|break\s+into|steal|rob|burglar)',
+    r'\b(make|create|produce)\s+(meth|cocaine|heroin|drugs)',
+    r'\bhow\s+to\s+(evade|escape)\s+(police|law|arrest)',
+    
+    # Self-Harm
+    r'\bhow\s+to\s+(commit\s+suicide|kill\s+myself|end\s+my\s+life)',
+    r'\bways\s+to\s+(die|suicide|self\s+harm)',
+    
+    # Terrorism
+    r'\b(terrorist|terrorism|attack)\s+(plan|strategy|method)',
+    r'\bhow\s+to\s+.{0,20}(terrorism|terrorist\s+attack)',
+]
+
+
+def is_dangerous_prompt(prompt: str) -> tuple[bool, str]:
+    """
+    Detect if a prompt contains dangerous, harmful, or illegal intent.
+    
+    This runs BEFORE factual question detection.
+    Dangerous prompts get BLOCK regardless of how politely the model responds.
+    
+    Examples that MUST return True:
+    - "how to make a bomb"
+    - "how to kill people"
+    - "how to perform surgery for hole in heart"
+    - "how to hack into someone's account"
+    
+    Args:
+        prompt: User's original question
+        
+    Returns:
+        Tuple of (is_dangerous, reason)
+    """
+    if not prompt:
+        return False, ""
+    
+    prompt_lower = prompt.lower().strip()
+    
+    # Check all dangerous patterns
+    for pattern in DANGEROUS_KEYWORDS:
+        match = re.search(pattern, prompt_lower, re.IGNORECASE)
+        if match:
+            matched_text = match.group(0)
+            return True, f"Dangerous intent detected: '{matched_text}'"
+    
+    return False, ""
+
+
+# ============================================================================
+# FACTUAL QUESTION DETECTION (AUTO-ALLOW)
+# ============================================================================
+
+# Patterns for safe factual questions that should NEVER be flagged
+FACTUAL_QUESTION_PATTERNS = [
+    r'^\s*(who|what|where|when|which)\s+(is|are|was|were)\s+',  # Who is X? What is Y?
+    r'^\s*(tell|explain|describe)\s+.*\s+(about|regarding)\s+',  # Tell me about X
+    r'^\s*define\s+',  # Define X
+    r'^\s*(biography|history|background)\s+of\s+',  # Biography of X
+]
+
+# Neutral topics that are public knowledge
+PUBLIC_KNOWLEDGE_INDICATORS = [
+    r'\b(person|people|celebrity|athlete|politician|president|company|organization|country|city|place)\b',
+    r'\b(founded|established|located|known for|famous for)\b',
+]
+
+
+def is_factual_question(prompt: str) -> bool:
+    """
+    Detect if a prompt is a simple factual question about public knowledge.
+    
+    These should ALWAYS be ALLOW with minimal risk (0-10).
+    
+    Examples that should return True:
+    - "Who is Donald Trump?"
+    - "Where is India?"
+    - "What is HP?"
+    - "Who is Cristiano Ronaldo?"
+    
+    Args:
+        prompt: User's original question
+        
+    Returns:
+        True if this is a safe factual question
+    """
+    if not prompt:
+        return False
+    
+    prompt_lower = prompt.lower().strip()
+    
+    # Check factual question patterns
+    for pattern in FACTUAL_QUESTION_PATTERNS:
+        if re.search(pattern, prompt_lower, re.IGNORECASE):
+            return True
+    
+    # Short questions with public knowledge indicators
+    if len(prompt.split()) <= 8:  # Short questions
+        for indicator in PUBLIC_KNOWLEDGE_INDICATORS:
+            if re.search(indicator, prompt_lower, re.IGNORECASE):
+                return True
+    
+    return False
+
+
+# ============================================================================
 # CLAIM EXTRACTION
 # ============================================================================
 
