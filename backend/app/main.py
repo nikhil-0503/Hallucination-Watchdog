@@ -13,8 +13,9 @@ import uvicorn
 
 from .api.routes import router
 
-# Load environment variables
-load_dotenv()
+# Load environment variables from project root
+# Note: .env should be at D:\Projects\Hallucination-Watchdog\.env
+load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), "..", "..", ".env"))
 
 # ============================================
 # APPLICATION INITIALIZATION

@@ -73,18 +73,26 @@ const UserChatPage = () => {
       );
     }
 
+    // Show a visible warning for WARN responses
+    const isWarn = msg.status === 'WARN' || msg.status === 'Warning';
+
     return (
       <motion.div
         key={msg.id}
-        className={`message ${msg.type}`}
+        className={`message ${msg.type}${isWarn ? ' message-warn' : ''}`}
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3, delay: index * 0.05 }}
       >
         <div className="message-content">
           {msg.content}
+          {isWarn && (
+            <div className="warn-banner">
+              <AlertTriangle size={16} className="status-warning" style={{ marginRight: 6 }} />
+              <span className="warn-text">Caution: This answer may be incomplete, unverified, or risky.</span>
+            </div>
+          )}
         </div>
-        
         {msg.confidence !== undefined && msg.status !== 'Blocked' && (
           <div className="message-footer">
             <div className="status-indicator">

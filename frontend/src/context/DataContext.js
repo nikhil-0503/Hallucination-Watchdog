@@ -45,7 +45,6 @@ export const DataProvider = ({ children }) => {
 
   const submitUserPrompt = async (message, userRole = 'user') => {
     setIsProcessing(true);
-    
     // Add user message to chat
     const userMessage = {
       id: Date.now(),
@@ -58,7 +57,7 @@ export const DataProvider = ({ children }) => {
     try {
       // Call WATCHDOG backend /api/chat
       const response = await chatWithWatchdog(message, userRole);
-      
+
       // Create AI message from response
       const aiMessage = {
         id: response.id,
@@ -68,11 +67,11 @@ export const DataProvider = ({ children }) => {
         confidence: response.confidence ? response.confidence * 100 : undefined,
         timestamp: new Date()
       };
-      
+
       setChatMessages(prev => [...prev, aiMessage]);
-      
       // Reload prompts to show new record in admin dashboard
       loadPrompts();
+      return response; // <-- Return the backend response for use in UserChatPage
     } catch (error) {
       console.error('Error processing prompt:', error);
       const errorMessage = {
@@ -83,6 +82,7 @@ export const DataProvider = ({ children }) => {
         timestamp: new Date()
       };
       setChatMessages(prev => [...prev, errorMessage]);
+      throw error; // <-- Rethrow so UserChatPage can handle it
     } finally {
       setIsProcessing(false);
     }

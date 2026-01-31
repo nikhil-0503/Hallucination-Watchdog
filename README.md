@@ -12,131 +12,65 @@ watchdog/
 │   ├── app/                # FastAPI Main Application (Member 1)
 │   │   ├── api/            # REST API endpoints
 │   │   ├── proxy/          # LLM proxy & enforcement
-│   │   ├── main.py         # Application entry point
-│   │   └── schemas.py      # Pydantic data models
-│   │
-│   ├── risk_engine/        # AI Risk Analysis (Member 2)
-│   │   ├── analyzer.py     # Main risk analysis engine
-│   │   ├── scorer.py       # Risk scoring algorithms
-│   │   └── signals.py      # Hallucination signals
-│   │
-│   ├── policies/           # Policy Engine (Member 4)
-│   │   ├── policy_engine.py  # ALLOW/WARN/BLOCK logic
-│   │   └── policies.json   # Policy thresholds
-│   │
-│   ├── audit/              # Audit System (Member 4)
-│   │   ├── audit_logger.py # Immutable audit logging
-│   │   └── schemas.py      # Audit data structures
-│   │
-│   └── requirements.txt    # Python dependencies
-│
-├── frontend/               # React.js User Interface
-│   ├── src/
-│   │   ├── pages/          # Application pages
-│   │   │   ├── LoginPage.js      # Role-based authentication
-│   │   │   ├── SignupPage.js     # User registration
-│   │   │   ├── UserChatPage.js   # Protected chat interface
-│   │   │   ├── AdminDashboard.js # Admin monitoring
-│   │   │   └── AdminAnalysis.js  # Detailed analysis
-│   │   │
-│   │   ├── components/     # Reusable UI components
-│   │   ├── context/        # React Context (Auth, Data)
-│   │   ├── services/       # API communication layer
-│   │   └── styles/         # Tailwind + Custom CSS
-│   │
-│   ├── tailwind.config.js  # Tailwind configuration
-│   ├── package.json        # Node dependencies
-│   └── public/             # Static assets
-│
-└── README.md               # This file
+# WATCHDOG - AI Hallucination Detection & Output Control System
+
+WATCHDOG is an AI safety gateway that detects hallucinations and enforces ALLOW/WARN/BLOCK policies on LLM outputs.
+
+**Quick overview**
+- Project root: contains `backend/` (FastAPI) and `frontend/` (React).
+
+**Prerequisites**
+- **Python**: 3.9+ and `pip`
+- **Node.js**: 16+ (recommended 18+) and `npm` or `yarn`
+
+**Backend (development)**
+- **Copy env file**: copy [backend/app/.env.example](backend/app/.env.example) to `backend/app/.env` and set `OPENROUTER_API_KEY` (or keep `MOCK_LLM=true` for local testing).
+- **Install deps**:
+```bash
+cd backend/app
+pip install -r requirements.txt
 ```
-
-## 🔄 **Data Flow Architecture**
-
-### **Complete Request Flow**
-
+- **Run (dev, auto-reload)**:
+```bash
+cd backend/app
+uvicorn main:app --reload --host 0.0.0.0 --port 8000
 ```
-Frontend (React) 
-    ↓ HTTP Request
-Backend API (Member 1 - FastAPI)
-    ↓ Forward to LLM
-LLM Proxy (Member 1)
-    ↓ Analyze Response
-Risk Engine (Member 2 - ML Analysis)
-    ↓ Apply Rules
-Policy Engine (Member 4 - ALLOW/WARN/BLOCK)
-    ↓ Log Decision
-Audit Logger (Member 4 - Immutable Record)
-    ↓ Return Safe Response
-User Interface (Enforcement Applied)
-```
-
-### **Core Enforcement Logic**
-
-```python
-# NON-NEGOTIABLE ENFORCEMENT RULE
-if action == "BLOCK":
-    response = "The output cannot be displayed."
-else:
-    response = llm_response
-```
-
-**This is the core innovation: BLOCKED responses never reach users.**
-
-## 🚦 **API Endpoints**
-
-### **Core Endpoint**
-```http
-POST /api/analyze
-Content-Type: application/json
-
-{
-  "prompt": "What are the side effects of ibuprofen?",
-  "domain": "health"
-}
-```
-
-**Response:**
-```json
-{
-  "final_action": "ALLOW|WARN|BLOCK",
-  "response": "Safe response or blocked message",
-  "risk_score": 25,
-  "explanation": "Low risk general knowledge query",
-  "metadata": {
-    "confidence": 87,
-    "processing_time": 1.2,
-    "rag_status": "verified"
-  }
-}
-```
-
-## 🔧 **Setup & Deployment**
-
-### **Backend Setup**
+- Alternative (from repository root):
 ```bash
 cd backend
-pip install -r requirements.txt
-uvicorn app.main:app --host 0.0.0.0 --port 8000
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
+- **Open API docs**: `http://localhost:8000/docs`
 
-### **Frontend Setup**
+**Frontend (development)**
+- **Install deps & run**:
 ```bash
 cd frontend
 npm install
 npm start
 ```
+- By default the React dev server runs on `http://localhost:3000`.
 
-### **Demo Credentials**
-- **Admin Access**: `admin@watchdog.ai` / `admin123`
-- **User Access**: `user@test.com` / `user123`
+**Production build (frontend)**
+- Build static assets:
+```bash
+cd frontend
+npm run build
+```
+- Serve the `build/` directory with any static host (nginx, `serve`, etc.).
 
-## 🚀 **Quick Start**
+**Environment notes**
+- The backend env file is at [backend/app/.env.example](backend/app/.env.example). Key variables:
+    - `MOCK_LLM`: `true` for local mock responses, `false` to call real LLM provider.
+    - `OPENROUTER_API_KEY`: set when `MOCK_LLM=false`.
+    - `HOST`, `PORT`, `RELOAD`, `CORS_ORIGINS`.
 
-1. **Start Backend**: `cd backend && uvicorn app.main:app --reload`
-2. **Start Frontend**: `cd frontend && npm start`  
-3. **Open Browser**: `http://localhost:3001`
-4. **Login**: Use demo credentials above
-5. **Test Safety**: Try prompts that trigger WARN/BLOCK actions
+**Testing**
+- Frontend: `cd frontend && npm test`
+- Backend: if tests are added, run `pytest` from `backend/`.
 
-**WATCHDOG is now fully operational and ready for production deployment.**
+**Troubleshooting**
+- If the backend fails to import `app` when running from repository root, run uvicorn from `backend/app` using `uvicorn main:app`.
+- If CORS blocks requests, adjust `CORS_ORIGINS` in the backend env file.
+
+If you want, I can also add a short `dev` script to the root `README` or create a convenience `Makefile`/PowerShell script for Windows to start both servers together.

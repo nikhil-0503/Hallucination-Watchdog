@@ -123,7 +123,10 @@ async def chat_with_watchdog(request: ChatRequest):
             action=action.value,
             risk_score=risk_score,
             explanation=risk_report.explanation,
-            metadata=risk_report.metadata
+            metadata={
+                "signals": risk_report.signals.model_dump(),
+                "risk_score": risk_report.risk_score
+            }
         )
         
         logger.info(f"Record saved - ID: {record_id}")
