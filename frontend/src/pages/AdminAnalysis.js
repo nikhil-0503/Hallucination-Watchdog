@@ -27,24 +27,27 @@ const AdminAnalysis = () => {
   const [prompt, setPrompt] = useState(null);
   const [loading, setLoading] = useState(true);
   const { user, logout } = useAuth();
-  const { getPromptById } = useData();
+  const { getPromptById, prompts } = useData();
   const navigate = useNavigate();
   const { id } = useParams();
   const [activeNav, setActiveNav] = useState('analysis');
 
   useEffect(() => {
     const loadPrompt = async () => {
+      setLoading(true);
       if (id) {
-        setLoading(true);
+        // Load specific prompt by ID
         const data = await getPromptById(parseInt(id));
         setPrompt(data);
-        setLoading(false);
-      } else {
-        setLoading(false);
+      } else if (prompts && prompts.length > 0) {
+        // Load the latest prompt when no ID is provided
+        // Prompts are already sorted by timestamp (newest first)
+        setPrompt(prompts[0]);
       }
+      setLoading(false);
     };
     loadPrompt();
-  }, [id, getPromptById]);
+  }, [id, getPromptById, prompts]);
 
   const handleLogout = () => {
     logout();
@@ -248,26 +251,24 @@ const AdminAnalysis = () => {
               onClick={() => { setActiveNav('dashboard'); navigate('/admin/dashboard'); }}
               whileHover={{ x: 4 }}
               whileTap={{ x: 2 }}
+              style={{
+                color: activeNav === 'dashboard' ? '#60a5fa' : '#000',   // active blue, inactive black
+                background: activeNav === 'dashboard' ? '#1e3a4c' : '#e5e7eb'
+              }}
             >
               <BarChart3 size={18} />
               <span>Dashboard</span>
             </motion.button>
-            
-            <motion.button
-              className={`nav-item ${activeNav === 'logs' ? 'active' : ''}`}
-              onClick={() => { setActiveNav('logs'); navigate('/admin/dashboard'); }}
-              whileHover={{ x: 4 }}
-              whileTap={{ x: 2 }}
-            >
-              <FileText size={18} />
-              <span>Activity Logs</span>
-            </motion.button>
-            
+        
             <motion.button
               className={`nav-item ${activeNav === 'analysis' ? 'active' : ''}`}
               onClick={() => { setActiveNav('analysis'); navigate('/admin/current'); }}
               whileHover={{ x: 4 }}
               whileTap={{ x: 2 }}
+              style={{
+                color: activeNav === 'analysis' ? '#60a5fa' : '#000',   // black text when not active
+                background: activeNav === 'analysis' ? '#1e3a4c' : '#e5e7eb'
+              }}
             >
               <AlertTriangle size={18} />
               <span>Current Prompt</span>
@@ -276,11 +277,21 @@ const AdminAnalysis = () => {
         </aside>
 
         {/* Main Content Area */}
-        <main className="admin-main-content">
+        <main className="admin-main-content" style={{ 
+          display: 'flex', 
+          justifyContent: 'center', 
+          alignItems: 'center',
+          padding: '2rem'
+        }}>
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
+            style={{ 
+              maxWidth: '1200px', 
+              width: '100%',
+              margin: '0 auto'
+            }}
           >
             {/* Header with Back Button */}
             <div style={{ marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>

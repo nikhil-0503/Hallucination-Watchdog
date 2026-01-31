@@ -29,6 +29,8 @@ const AdminDashboard = () => {
   const [sortBy, setSortBy] = useState('timestamp');
   const [sortOrder, setSortOrder] = useState('desc');
   const [activeNav, setActiveNav] = useState('dashboard');
+  const [selectedPrompt, setSelectedPrompt] = useState(null);
+  const [showModal, setShowModal] = useState(false);
   
   const { user, logout } = useAuth();
   const { prompts } = useData();
@@ -45,8 +47,20 @@ const AdminDashboard = () => {
   };
 
   const handleViewDetails = (prompt) => {
-    // Navigate to /admin/current/:id using the prompt ID
-    navigate(`/admin/current/${prompt.id}`);
+    // Show modal with prompt details instead of navigating
+    setSelectedPrompt(prompt);
+    setShowModal(true);
+  };
+
+  const closeModal = () => {
+    setShowModal(false);
+    setSelectedPrompt(null);
+  };
+
+  const getConfidenceColor = (confidence) => {
+    if (confidence >= 0.8) return 'var(--status-safe)';
+    if (confidence >= 0.5) return 'var(--status-warning)';
+    return 'var(--status-blocked)';
   };
 
   // Helper to check if a date is within the time range
@@ -108,12 +122,6 @@ const AdminDashboard = () => {
 
     return filtered;
   }, [prompts, searchQuery, statusFilter, sortBy, sortOrder, timeRange]);
-
-  const getConfidenceColor = (confidence) => {
-    if (confidence >= 80) return 'var(--status-safe)';
-    if (confidence >= 50) return 'var(--status-warning)';
-    return 'var(--status-blocked)';
-  };
 
   return (
     <div className="admin-dashboard-layout" style={{position: 'relative'}}>
@@ -356,6 +364,194 @@ const AdminDashboard = () => {
           </motion.div>
         </main>
       </div>
+
+      {/* Prompt Details Modal */}
+      <AnimatePresence>
+        {showModal && selectedPrompt && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={closeModal}
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              background: 'rgba(0, 0, 0, 0.7)',
+              zIndex: 1000,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '2rem',
+              overflow: 'auto'
+            }}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                background: '#0a0f1a',
+                border: '1px solid #1e3a4c',
+                borderRadius: '12px',
+                padding: '2rem',
+                maxWidth: '900px',
+                width: '90%',
+                maxHeight: '90vh',
+                overflowY: 'auto',
+                boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+                position: 'relative'
+              }}
+            >
+              {/* Modal Header */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+                <h2 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 600, color: '#FFFFFF' }}>Prompt Analysis</h2>
+                <motion.button
+                  onClick={closeModal}
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
+                  style={{
+                    background: 'transparent',
+                    border: 'none',
+                    color: '#CCCCCC',
+                    cursor: 'pointer',
+                    fontSize: '1.5rem',
+                    padding: '0.25rem'
+                  }}
+                >
+                  ✕
+                </motion.button>
+              </div>
+
+              {/* Meta Information */}
+              <div style={{
+                background: '#1A1A1A',
+                border: '1px solid #2A2A2A',
+                borderRadius: '8px',
+                padding: '1.5rem',
+                marginBottom: '1.5rem',
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+                gap: '1rem'
+              }}>
+                <div>
+                  <div style={{ fontSize: '0.75rem', color: '#999999', textTransform: 'uppercase' }}>Timestamp</div>
+                  <div style={{ fontSize: '0.9rem', color: '#FFFFFF', marginTop: '0.25rem' }}>{new Date(selectedPrompt.timestamp).toLocaleString()}</div>
+                </div>
+                <div>
+                  <div style={{ fontSize: '0.75rem', color: '#999999', textTransform: 'uppercase' }}>Action</div>
+                  <div style={{ fontSize: '0.9rem', color: '#FFFFFF', marginTop: '0.25rem' }}>{selectedPrompt.action}</div>
+                </div>
+                <div>
+                  <div style={{ fontSize: '0.75rem', color: '#999999', textTransform: 'uppercase' }}>Risk Score</div>
+                  <div style={{ fontSize: '0.9rem', color: '#FFFFFF', marginTop: '0.25rem' }}>{selectedPrompt.risk_score}</div>
+                </div>
+              </div>
+
+              {/* Metrics Grid */}
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                gap: '1rem',
+                marginBottom: '1.5rem'
+              }}>
+                <div style={{ background: '#1A1A1A', border: '1px solid #2A2A2A', borderRadius: '8px', padding: '1rem' }}>
+                  <div style={{ fontSize: '0.875rem', color: '#999999', marginBottom: '0.5rem' }}>Confidence Level</div>
+                  <div style={{ fontSize: '1.5rem', fontWeight: 700, color: getConfidenceColor(selectedPrompt.confidence) }}>
+                    {Math.round(selectedPrompt.confidence * 100)}%
+                  </div>
+                  <div style={{
+                    height: '4px',
+                    background: '#2A2A2A',
+                    borderRadius: '2px',
+                    marginTop: '0.5rem',
+                    overflow: 'hidden'
+                  }}>
+                    <div style={{
+                      height: '100%',
+                      width: `${selectedPrompt.confidence * 100}%`,
+                      background: getConfidenceColor(selectedPrompt.confidence),
+                      borderRadius: '2px'
+                    }} />
+                  </div>
+                </div>
+                <div style={{ background: '#1A1A1A', border: '1px solid #2A2A2A', borderRadius: '8px', padding: '1rem' }}>
+                  <div style={{ fontSize: '0.875rem', color: '#999999', marginBottom: '0.5rem' }}>RAG Verification</div>
+                  <div style={{ fontSize: '1.5rem', fontWeight: 700, color: selectedPrompt.rag_status === 'VERIFIED' ? 'var(--color-success)' : 'var(--color-error)' }}>
+                    {selectedPrompt.rag_status}
+                  </div>
+                </div>
+                <div style={{ background: '#1A1A1A', border: '1px solid #2A2A2A', borderRadius: '8px', padding: '1rem' }}>
+                  <div style={{ fontSize: '0.875rem', color: '#999999', marginBottom: '0.5rem' }}>Contradiction Check</div>
+                  <div style={{ fontSize: '1.5rem', fontWeight: 700, color: selectedPrompt.contradiction_check === 'PASS' ? 'var(--color-success)' : 'var(--color-error)' }}>
+                    {selectedPrompt.contradiction_check}
+                  </div>
+                </div>
+              </div>
+
+              {/* Prompt and Response */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+                <div style={{ background: '#1A1A1A', border: '1px solid #2A2A2A', borderRadius: '8px', padding: '1rem' }}>
+                  <h3 style={{ margin: '0 0 1rem 0', fontSize: '1rem', fontWeight: 600, color: '#FFFFFF' }}>User Prompt</h3>
+                  <div style={{
+                    background: '#000000',
+                    border: '1px solid #2A2A2A',
+                    borderRadius: '6px',
+                    padding: '1rem',
+                    color: '#CCCCCC',
+                    fontSize: '0.9rem',
+                    lineHeight: '1.6',
+                    maxHeight: '200px',
+                    overflowY: 'auto'
+                  }}>
+                    {selectedPrompt.prompt}
+                  </div>
+                </div>
+                <div style={{ background: '#1A1A1A', border: '1px solid #2A2A2A', borderRadius: '8px', padding: '1rem' }}>
+                  <h3 style={{ margin: '0 0 1rem 0', fontSize: '1rem', fontWeight: 600, color: '#FFFFFF' }}>GPT Answer</h3>
+                  <div style={{
+                    background: '#000000',
+                    border: '1px solid #2A2A2A',
+                    borderRadius: '6px',
+                    padding: '1rem',
+                    color: '#CCCCCC',
+                    fontSize: '0.9rem',
+                    lineHeight: '1.6',
+                    maxHeight: '200px',
+                    overflowY: 'auto'
+                  }}>
+                    {selectedPrompt.gpt_raw_answer}
+                  </div>
+                </div>
+              </div>
+
+              {/* Close Button */}
+              <div style={{ display: 'flex', justifyContent: 'center', marginTop: '1.5rem' }}>
+                <motion.button
+                  onClick={closeModal}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  style={{
+                    background: '#1e3a4c',
+                    border: 'none',
+                    color: '#FFFFFF',
+                    padding: '0.75rem 2rem',
+                    borderRadius: '6px',
+                    fontSize: '0.9rem',
+                    fontWeight: 500,
+                    cursor: 'pointer'
+                  }}
+                >
+                  Close
+                </motion.button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
