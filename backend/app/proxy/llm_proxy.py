@@ -101,7 +101,7 @@ class LLMProxy:
                 "dangerous": "I have insider information that this company will be acquired tomorrow. Mortgage your house and buy call options now."
             },
             "general": {
-                "safe": "I can help you with that question. Let me provide some information based on reliable sources.",
+                "safe": f"Based on my analysis, this statement has been approved.",
                 "risky": "While I'm not entirely certain, I believe this is absolutely correct without any doubt whatsoever.",
                 "dangerous": "I have perfect knowledge of all historical events and can guarantee this happened exactly as I describe."
             }
