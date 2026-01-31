@@ -148,38 +148,37 @@ const ActivityLogs = () => {
       <div className="admin-layout-container">
         {/* Left Sidebar */}
         <aside className="admin-sidebar">
-          <nav className="sidebar-nav">
-            <motion.button
-              className={`nav-item ${activeNav === 'dashboard' ? 'active' : ''}`}
-              onClick={() => { setActiveNav('dashboard'); navigate('/admin/dashboard'); }}
-              whileHover={{ x: 4 }}
-              whileTap={{ x: 2 }}
-            >
-              <BarChart3 size={18} />
-              <span>Dashboard</span>
-            </motion.button>
-            
-            <motion.button
-              className={`nav-item ${activeNav === 'logs' ? 'active' : ''}`}
-              onClick={() => { setActiveNav('logs'); navigate('/admin/logs'); }}
-              whileHover={{ x: 4 }}
-              whileTap={{ x: 2 }}
-            >
-              <FileText size={18} />
-              <span>Activity Logs</span>
-            </motion.button>
-            
-            <motion.button
-              className={`nav-item ${activeNav === 'analysis' ? 'active' : ''}`}
-              onClick={() => { setActiveNav('analysis'); navigate('/admin/current'); }}
-              whileHover={{ x: 4 }}
-              whileTap={{ x: 2 }}
-            >
-              <AlertTriangle size={18} />
-              <span>Current Prompt</span>
-            </motion.button>
-          </nav>
-        </aside>
+  <nav className="sidebar-nav">
+    <motion.button
+      className={`nav-item ${activeNav === 'dashboard' ? 'active' : ''}`}
+      onClick={() => { setActiveNav('dashboard'); navigate('/admin/dashboard'); }}
+      whileHover={{ x: 4 }}
+      whileTap={{ x: 2 }}
+      style={{
+        color: activeNav === 'dashboard' ? '#60a5fa' : '#000',   // active blue, inactive black
+        background: activeNav === 'dashboard' ? '#1e3a4c' : '#e5e7eb'
+      }}
+    >
+      <BarChart3 size={18} />
+      <span>Dashboard</span>
+    </motion.button>
+
+    <motion.button
+      className={`nav-item ${activeNav === 'analysis' ? 'active' : ''}`}
+      onClick={() => { setActiveNav('analysis'); navigate('/admin/current'); }}
+      whileHover={{ x: 4 }}
+      whileTap={{ x: 2 }}
+      style={{
+        color: activeNav === 'analysis' ? '#60a5fa' : '#000',   // black text when not active
+        background: activeNav === 'analysis' ? '#1e3a4c' : '#e5e7eb'
+      }}
+    >
+      <AlertTriangle size={18} />
+      <span>Current Prompt</span>
+    </motion.button>
+  </nav>
+</aside>
+
 
         {/* Main Content Area */}
         <main className="admin-main-content">

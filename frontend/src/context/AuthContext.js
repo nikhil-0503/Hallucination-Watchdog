@@ -20,12 +20,32 @@ export const AuthProvider = ({ children }) => {
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // Mock authentication
-      if (email && password) {
+      // Admin credentials validation
+      if (role === 'admin') {
+        const adminEmail = 'admin@watchdog.ai';
+        const adminPassword = 'admin123';
+        
+        if (email === adminEmail && password === adminPassword) {
+          const userData = {
+            id: Math.random().toString(36).substr(2, 9),
+            email,
+            role: 'admin',
+            name: 'Admin'
+          };
+          setUser(userData);
+          localStorage.setItem('watchdog_user', JSON.stringify(userData));
+          return { success: true };
+        } else {
+          return { success: false, error: 'Invalid admin credentials' };
+        }
+      }
+      
+      // User credentials validation
+      if (role === 'user' && email && password) {
         const userData = {
           id: Math.random().toString(36).substr(2, 9),
           email,
-          role: role || 'user',
+          role: 'user',
           name: email.split('@')[0]
         };
         setUser(userData);

@@ -8,29 +8,38 @@ const LoginPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [selectedRole, setSelectedRole] = useState('user');
+  const [error, setError] = useState('');
   const { login, isLoading } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError('');
     try {
-      await login(email, password, selectedRole);
-      navigate(selectedRole === 'admin' ? '/admin/dashboard' : '/chat');
+      const result = await login(email, password, selectedRole);
+      if (result.success) {
+        navigate(selectedRole === 'admin' ? '/admin/dashboard' : '/chat');
+      } else {
+        setError(result.error || 'Login failed');
+      }
     } catch (error) {
       console.error('Login failed:', error);
+      setError(error.message || 'Login failed');
     }
   };
 
   return (
-    <div className="auth-container">
+    <div style={{ position: 'relative', minHeight: '100vh', background: 'var(--color-bg-primary)' }}>
       <ParticleBackground particleCount={80} />
       
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="auth-card"
-      >
+      <div style={{ position: 'relative', zIndex: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', padding: 'var(--space-6)', width: '100%' }}>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="auth-card"
+          style={{ width: '100%', maxWidth: '480px' }}
+        >
         <div className="auth-header">
           <motion.div
             initial={{ scale: 0 }}
@@ -64,6 +73,24 @@ const LoginPage = () => {
             <span>Admin</span>
           </motion.div>
         </div>
+
+        {error && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            style={{
+              padding: 'var(--space-3) var(--space-4)',
+              background: 'rgba(239, 68, 68, 0.1)',
+              border: '1px solid rgba(239, 68, 68, 0.3)',
+              borderRadius: 'var(--radius-md)',
+              color: '#ef4444',
+              fontSize: '0.875rem',
+              marginBottom: 'var(--space-4)'
+            }}
+          >
+            {error}
+          </motion.div>
+        )}
 
         <form onSubmit={handleSubmit}>
           <div className="form-group">
@@ -143,7 +170,8 @@ const LoginPage = () => {
             </div>
           </div>
         </motion.div>
-      </motion.div>
+        </motion.div>
+      </div>
     </div>
   );
 };

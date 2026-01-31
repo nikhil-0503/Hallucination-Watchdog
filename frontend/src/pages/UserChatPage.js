@@ -9,6 +9,7 @@ const UserChatPage = () => {
   const [prompt, setPrompt] = useState('');
   const [messages, setMessages] = useState([]);
   const messagesEndRef = useRef(null);
+
   const { user, logout } = useAuth();
   const { submitUserPrompt, isLoading } = useData();
   const navigate = useNavigate();
@@ -38,7 +39,7 @@ const UserChatPage = () => {
 
     try {
       const response = await submitUserPrompt(currentPrompt);
-      
+
       const assistantMessage = {
         id: Date.now() + 1,
         role: 'assistant',
@@ -48,15 +49,17 @@ const UserChatPage = () => {
       };
 
       setMessages(prev => [...prev, assistantMessage]);
-    } catch (error) {
-      const errorMessage = {
-        id: Date.now() + 1,
-        role: 'assistant',
-        content: 'Sorry, something went wrong. Please try again.',
-        timestamp: new Date(),
-        isError: true
-      };
-      setMessages(prev => [...prev, errorMessage]);
+    } catch {
+      setMessages(prev => [
+        ...prev,
+        {
+          id: Date.now() + 1,
+          role: 'assistant',
+          content: 'Sorry, something went wrong. Please try again.',
+          timestamp: new Date(),
+          isError: true
+        }
+      ]);
     }
   };
 
@@ -68,50 +71,83 @@ const UserChatPage = () => {
   return (
     <div style={{ position: 'relative', minHeight: '100vh', background: 'var(--color-bg-primary)' }}>
       <ParticleBackground particleCount={60} />
-      
+
       <div style={{ position: 'relative', zIndex: 10 }}>
-        {/* Navbar */}
+        {/* Top Navbar */}
         <motion.div
           initial={{ y: -20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           className="navbar"
-          style={{ margin: 'var(--space-6)' }}
+          style={{
+            width: '100%',
+            padding: 'var(--space-4) var(--space-6)',
+            margin: 0,
+            borderRadius: 0,
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center'
+          }}
         >
+          {/* Left: Logo + title */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-4)' }}>
             <div className="sidebar-brand-icon">
               <i className="fas fa-shield-alt"></i>
             </div>
             <div>
-              <h1 className="navbar-title">WATCHDOG Chat</h1>
-              <p style={{ margin: 0, fontSize: '0.875rem', color: 'var(--color-text-tertiary)' }}>
-                AI Safety Platform
-              </p>
+              <h1 className="navbar-title">WATCHDOG</h1>
             </div>
           </div>
-          <div className="navbar-actions">
+
+          {/* Right: User info + visible logout button */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-4)' }}>
             <div className="user-info">
               <div className="user-avatar">
-                {user?.email?.[0].toUpperCase() || 'U'}
+                {user?.email?.[0]?.toUpperCase() || 'U'}
               </div>
               <div>
                 <div className="user-name">{user?.email}</div>
                 <div className="user-role">User</div>
               </div>
             </div>
+
             <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={handleLogout}
-              className="btn btn-outline btn-sm"
-            >
-              <i className="fas fa-sign-out-alt"></i>
-              Logout
-            </motion.button>
+  whileHover={{ scale: 1.08 }}
+  whileTap={{ scale: 0.92 }}
+  onClick={handleLogout}
+  title="Logout"
+  style={{
+    width: '42px',
+    height: '42px',
+    borderRadius: '10px',
+    background: 'transparent',
+    border: '1px solid #ef4444',
+    color: '#ef4444',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    cursor: 'pointer'
+  }}
+  onMouseEnter={(e) => {
+    e.currentTarget.style.background = 'rgba(239,68,68,0.15)';
+  }}
+  onMouseLeave={(e) => {
+    e.currentTarget.style.background = 'transparent';
+  }}
+>
+  <i className="fas fa-sign-out-alt"></i>
+</motion.button>
+
           </div>
         </motion.div>
 
         {/* Chat Container */}
-        <div className="chat-container" style={{ padding: '0 var(--space-6) var(--space-6)' }}>
+        <div
+          className="chat-container"
+          style={{
+            padding: 'var(--space-6)',
+            paddingTop: 'var(--space-6)'
+          }}
+        >
           {/* Messages */}
           <motion.div
             initial={{ opacity: 0 }}
@@ -140,12 +176,11 @@ const UserChatPage = () => {
                     className={`message ${msg.role}`}
                   >
                     <div className="message-avatar">
-                      {msg.role === 'user' ? (
-                        <i className="fas fa-user"></i>
-                      ) : (
-                        <i className="fas fa-robot"></i>
-                      )}
+                      {msg.role === 'user'
+                        ? <i className="fas fa-user"></i>
+                        : <i className="fas fa-robot"></i>}
                     </div>
+
                     <div className="message-content">
                       <div className="message-header">
                         <span className="message-sender">
@@ -155,11 +190,20 @@ const UserChatPage = () => {
                           {msg.timestamp.toLocaleTimeString()}
                         </span>
                       </div>
+
                       <div className="message-text">
                         {msg.content}
                         {msg.action && (
                           <div style={{ marginTop: 'var(--space-3)' }}>
-                            <span className={`badge badge-${msg.action === 'ALLOW' ? 'success' : msg.action === 'WARN' ? 'warning' : 'error'}`}>
+                            <span
+                              className={`badge badge-${
+                                msg.action === 'ALLOW'
+                                  ? 'success'
+                                  : msg.action === 'WARN'
+                                  ? 'warning'
+                                  : 'error'
+                              }`}
+                            >
                               {msg.action}
                             </span>
                           </div>
@@ -195,6 +239,7 @@ const UserChatPage = () => {
               rows={1}
               disabled={isLoading}
             />
+
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}

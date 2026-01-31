@@ -26,15 +26,17 @@ const SignupPage = () => {
   };
 
   return (
-    <div className="auth-container">
+    <div style={{ position: 'relative', minHeight: '100vh', background: 'var(--color-bg-primary)' }}>
       <ParticleBackground particleCount={80} />
       
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="auth-card"
-      >
+      <div style={{ position: 'relative', zIndex: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', padding: 'var(--space-6)', width: '100%' }}>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="auth-card"
+          style={{ width: '100%', maxWidth: '480px' }}
+        >
         <div className="auth-header">
           <motion.div
             initial={{ scale: 0 }}
@@ -114,7 +116,8 @@ const SignupPage = () => {
             Already have an account? <strong style={{ color: 'var(--color-brand-blue-light)' }}>Sign in</strong>
           </a>
         </div>
-      </motion.div>
+        </motion.div>
+      </div>
     </div>
   );
 };
