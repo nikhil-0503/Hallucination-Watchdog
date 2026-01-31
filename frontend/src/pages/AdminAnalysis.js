@@ -39,16 +39,10 @@ const AdminAnalysis = () => {
         // Load specific prompt by ID
         const data = await getPromptById(parseInt(id));
         setPrompt(data);
-      } else {
+      } else if (prompts && prompts.length > 0) {
         // Load the latest prompt when no ID is provided
-        if (prompts && prompts.length > 0) {
-          // Get the most recent prompt by sorting by timestamp
-          const sortedPrompts = [...prompts].sort((a, b) => 
-            new Date(b.timestamp) - new Date(a.timestamp)
-          );
-          const latestPrompt = sortedPrompts[0];
-          setPrompt(latestPrompt);
-        }
+        // Prompts are already sorted by timestamp (newest first)
+        setPrompt(prompts[0]);
       }
       setLoading(false);
     };
@@ -250,7 +244,7 @@ const AdminAnalysis = () => {
       {/* Main Layout Container */}
       <div className="admin-layout-container">
         {/* Left Sidebar */}
-                <aside className="admin-sidebar">
+        <aside className="admin-sidebar">
           <nav className="sidebar-nav">
             <motion.button
               className={`nav-item ${activeNav === 'dashboard' ? 'active' : ''}`}
@@ -283,11 +277,21 @@ const AdminAnalysis = () => {
         </aside>
 
         {/* Main Content Area */}
-        <main className="admin-main-content">
+        <main className="admin-main-content" style={{ 
+          display: 'flex', 
+          justifyContent: 'center', 
+          alignItems: 'center',
+          padding: '2rem'
+        }}>
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
+            style={{ 
+              maxWidth: '1200px', 
+              width: '100%',
+              margin: '0 auto'
+            }}
           >
             {/* Header with Back Button */}
             <div style={{ marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>

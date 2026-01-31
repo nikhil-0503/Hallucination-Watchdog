@@ -13,7 +13,7 @@ Only estimates risk and provides explainable output.
 """
 
 from typing import Dict, List, Optional
-from .signals import extract_all_signals, is_factual_question, is_dangerous_prompt
+from .signals import extract_all_signals
 from .scorer import (
     calculate_risk_score, 
     generate_explanation, 
@@ -111,51 +111,6 @@ def analyze(
             "time_sensitivity": "LOW",
             "domain_multiplier": 1.0,
             "business_impact": "No content to assess - neutral trust",
-        }
-    
-    # *** CRITICAL: Check for DANGEROUS prompts FIRST (before factual questions) ***
-    # Dangerous prompts must ALWAYS be high-risk (90+) regardless of response
-    is_dangerous, danger_reason = is_dangerous_prompt(prompt)
-    if is_dangerous:
-        return {
-            "risk_score": 95,  # CRITICAL: High risk for dangerous intent
-            "signals": {
-                "rag_contradiction": True,  # Violates policy
-                "rag_unverified": True,
-                "internal_contradiction": True,  # Intent contradicts safety policy
-                "overconfidence": False,
-            },
-            "explanation": f"DANGEROUS PROMPT DETECTED: {danger_reason}. User intent violates safety policy.",
-            "claims": [],
-            "trust_score": 0.0,  # Zero trust for dangerous prompts
-            "time_sensitivity": "HIGH",
-            "domain_multiplier": 2.0,
-            "business_impact": "CRITICAL: Dangerous/illegal/harmful intent - BLOCK required",
-            "rag_unverified": True,
-            "internal_contradiction": True,
-            "overconfidence": False,
-        }
-    
-    # *** CRITICAL FIX: AUTO-ALLOW for factual questions (checked AFTER dangerous prompts) ***
-    # Factual questions about public knowledge should NEVER be flagged
-    if is_factual_question(prompt):
-        return {
-            "risk_score": 5,  # Minimal risk (0-10)
-            "signals": {
-                "rag_contradiction": False,
-                "rag_unverified": False,
-                "internal_contradiction": False,
-                "overconfidence": False,
-            },
-            "explanation": "Safe factual question about public knowledge - auto-approved",
-            "claims": [],
-            "trust_score": 0.95,  # High trust for factual queries
-            "time_sensitivity": "LOW",
-            "domain_multiplier": 1.0,
-            "business_impact": "Low risk: Factual information request",
-            "rag_unverified": False,
-            "internal_contradiction": False,
-            "overconfidence": False,
         }
     
     # Step 1: Extract all signals (including trust intelligence)

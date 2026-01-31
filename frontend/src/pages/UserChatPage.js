@@ -43,7 +43,7 @@ const UserChatPage = () => {
       const assistantMessage = {
         id: Date.now() + 1,
         role: 'assistant',
-        content: response.user_output || response.message || 'No response received',
+        content: response.safe_output || response.message || 'Response received',
         timestamp: new Date(),
         action: response.action
       };
@@ -193,11 +193,13 @@ const UserChatPage = () => {
 
                       <div className="message-text">
                         {msg.content}
-                        {msg.action && msg.action !== 'ALLOW' && (
+                        {msg.action && (
                           <div style={{ marginTop: 'var(--space-3)' }}>
                             <span
                               className={`badge badge-${
-                                msg.action === 'WARN'
+                                msg.action === 'ALLOW'
+                                  ? 'success'
+                                  : msg.action === 'WARN'
                                   ? 'warning'
                                   : 'error'
                               }`}

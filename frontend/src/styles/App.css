@@ -1430,14 +1430,6 @@ select.form-control {
   gap: var(--space-3);
 }
 
-.confidence-display span {
-  color: #FFFFFF !important;  /* Force white text for visibility */
-  font-weight: 600;
-  font-size: 0.9rem;
-  min-width: 45px;
-  text-align: right;
-}
-
 .confidence-bar {
   flex: 1;
   height: 8px;
@@ -1475,15 +1467,6 @@ select.form-control {
 .text-blocked {
   color: var(--color-error-light);
   font-weight: var(--font-weight-medium);
-}
-
-/* Ensure all table cells have visible white text */
-.dashboard-table td {
-  color: #FFFFFF !important;
-}
-
-.dashboard-table .text-truncate {
-  color: #FFFFFF !important;
 }
 
 .action-button {
