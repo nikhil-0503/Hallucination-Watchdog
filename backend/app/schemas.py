@@ -72,6 +72,10 @@ class RiskReport(BaseModel):
     risk_score: int = Field(..., ge=0, le=100, description="Risk score 0-100")
     signals: RiskSignals
     explanation: str = Field(..., description="Human-readable risk explanation")
+    # Optional trust score (0.0 - 1.0) computed by the risk engine
+    trust_score: Optional[float] = Field(default=None, description="Trust score (0-1), higher is safer")
+    # Optional additional metadata (diagnostics, claim breakdowns, etc.)
+    metadata: Optional[Dict] = Field(default=None, description="Additional diagnostic metadata")
 
 
 # ============================================
@@ -111,7 +115,8 @@ class ChatResponse(BaseModel):
     id: int = Field(..., description="Unique record ID")
     user_output: str = Field(..., description="Safe response for user display")
     action: ActionType = Field(..., description="Enforcement action")
-    
+    # Optional field: human-friendly warning text for WARN responses
+    warning_text: Optional[str] = Field(default=None, description="Optional warning text to show to users when action is WARN")
     # Admin-only fields (included only for admin role)
     timestamp: Optional[str] = Field(default=None)
     prompt: Optional[str] = Field(default=None)

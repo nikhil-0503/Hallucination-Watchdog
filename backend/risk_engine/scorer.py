@@ -262,9 +262,23 @@ def calculate_trust_score(
     # Factor in average claim confidence
     if claim_confidences:
         avg_confidence = sum(claim_confidences.values()) / len(claim_confidences)
-        # Blend with claim confidence (70% trust calculation, 30% claim confidence)
-        trust_after_time = (trust_after_time * 0.7) + (avg_confidence * 0.3)
-    
+        # Blend with claim confidence (60% trust calculation, 40% claim confidence for more spread)
+        trust_after_time = (trust_after_time * 0.6) + (avg_confidence * 0.4)
+
+    # Additional penalties based on detailed signals to increase variance
+    if signals:
+        if signals.get("rag_unverified"):
+            trust_after_time -= 0.05
+        if signals.get("rag_contradiction"):
+            trust_after_time -= 0.15
+        if signals.get("internal_contradiction"):
+            trust_after_time -= 0.20
+        if signals.get("overconfidence"):
+            trust_after_time -= 0.10
+        # If auto_block was triggered anywhere upstream, force very low trust
+        if signals.get("auto_block"):
+            trust_after_time = min(trust_after_time, 0.05)
+
     # Clamp to [0, 1]
     return max(0.0, min(1.0, trust_after_time))
 

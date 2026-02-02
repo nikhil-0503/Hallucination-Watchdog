@@ -391,7 +391,7 @@ const AdminAnalysis = () => {
                     </div>
                   </div>
                   <motion.div
-                    style={{ fontSize: '1.875rem', fontWeight: 700, color: metric.color, marginBottom: '1rem' }}
+                    style={{ fontSize: '1.875rem', fontWeight: 700, color: "#EEEEEE", marginBottom: '1rem' }}
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ delay: 0.2 + index * 0.1 }}
@@ -531,59 +531,7 @@ const AdminAnalysis = () => {
               </motion.div>
             </div>
 
-            {/* Footer Actions */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.6 }}
-              style={{
-                display: 'flex',
-                gap: '1rem',
-                justifyContent: 'center'
-              }}
-            >
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                style={{
-                  background: '#1A1A1A',
-                  border: '1px solid #2A2A2A',
-                  color: '#CCCCCC',
-                  padding: '0.75rem 1.5rem',
-                  borderRadius: '6px',
-                  fontSize: '0.9rem',
-                  fontWeight: 500,
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem'
-                }}
-              >
-                <Download size={16} />
-                Export Analysis
-              </motion.button>
-              
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                style={{
-                  background: '#1A1A1A',
-                  border: '1px solid #2A2A2A',
-                  color: '#CCCCCC',
-                  padding: '0.75rem 1.5rem',
-                  borderRadius: '6px',
-                  fontSize: '0.9rem',
-                  fontWeight: 500,
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem'
-                }}
-              >
-                <Zap size={16} />
-                Re-analyze
-              </motion.button>
-            </motion.div>
+            
           </motion.div>
         </main>
       </div>

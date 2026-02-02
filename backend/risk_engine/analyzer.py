@@ -141,11 +141,18 @@ def analyze(
     
     # Step 6: Generate explanation with final risk score
     explanation = generate_explanation(signals, risk_score)
+
+    # Step 6b: Auto-block override - if signals indicate immediate block, push score high
+    if signals.get('auto_block'):
+        # Ensure high risk to force blocking by policy
+        risk_score = max(risk_score, 95)
+        explanation = explanation + "; Auto-block rule triggered"
     
     # Step 7: TRUST INTELLIGENCE - Calculate trust score
+    # Use full signals dict so trust can react to auto_block and detailed flags
     trust_score = calculate_trust_score(
         risk_score=risk_score,
-        signals=signal_flags,
+        signals=signals,
         domain=domain,
         time_sensitivity=time_sensitivity,
         claim_confidences=claim_confidences
@@ -157,7 +164,7 @@ def analyze(
         risk_score=risk_score,
         domain=domain,
         time_sensitivity=time_sensitivity,
-        signals=signal_flags
+        signals=signals
     )
     
     # Step 9: Format claims for output (with trust intelligence)
@@ -187,6 +194,9 @@ def analyze(
         "time_sensitivity": time_sensitivity,
         "domain_multiplier": domain_multiplier,
         "business_impact": business_impact,
+        # Auto-block fields
+        "auto_block": signals.get('auto_block', False),
+        "auto_block_reasons": signals.get('auto_block_reasons', []),
     }
 
 

@@ -54,19 +54,25 @@ async def get_risk_report(prompt: str, llm_response: str, domain: str) -> RiskRe
         # Convert to our schema format
         risk_score = risk_analysis.get('risk_score', 30)
         explanation = risk_analysis.get('explanation', 'Risk analysis completed')
-        
+
         # Extract signals
         signals = RiskSignals(
             rag_unverified=risk_analysis.get('rag_unverified', False),
             internal_contradiction=risk_analysis.get('internal_contradiction', False),
             overconfidence=risk_analysis.get('overconfidence', False)
         )
-        
+
+        # Include auto-block hints in metadata for auditing
+        metadata = risk_analysis.get('metadata', {}) or {}
+        metadata['auto_block'] = risk_analysis.get('auto_block', False)
+        metadata['auto_block_reasons'] = risk_analysis.get('auto_block_reasons', [])
+
         return RiskReport(
             risk_score=risk_score,
             signals=signals,
             explanation=explanation,
-            metadata=risk_analysis.get('metadata', {})
+            trust_score=risk_analysis.get('trust_score'),
+            metadata=metadata
         )
     
     except Exception as e:

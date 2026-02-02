@@ -39,13 +39,16 @@ const UserChatPage = () => {
 
     try {
       const response = await submitUserPrompt(currentPrompt);
+      console.log('Response from backend:', response);
 
       const assistantMessage = {
         id: Date.now() + 1,
         role: 'assistant',
-        content: response.safe_output || response.message || 'Response received',
+        content: response.user_output || response.message || 'Response received',
         timestamp: new Date(),
-        action: response.action
+        action: response.action,
+        confidence: response.confidence ? Math.round(response.confidence * 100) : undefined,
+        warning_text: response.warning_text || undefined
       };
 
       setMessages(prev => [...prev, assistantMessage]);
@@ -193,8 +196,13 @@ const UserChatPage = () => {
 
                       <div className="message-text">
                         {msg.content}
-                        {msg.action && (
-                          <div style={{ marginTop: 'var(--space-3)' }}>
+                        {msg.warning_text && (
+                          <div style={{ marginTop: '8px', color: '#f59e0b', fontWeight: 600 }}>
+                            {msg.warning_text}
+                          </div>
+                        )}
+                        <div style={{ marginTop: 'var(--space-3)' }}>
+                          {msg.action && (
                             <span
                               className={`badge badge-${
                                 msg.action === 'ALLOW'
@@ -206,8 +214,14 @@ const UserChatPage = () => {
                             >
                               {msg.action}
                             </span>
-                          </div>
-                        )}
+                          )}
+
+                          {typeof msg.confidence === 'number' && (
+                            <span style={{ marginLeft: '12px', color: '#9ca3af' }}>
+                              Confidence: {msg.confidence}%
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </motion.div>

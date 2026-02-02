@@ -37,12 +37,21 @@ class LLMProxy:
     
     def __init__(self):
         self.mock_mode = os.getenv("MOCK_LLM", "true").lower() == "true"
+        self.provider = os.getenv("LLM_PROVIDER", "openrouter").lower()
+        
+        # OpenRouter config
         self.api_key = os.getenv("OPENROUTER_API_KEY", "")
         self.model = os.getenv("OPENROUTER_MODEL", "meta-llama/llama-3.1-8b-instruct:free")
+        self.openrouter_base_url = "https://openrouter.ai/api/v1/chat/completions"
+        
+        # Google Gemini config
+        self.gemini_api_key = os.getenv("GEMINI_API_KEY", "")
+        self.gemini_model = os.getenv("GEMINI_MODEL", "gemini-1.5-flash")
+        
+        # Common config
         self.timeout = int(os.getenv("LLM_TIMEOUT", "30"))
         self.max_retries = int(os.getenv("LLM_MAX_RETRIES", "2"))
         self.fallback_enabled = os.getenv("FALLBACK_TO_MOCK", "true").lower() == "true"
-        self.openrouter_base_url = "https://openrouter.ai/api/v1/chat/completions"
         
     async def forward_prompt(self, prompt: str, domain: str = "general") -> str:
         """
@@ -66,8 +75,12 @@ class LLMProxy:
         
         # Try real LLM with fallback
         try:
-            logger.info(f"Attempting real LLM call via OpenRouter (model: {self.model})")
-            return await self._real_llm_call_with_retry(prompt, domain)
+            if self.provider == "gemini":
+                logger.info(f"Attempting Gemini API call (model: {self.gemini_model})")
+                return await self._gemini_llm_call_with_retry(prompt, domain)
+            else:
+                logger.info(f"Attempting real LLM call via OpenRouter (model: {self.model})")
+                return await self._real_llm_call_with_retry(prompt, domain)
         except Exception as e:
             logger.error(f"Real LLM call failed: {str(e)}")
             
@@ -101,7 +114,11 @@ class LLMProxy:
                 "dangerous": "I have insider information that this company will be acquired tomorrow. Mortgage your house and buy call options now."
             },
             "general": {
-                "safe": f"Based on my analysis, this statement has been approved.",
+                "safe": (
+                    "Based on my analysis, this request does not appear to raise "
+                    "specific safety concerns. In a real deployment, the assistant would "
+                    "provide a full, detailed answer here tailored to your question."
+                ),
                 "risky": "While I'm not entirely certain, I believe this is absolutely correct without any doubt whatsoever.",
                 "dangerous": "I have perfect knowledge of all historical events and can guarantee this happened exactly as I describe."
             }
@@ -109,8 +126,20 @@ class LLMProxy:
         
         # Determine response type based on prompt keywords
         prompt_lower = prompt.lower()
-        
-        # High-risk triggers
+		
+        # FIRST: explicit safety-violation style prompts -> hard refusal
+        violence_terms = [
+            "bomb", "kill", "nuke", "assassinate", "eliminate", "shoot", "stab",
+            "terrorist", "terrorism", "blow up",
+        ]
+        if any(term in prompt_lower for term in violence_terms):
+            return (
+                "I cannot provide any information or assistance related to violence, "
+                "harm, or illegal activities. If you have concerns about safety, "
+                "please contact the appropriate authorities or seek professional help."
+            )
+		
+        # High-risk triggers (medical/financial overclaiming etc.)
         if any(word in prompt_lower for word in ["cure", "guarantee", "definitely", "insider", "miracle"]):
             response_type = "dangerous"
         # Medium-risk triggers
@@ -235,6 +264,90 @@ class LLMProxy:
             except (KeyError, IndexError) as e:
                 logger.error(f"Unexpected response format: {data}")
                 raise Exception(f"Invalid response structure from OpenRouter: {e}")
+
+    async def _gemini_llm_call_with_retry(self, prompt: str, domain: str) -> str:
+        """Call Google Gemini with retry logic"""
+        last_error = None
+        
+        for attempt in range(self.max_retries + 1):
+            try:
+                if attempt > 0:
+                    wait_time = 2 ** (attempt - 1)
+                    logger.info(f"Retry attempt {attempt}/{self.max_retries} after {wait_time}s wait")
+                    await asyncio.sleep(wait_time)
+                
+                return await self._gemini_llm_call(prompt, domain)
+                
+            except (httpx.TimeoutException, httpx.ConnectError, httpx.ReadError) as e:
+                last_error = e
+                logger.warning(f"Network error on attempt {attempt + 1}: {type(e).__name__}")
+                continue
+                
+            except Exception as e:
+                logger.error(f"Non-retryable error: {str(e)}")
+                raise
+        
+        raise Exception(f"Gemini call failed after {self.max_retries + 1} attempts: {last_error}")
+
+    async def _gemini_llm_call(self, prompt: str, domain: str) -> str:
+        """Call Google Gemini API directly"""
+        if not self.gemini_api_key:
+            raise ValueError("GEMINI_API_KEY not set")
+        
+        # Build system instruction based on domain
+        system_messages = {
+            "health": "You are a helpful assistant answering health-related questions. Always remind users to consult healthcare professionals.",
+            "finance": "You are a helpful assistant answering finance-related questions. Always include appropriate risk disclaimers.",
+            "general": "You are a helpful assistant providing accurate and reliable information."
+        }
+        
+        system_instruction = system_messages.get(domain, system_messages["general"])
+        
+        # Gemini API endpoint (v1)
+        url = f"https://generativelanguage.googleapis.com/v1/models/{self.gemini_model}:generateContent?key={self.gemini_api_key}"
+        
+        # Prepare request payload
+        payload = {
+            "contents": [{
+                "parts": [{
+                    "text": f"{system_instruction}\n\nUser: {prompt}"
+                }]
+            }],
+            "generationConfig": {
+                "temperature": 0.7,
+                "maxOutputTokens": 500
+            }
+        }
+        
+        # Make async HTTP request
+        async with httpx.AsyncClient(timeout=self.timeout) as client:
+            logger.debug(f"Sending request to Gemini: model={self.gemini_model}")
+            
+            response = await client.post(url, json=payload)
+            
+            # Handle HTTP errors
+            if response.status_code != 200:
+                error_detail = response.text
+                logger.error(f"Gemini API error {response.status_code}: {error_detail}")
+                
+                if response.status_code == 400:
+                    raise ValueError(f"Invalid request to Gemini: {error_detail}")
+                elif response.status_code == 429:
+                    raise Exception("Rate limit exceeded - try again later")
+                else:
+                    raise Exception(f"API request failed: {response.status_code} - {error_detail}")
+            
+            # Parse response
+            data = response.json()
+            
+            # Extract message content
+            try:
+                llm_response = data["candidates"][0]["content"]["parts"][0]["text"]
+                logger.info(f"✓ Gemini response received ({len(llm_response)} chars)")
+                return llm_response
+            except (KeyError, IndexError) as e:
+                logger.error(f"Unexpected Gemini response format: {data}")
+                raise Exception(f"Invalid response structure from Gemini: {e}")
 
 
 # ============================================

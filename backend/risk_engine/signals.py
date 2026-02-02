@@ -582,6 +582,24 @@ def extract_all_signals(
         status == "UNVERIFIED" 
         for status in claim_verification.values()
     )
+
+    # STRICT VIOLATION DETECTION (auto-block candidates)
+    strict_violations = detect_strict_violations(prompt, llm_response)
+
+    # CLAIM-LEVEL CONTRADICTIONS (pairwise checks)
+    claim_contradictions = detect_claim_contradictions(claims)
+
+    # Decide whether to auto-block based on strict violations or combined high-risk signals
+    auto_block, auto_block_reasons = decide_auto_block({
+        "strict_violations": strict_violations,
+        "claim_contradictions": claim_contradictions,
+        "rag_unverified": rag_unverified,
+        "internal_contradiction": has_contradiction,
+        "overconfidence": is_overconfident,
+        "domain": domain,
+        "time_sensitivity": time_sensitivity,
+        "claim_confidences": claim_confidences,
+    })
     
     return {
         # Original signals
@@ -593,6 +611,10 @@ def extract_all_signals(
         "contradiction_details": contradiction_details,
         "overconfidence": is_overconfident,
         "overconfidence_reason": overconfidence_reason,
+        "strict_violations": strict_violations,
+        "claim_contradictions": claim_contradictions,
+        "auto_block": auto_block,
+        "auto_block_reasons": auto_block_reasons,
         
         # TRUST INTELLIGENCE (new)
         "claim_confidences": claim_confidences,
@@ -600,3 +622,136 @@ def extract_all_signals(
         "time_sensitivity": time_sensitivity,
         "domain": domain,
     }
+
+
+# ============================================================================
+# STRICT RULES & AUTO-BLOCKING
+# ============================================================================
+
+
+# Explicit high-risk phrase patterns that should trigger immediate review/blocking
+STRICT_HIGH_PATTERNS = [
+    r'cure cancer', r'miracle drug', r'insider information', r'invest all',
+    r'mortgage your house', r'guarantee to', r'definitely will', r'no side effects',
+    r'100% safe', r'zero side effects', r'take .* pills at once', r'beat the market',
+    # Violence / terrorism / weapons
+    r'\bkill\b', r'\bkill\s+.+', r'\bbomb\b', r'\bnuke\b', r'\bnuclear attack\b',
+    r'\bblow\s+up\b', r'\bexplode\b', r'\bmassacre\b', r'\bgenocide\b',
+    r'\bterrorist\b', r'\bterrorism\b', r'\bassassinate\b', r'\beliminate\b',
+    r'how to (build|make|create).+bomb', r'how to .+kill', r'how to .+attack',
+]
+
+# Medium severity patterns
+STRICT_MEDIUM_PATTERNS = [
+    r'absolutely', r'500%', r'instantly', r'overnight', r'get rich', r'no risk',
+    r'best way to (make|earn) money', r"avoid taxes",
+]
+
+
+def detect_strict_violations(prompt: str, llm_response: str) -> List[Dict]:
+    """Return list of detected strict violations with severity and matched text."""
+    text = (prompt + " " + llm_response).lower()
+    violations = []
+
+    for pat in STRICT_HIGH_PATTERNS:
+        if re.search(pat, text, re.IGNORECASE):
+            violations.append({"pattern": pat, "severity": "HIGH"})
+
+    for pat in STRICT_MEDIUM_PATTERNS:
+        if re.search(pat, text, re.IGNORECASE):
+            violations.append({"pattern": pat, "severity": "MEDIUM"})
+
+    return violations
+
+
+ANTONYM_PAIRS = [
+    (r'open', r'closed'),
+    (r'alive', r'dead'),
+    (r'positive', r'negative'),
+    (r'increase', r'decrease'),
+    (r'started', r'stopped'),
+]
+
+
+def detect_claim_contradictions(claims: List[str]) -> List[Tuple[int, int, str]]:
+    """
+    Pairwise check for contradictions between claims.
+    Returns list of tuples (i, j, reason) where claim i contradicts claim j.
+    """
+    contradictions = []
+    if not claims:
+        return contradictions
+
+    for i, a in enumerate(claims):
+        for j, b in enumerate(claims):
+            if i >= j:
+                continue
+
+            a_low = a.lower()
+            b_low = b.lower()
+
+            # Negation-based contradiction
+            negation_words = ['not ', "n't ", 'never', 'no ']
+            for w in negation_words:
+                if w in a_low and w not in b_low and any(tok in b_low for tok in a_low.split()[:5]):
+                    contradictions.append((i, j, 'Negation mismatch'))
+                    break
+
+            # Antonym patterns
+            for p, q in ANTONYM_PAIRS:
+                if re.search(r'\b' + p + r'\b', a_low) and re.search(r'\b' + q + r'\b', b_low):
+                    contradictions.append((i, j, f'Antonym detected: {p} vs {q}'))
+                elif re.search(r'\b' + q + r'\b', a_low) and re.search(r'\b' + p + r'\b', b_low):
+                    contradictions.append((i, j, f'Antonym detected: {q} vs {p}'))
+
+    return contradictions
+
+
+def decide_auto_block(context: Dict) -> Tuple[bool, List[str]]:
+    """
+    Decide whether to auto-block based on detected signals.
+
+    Rules (simple, conservative):
+    - Any HIGH strict violation -> auto-block
+    - >1 claim contradiction OR any internal contradiction in sensitive domains -> auto-block
+    - Overconfidence + many UNVERIFIED claims in sensitive domain -> auto-block
+    Returns (auto_block_bool, reasons[])
+    """
+    reasons = []
+    strict = context.get('strict_violations', []) or []
+    claim_contradictions = context.get('claim_contradictions', []) or []
+    rag_unverified = context.get('rag_unverified', False)
+    internal_contradiction = context.get('internal_contradiction', False)
+    overconfidence = context.get('overconfidence', False)
+    domain = context.get('domain', 'general')
+    time_sensitivity = context.get('time_sensitivity', 'MEDIUM')
+    claim_confidences = context.get('claim_confidences', {}) or {}
+
+    # Rule 1: Any HIGH strict violation
+    for v in strict:
+        if v.get('severity') == 'HIGH':
+            reasons.append(f"Strict pattern matched: {v.get('pattern')}")
+            return True, reasons
+
+    # Rule 2: Multiple claim contradictions
+    if len(claim_contradictions) > 1:
+        reasons.append(f"Multiple claim contradictions detected: {len(claim_contradictions)}")
+        return True, reasons
+
+    # Rule 3: Internal contradiction in sensitive domain or time-sensitive content
+    if internal_contradiction and domain in ('health', 'legal', 'finance'):
+        reasons.append(f"Internal contradiction in sensitive domain: {domain}")
+        return True, reasons
+
+    if internal_contradiction and time_sensitivity == 'HIGH':
+        reasons.append("Internal contradiction in high time-sensitivity content")
+        return True, reasons
+
+    # Rule 4: Overconfidence + many low-confidence/unverified claims
+    low_conf_count = sum(1 for c in claim_confidences.values() if c < 0.4)
+    if overconfidence and (rag_unverified or low_conf_count >= 2) and domain in ('health', 'finance'):
+        reasons.append("Overconfident claims with low verification/confidence in sensitive domain")
+        return True, reasons
+
+    # Otherwise no auto-block
+    return False, reasons

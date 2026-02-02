@@ -77,7 +77,18 @@ async def chat_with_watchdog(request: ChatRequest):
         
         # Extract risk engine data
         risk_score = risk_report.risk_score
-        confidence = 100 - risk_score  # Inverse relationship
+        # Prefer the risk engine's trust_score (0-1). Fall back to inverse risk if missing.
+        trust_score = None
+        try:
+            trust_score = getattr(risk_report, "trust_score", None)
+        except Exception:
+            trust_score = None
+
+        if trust_score is None:
+            confidence = (100 - risk_score) / 100.0
+        else:
+            confidence = float(trust_score)
+
         rag_status = "VERIFIED" if not risk_report.signals.rag_unverified else "UNVERIFIED"
         contradiction_check = "PASS" if not risk_report.signals.internal_contradiction else "FAIL"
         
@@ -113,11 +124,16 @@ async def chat_with_watchdog(request: ChatRequest):
         # ============================================
         # STEP 5: Save to Storage
         # ============================================
+        # include optional warning_text in metadata when a WARN action occurred
+        warning_text = None
+        if action == ActionType.WARN:
+            warning_text = "⚠️ Warning: This response may be unreliable. Please verify before acting."
+
         record_id = save_prompt_record(
             prompt=request.prompt,
             gpt_raw_answer=llm_response,
             user_visible_answer=user_visible_answer,
-            confidence=confidence / 100.0,  # Convert to 0-1 range
+            confidence=confidence,  # already 0-1 range
             rag_status=rag_status,
             contradiction_check=contradiction_check,
             action=action.value,
@@ -125,7 +141,8 @@ async def chat_with_watchdog(request: ChatRequest):
             explanation=risk_report.explanation,
             metadata={
                 "signals": risk_report.signals.model_dump(),
-                "risk_score": risk_report.risk_score
+                "risk_score": risk_report.risk_score,
+                "warning_text": warning_text
             }
         )
         
@@ -143,19 +160,22 @@ async def chat_with_watchdog(request: ChatRequest):
                 timestamp=get_prompt_by_id(record_id)["timestamp"],
                 prompt=request.prompt,
                 gpt_raw_answer=llm_response,
-                confidence=confidence / 100.0,
+                confidence=confidence,
                 rag_status=rag_status,
                 contradiction_check=contradiction_check,
                 risk_score=risk_score,
                 explanation=risk_report.explanation,
-                metadata=risk_report.metadata
+                metadata=risk_report.metadata,
+                warning_text=warning_text
             )
         else:
             # User gets only safe output
             return ChatResponse(
                 id=record_id,
                 user_output=user_visible_answer,
-                action=action
+                action=action,
+                confidence=confidence,
+                warning_text=warning_text
             )
         
     except Exception as e:

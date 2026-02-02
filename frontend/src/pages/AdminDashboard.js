@@ -294,20 +294,12 @@ const AdminDashboard = () => {
                           </div>
                         </td>
                         <td className="cell-confidence">
-                          <div className="confidence-display">
-                            <div className="confidence-bar">
-                              <motion.div 
-                                className="confidence-fill"
-                                style={{ backgroundColor: getConfidenceColor(prompt.confidence * 100) }}
-                                initial={{ width: 0 }}
-                                animate={{ width: `${prompt.confidence * 100}%` }}
-                                transition={{ duration: 0.8, delay: 0.3 + index * 0.02 }}
-                              />
-                            </div>
-                            <span style={{ color: getConfidenceColor(prompt.confidence * 100) }}>
-                              {Math.round(prompt.confidence * 100)}%
-                            </span>
-                          </div>
+                          <span style={{ 
+                            color: getConfidenceColor(prompt.confidence * 100),
+                            fontWeight: 600
+                          }}>
+                            {Math.round(prompt.confidence * 100)}%
+                          </span>
                         </td>
                         <td className="cell-rag">
                           <span 
@@ -332,15 +324,37 @@ const AdminDashboard = () => {
                           </div>
                         </td>
                         <td className="cell-actions">
-                          <motion.button
-                            className="action-button"
-                            onClick={() => handleViewDetails(prompt)}
-                            whileHover={{ scale: 1.15 }}
-                            whileTap={{ scale: 0.9 }}
-                            title="View details"
-                          >
-                            <Eye size={16} />
-                          </motion.button>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                            <span style={{
+                              fontSize: '0.85rem',
+                              fontWeight: 600,
+                              color: prompt.action === 'ALLOW' ? 'var(--status-safe)' : 
+                                     prompt.action === 'WARN' ? 'var(--status-warning)' : 
+                                     'var(--status-blocked)'
+                            }}>
+                              {prompt.action}
+                            </span>
+                            <span style={{ 
+                              fontSize: '0.95rem',
+                              color: getConfidenceColor(prompt.confidence * 100),
+                              fontWeight: 700,
+                              background: 'rgba(255,255,255,0.05)',
+                              padding: '0.25rem 0.5rem',
+                              borderRadius: '4px',
+                              border: `1px solid ${getConfidenceColor(prompt.confidence * 100)}`
+                            }}>
+                              {Math.round(prompt.confidence * 100)}%
+                            </span>
+                            <motion.button
+                              className="action-button"
+                              onClick={() => handleViewDetails(prompt)}
+                              whileHover={{ scale: 1.15 }}
+                              whileTap={{ scale: 0.9 }}
+                              title="View details"
+                            >
+                              <Eye size={16} />
+                            </motion.button>
+                          </div>
                         </td>
                       </motion.tr>
                     ))}
@@ -460,21 +474,21 @@ const AdminDashboard = () => {
               }}>
                 <div style={{ background: '#1A1A1A', border: '1px solid #2A2A2A', borderRadius: '8px', padding: '1rem' }}>
                   <div style={{ fontSize: '0.875rem', color: '#999999', marginBottom: '0.5rem' }}>Confidence Level</div>
-                  <div style={{ fontSize: '1.5rem', fontWeight: 700, color: getConfidenceColor(selectedPrompt.confidence) }}>
+                  <div style={{ fontSize: '2rem', fontWeight: 700, color: '#EEEEEE' }}>
                     {Math.round(selectedPrompt.confidence * 100)}%
                   </div>
                   <div style={{
-                    height: '4px',
+                    height: '6px',
                     background: '#2A2A2A',
-                    borderRadius: '2px',
-                    marginTop: '0.5rem',
+                    borderRadius: '3px',
+                    marginTop: '0.75rem',
                     overflow: 'hidden'
                   }}>
                     <div style={{
                       height: '100%',
                       width: `${selectedPrompt.confidence * 100}%`,
                       background: getConfidenceColor(selectedPrompt.confidence),
-                      borderRadius: '2px'
+                      borderRadius: '3px'
                     }} />
                   </div>
                 </div>
