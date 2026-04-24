@@ -1,0 +1,53 @@
+:root {
+  --bg-light: #ffffff;
+  --bg-dark: #1e1e1e;
+  --text-light: #000000;
+  --text-dark: #ffffff;
+  --card-bg-light: #ffffff;
+  --card-bg-dark: #2d2d2d;
+  --border-light: #dee2e6;
+  --border-dark: #404040;
+}
+
+@media (prefers-color-scheme: dark) {
+  body {
+    background-color: var(--bg-dark);
+    color: var(--text-dark);
+  }
+  .card {
+    background-color: var(--card-bg-dark);
+    border-color: var(--border-dark);
+  }
+  .card-header {
+    background-color: #333333 !important;
+    border-color: var(--border-dark);
+  }
+  .table {
+    color: var(--text-dark);
+  }
+  .list-group-item {
+    background-color: var(--card-bg-dark);
+    color: var(--text-dark);
+    border-color: var(--border-dark);
+  }
+  .form-control, .form-select {
+    background-color: #333333;
+    color: var(--text-dark);
+    border-color: var(--border-dark);
+  }
+  .form-control:focus, .form-select:focus {
+    background-color: #404040;
+    color: var(--text-dark);
+  }
+}
+
+body.dark-mode {
+  background-color: var(--bg-dark);
+  color: var(--text-dark);
+}
+body.dark-mode .card { background-color: var(--card-bg-dark); border-color: var(--border-dark); }
+body.dark-mode .card-header { background-color: #333333 !important; border-color: var(--border-dark); }
+body.dark-mode .table { color: var(--text-dark); }
+body.dark-mode .list-group-item { background-color: var(--card-bg-dark); color: var(--text-dark); border-color: var(--border-dark); }
+body.dark-mode .form-control, body.dark-mode .form-select { background-color: #333333; color: var(--text-dark); border-color: var(--border-dark); }
+body.dark-mode .form-control:focus, body.dark-mode .form-select:focus { background-color: #404040; color: var(--text-dark); }

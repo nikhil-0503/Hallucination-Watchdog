@@ -10,9 +10,15 @@ import UserChatPage from './pages/UserChatPage';
 import AdminDashboard from './pages/AdminDashboard';
 import ActivityLogs from './pages/ActivityLogs';
 import AdminAnalysis from './pages/AdminAnalysis';
+import BiasAnalysisDashboard from './pages/BiasAnalysisDashboard';
+import WhatIfScenarios from './pages/WhatIfScenarios';
+import ImpactDashboard from './pages/ImpactDashboard';
+import ExplainabilityDashboard from './pages/ExplainabilityDashboard';
+import CommunityHub from './pages/CommunityHub';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { DataProvider } from './context/DataContext';
 import './styles/index.css';
+import './styles/darkMode.css';
 
 function AppRoutes() {
   const { user, isAuthenticated } = useAuth();
@@ -42,6 +48,21 @@ function AppRoutes() {
       } />
       <Route path="/admin/current" element={
         isAuthenticated && user?.role === 'admin' ? <AdminAnalysis /> : <Navigate to="/login" replace />
+      } />
+      <Route path="/admin/bias-analysis" element={
+        isAuthenticated && user?.role === 'admin' ? <BiasAnalysisDashboard /> : <Navigate to="/login" replace />
+      } />
+      <Route path="/admin/what-if" element={
+        isAuthenticated && user?.role === 'admin' ? <WhatIfScenarios /> : <Navigate to="/login" replace />
+      } />
+      <Route path="/admin/impact" element={
+        isAuthenticated && user?.role === 'admin' ? <ImpactDashboard /> : <Navigate to="/login" replace />
+      } />
+      <Route path="/admin/explainability" element={
+        isAuthenticated && user?.role === 'admin' ? <ExplainabilityDashboard /> : <Navigate to="/login" replace />
+      } />
+      <Route path="/admin/community" element={
+        isAuthenticated && user?.role === 'admin' ? <CommunityHub /> : <Navigate to="/login" replace />
       } />
       <Route path="/" element={<Navigate to="/login" replace />} />
       <Route path="*" element={<Navigate to="/login" replace />} />
