@@ -13,6 +13,9 @@ python-dotenv==1.0.0
 # HTTP Client for OpenRouter API
 httpx==0.25.2
 
+# Google Generative AI (Gemini) - For bias analysis
+google-generativeai==0.3.0
+
 # Async Support
 aiofiles==23.2.1
 

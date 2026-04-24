@@ -17,12 +17,16 @@ if backend_root not in sys.path:
 
 from ..schemas import (
     AnalyzeRequest, AnalyzeResponse, ActionType,
-    ChatRequest, ChatResponse, PromptRecord
+    ChatRequest, ChatResponse, PromptRecord,
+    BiasAnalysisRequest, BiasScoreResponse,
+    DatasetAuditRequest, DatasetAuditResponse
 )
 from ..proxy.llm_proxy import get_llm_response
 from ..proxy.enforcement import get_risk_report, apply_enforcement, get_enforcement_metadata
 from ..storage import save_prompt_record, get_all_prompts, get_prompt_by_id
 from audit.audit_logger import log_decision
+from bias_engine.bias_analyzer import BiasAnalyzer
+from demo_handler import router as demo_router
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
@@ -30,6 +34,9 @@ logger = logging.getLogger(__name__)
 
 # Create router
 router = APIRouter(prefix="/api", tags=["watchdog"])
+
+# Initialize bias analyzer (Gemini integration for bias detection)
+bias_analyzer = BiasAnalyzer()
 
 
 # ============================================
@@ -329,6 +336,136 @@ async def analyze_prompt(request: AnalyzeRequest):
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Internal error processing request: {str(e)}"
+        )
+
+
+# ============================================
+# BIAS DETECTION ENDPOINTS
+# ============================================
+
+@router.post("/analyze-bias", response_model=BiasScoreResponse)
+async def analyze_bias(request: BiasAnalysisRequest):
+    """
+    **Analyze a decision for potential bias and fairness issues**
+    
+    Detects:
+    - Protected attributes (age, gender, race, ethnicity, disability, etc.)
+    - Demographic disparities in decision outcomes
+    - Fairness metric violations
+    - Uses Google Gemini API for intelligent bias analysis
+    
+    Request body:
+    {
+        "decision": {
+            "applicant_id": "A123",
+            "age": 35,
+            "gender": "female",
+            "race": "black",
+            "credit_score": 720,
+            "decision": "approved",
+            "reason": "Good credit history"
+        },
+        "historical_decisions": [...],  # Optional
+        "outcome_field": "decision"
+    }
+    
+    Response includes:
+    - Detected demographics
+    - Bias score (0-100, higher = more biased)
+    - Fairness metrics
+    - Gemini AI analysis
+    - Recommendation (ALLOW/WARN/BLOCK)
+    """
+    try:
+        logger.info(f"Bias analysis request - Decision ID: {request.decision.get('id', 'unknown')}")
+        
+        # Run bias analysis
+        analysis_result = bias_analyzer.analyze_decision(
+            decision=request.decision,
+            historical_decisions=request.historical_decisions,
+            outcome_field=request.outcome_field
+        )
+        
+        # Convert to response format
+        response = BiasScoreResponse(
+            decision_id=analysis_result["decision_id"],
+            timestamp=analysis_result["timestamp"],
+            demographics=analysis_result["demographics"],
+            bias_score=analysis_result["bias_score"],
+            gemini_analysis=analysis_result.get("gemini_analysis"),
+            recommendation=ActionType(analysis_result["recommendation"]),
+            confidence=analysis_result["confidence"]
+        )
+        
+        logger.info(f"Bias analysis complete - Risk level: {analysis_result['bias_score']['level']}")
+        return response
+        
+    except Exception as e:
+        logger.error(f"Bias analysis failed: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Bias analysis failed: {str(e)}"
+        )
+
+
+@router.post("/audit-dataset", response_model=DatasetAuditResponse)
+async def audit_dataset(request: DatasetAuditRequest):
+    """
+    **Audit a dataset for systematic bias and fairness issues**
+    
+    Performs comprehensive fairness analysis:
+    - Demographic parity analysis by gender, age, race, ethnicity
+    - Detection of significant disparities (4/5ths rule)
+    - Identification of outlier decisions
+    - Historical trend analysis
+    - Google Gemini AI-powered audit report
+    
+    Request body:
+    {
+        "decisions": [
+            {"age": 35, "gender": "M", "race": "black", "decision": "approved"},
+            {"age": 28, "gender": "F", "race": "white", "decision": "denied"},
+            ...
+        ],
+        "outcome_field": "decision"
+    }
+    
+    Response includes:
+    - Dataset statistics
+    - Fairness metrics per demographic
+    - Identified disparities
+    - Risky decisions flagged for review
+    - Overall fairness recommendation
+    - Gemini audit report
+    """
+    try:
+        logger.info(f"Dataset audit request - Size: {len(request.decisions)}")
+        
+        # Run dataset audit
+        audit_result = bias_analyzer.audit_dataset(
+            decisions=request.decisions,
+            outcome_field=request.outcome_field
+        )
+        
+        # Convert to response format
+        response = DatasetAuditResponse(
+            dataset_size=audit_result["dataset_size"],
+            audit_timestamp=audit_result["audit_timestamp"],
+            fairness_metrics=audit_result["fairness_metrics"],
+            risky_decisions=audit_result["risky_decisions"],
+            gemini_audit_report=audit_result.get("gemini_audit_report"),
+            overall_recommendation=ActionType(audit_result["overall_recommendation"]),
+            summary=audit_result["summary"]
+        )
+        
+        logger.info(f"Dataset audit complete - Recommendation: {audit_result['overall_recommendation']}")
+        return response
+        
+    except Exception as e:
+        logger.error(f"Dataset audit failed: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Dataset audit failed: {str(e)}"
         )
 
 

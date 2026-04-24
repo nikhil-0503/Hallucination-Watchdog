@@ -57,6 +57,108 @@ class ChatRequest(BaseModel):
 
 
 # ============================================
+# BIAS DETECTION SCHEMAS
+# ============================================
+
+class BiasAnalysisRequest(BaseModel):
+    """Request schema for /analyze-bias endpoint"""
+    decision: Dict = Field(..., description="Decision record to analyze for bias")
+    historical_decisions: Optional[list] = Field(default=None, description="Historical decisions for comparison")
+    outcome_field: str = Field(default="decision", description="Field name for decision outcome")
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "decision": {
+                    "applicant_id": "A123",
+                    "age": 35,
+                    "gender": "female",
+                    "race": "black",
+                    "credit_score": 720,
+                    "decision": "approved"
+                },
+                "outcome_field": "decision"
+            }
+        }
+
+
+class DatasetAuditRequest(BaseModel):
+    """Request schema for /audit-dataset endpoint"""
+    decisions: list = Field(..., min_items=1, description="List of decision records to audit")
+    outcome_field: str = Field(default="decision", description="Field name for decision outcome")
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "decisions": [
+                    {"age": 35, "gender": "M", "decision": "approved"},
+                    {"age": 28, "gender": "F", "decision": "denied"}
+                ],
+                "outcome_field": "decision"
+            }
+        }
+
+
+class BiasScoreResponse(BaseModel):
+    """Response schema for bias analysis"""
+    decision_id: str = Field(..., description="ID of analyzed decision")
+    timestamp: str = Field(..., description="Analysis timestamp")
+    demographics: Dict = Field(..., description="Detected demographic attributes")
+    bias_score: Dict = Field(..., description="Bias scoring metrics")
+    gemini_analysis: Optional[Dict] = Field(default=None, description="Gemini AI analysis")
+    recommendation: ActionType = Field(..., description="Enforcement recommendation")
+    confidence: float = Field(..., ge=0, le=1, description="Confidence in analysis")
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "decision_id": "D123",
+                "timestamp": "2024-01-15T10:30:00Z",
+                "demographics": {
+                    "age": {"detected": True, "value": "35"},
+                    "gender": {"detected": True, "value": "female"}
+                },
+                "bias_score": {
+                    "score": 25.5,
+                    "level": "MEDIUM",
+                    "factors": {"demographic_parity": 18.5, "equal_opportunity": 22.0}
+                },
+                "recommendation": "WARN",
+                "confidence": 0.85
+            }
+        }
+
+
+class DatasetAuditResponse(BaseModel):
+    """Response schema for dataset audit"""
+    dataset_size: int = Field(..., description="Number of decisions audited")
+    audit_timestamp: str = Field(..., description="Audit timestamp")
+    fairness_metrics: Dict = Field(..., description="Fairness metrics by protected attribute")
+    risky_decisions: list = Field(..., description="Decisions flagged for review")
+    gemini_audit_report: Optional[str] = Field(default=None, description="Gemini audit report")
+    overall_recommendation: ActionType = Field(..., description="Overall enforcement recommendation")
+    summary: str = Field(..., description="Brief audit summary")
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "dataset_size": 1000,
+                "audit_timestamp": "2024-01-15T10:30:00Z",
+                "fairness_metrics": {
+                    "gender": {
+                        "disparity_detected": True,
+                        "disparity_gap": 0.15,
+                        "description": "Concerning disparity detected"
+                    }
+                },
+                "risky_decisions": [],
+                "overall_recommendation": "WARN",
+                "summary": "Significant disparities detected in gender-based decisions"
+            }
+        }
+
+
+# ============================================
 # INTERNAL SCHEMAS (Risk Engine Interface)
 # ============================================
 

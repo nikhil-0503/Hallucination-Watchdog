@@ -12,6 +12,7 @@ from dotenv import load_dotenv
 import uvicorn
 
 from .api.routes import router
+from demo_handler import router as demo_router
 
 # Load environment variables from project root
 # Note: .env should be at D:\Projects\Hallucination-Watchdog\.env
@@ -61,6 +62,7 @@ app.add_middleware(
 # ============================================
 
 app.include_router(router)
+app.include_router(demo_router)
 
 
 # ============================================
