@@ -1,3 +1,6 @@
 {
-  "startCommand": "cd backend && python -m uvicorn app.main:app --host 0.0.0.0 --port $PORT"
+  "build": {
+    "builder": "dockerfile",
+    "dockerfilePath": "backend/Dockerfile"
+  }
 }
