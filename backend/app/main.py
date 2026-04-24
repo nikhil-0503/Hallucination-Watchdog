@@ -12,7 +12,13 @@ from dotenv import load_dotenv
 import uvicorn
 
 from .api.routes import router
-from ..demo_handler import router as demo_router
+
+# Import demo_handler using absolute path (relative .. fails when app is imported as top-level)
+import sys
+_backend_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+if _backend_root not in sys.path:
+    sys.path.insert(0, _backend_root)
+from demo_handler import router as demo_router
 
 # Load environment variables from project root
 # Note: .env should be at D:\Projects\Hallucination-Watchdog\.env

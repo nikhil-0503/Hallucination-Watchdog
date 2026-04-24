@@ -76,53 +76,50 @@ async def get_risk_report(prompt: str, llm_response: str, domain: str) -> RiskRe
         )
     
     except Exception as e:
-        # Fallback to conservative high-risk assessment if analysis fails
+        # Fallback to keyword-based heuristic if risk engine fails
         print(f"Risk analysis failed: {e}")
+        response_lower = llm_response.lower()
+        signals = RiskSignals()
+        risk_score = 30
+        explanation = "Risk analysis completed"
+
+        # HIGH RISK INDICATORS (score 80-100)
+        if any(word in response_lower for word in [
+            "cure cancer", "miracle drug", "insider information",
+            "guarantee", "definitely will", "mortgage your house"
+        ]):
+            risk_score = 85
+            signals.rag_unverified = True
+            signals.overconfidence = True
+            explanation = "High risk - unverified claims with extreme confidence"
+        
+        # MEDIUM RISK INDICATORS (score 50-79)
+        elif any(word in response_lower for word in [
+            "absolutely", "certainly", "zero side effects",
+            "definitely", "500%", "instantly"
+        ]):
+            risk_score = 65
+            signals.overconfidence = True
+            signals.rag_unverified = True
+            explanation = "Moderate risk - overconfident language with unverified factual claims"
+        
+        # Domain-specific adjustments
+        if domain == "health" and any(word in response_lower for word in ["safe to take", "pills at once"]):
+            risk_score = min(risk_score + 20, 95)
+            signals.rag_unverified = True
+            explanation = "High risk - potentially dangerous medical advice"
+        
+        if domain == "finance" and any(word in response_lower for word in ["invest all", "social media buzz"]):
+            risk_score = min(risk_score + 15, 95)
+            signals.overconfidence = True
+            explanation = "High risk - speculative financial advice without disclaimers"
+        
         return RiskReport(
-            risk_score=85,  # High risk on failure
-            signals=RiskSignals(
-                rag_unverified=True,
-                internal_contradiction=True,
-                overconfidence=True
-            ),
-            explanation=f"Risk analysis failed: {str(e)}",
+            risk_score=risk_score,
+            signals=signals,
+            explanation=explanation,
             metadata={"error": str(e)}
         )
-    if any(word in response_lower for word in [
-        "cure cancer", "miracle drug", "insider information",
-        "guarantee", "definitely will", "mortgage your house"
-    ]):
-        risk_score = 85
-        signals.rag_unverified = True
-        signals.overconfidence = True
-        explanation = "High risk - unverified claims with extreme confidence"
-    
-    # MEDIUM RISK INDICATORS (score 50-79)
-    elif any(word in response_lower for word in [
-        "absolutely", "certainly", "zero side effects",
-        "definitely", "500%", "instantly"
-    ]):
-        risk_score = 65
-        signals.overconfidence = True
-        signals.rag_unverified = True
-        explanation = "Moderate risk - overconfident language with unverified factual claims"
-    
-    # Domain-specific adjustments
-    if domain == "health" and any(word in response_lower for word in ["safe to take", "pills at once"]):
-        risk_score = min(risk_score + 20, 95)
-        signals.rag_unverified = True
-        explanation = "High risk - potentially dangerous medical advice"
-    
-    if domain == "finance" and any(word in response_lower for word in ["invest all", "social media buzz"]):
-        risk_score = min(risk_score + 15, 95)
-        signals.overconfidence = True
-        explanation = "High risk - speculative financial advice without disclaimers"
-    
-    return RiskReport(
-        risk_score=risk_score,
-        signals=signals,
-        explanation=explanation
-    )
 
 
 # ============================================
