@@ -7,15 +7,11 @@ import {
   User, 
   AlertTriangle,
   Copy,
-  Download,
-  Clock,
   Calendar,
   Database,
   FileCheck,
-  Zap,
   Target,
-  BarChart3,
-  FileText
+  BarChart3
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';

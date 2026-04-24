@@ -13,7 +13,6 @@ import {
   Eye,
   Calendar,
   BarChart3,
-  FileText,
   Database,
   FileCheck
 } from 'lucide-react';

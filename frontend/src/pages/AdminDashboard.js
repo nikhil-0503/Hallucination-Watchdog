@@ -13,7 +13,6 @@ import {
   Eye,
   Calendar,
   BarChart3,
-  FileText,
   Database,
   FileCheck
 } from 'lucide-react';
@@ -24,8 +23,8 @@ import ParticleBackground from '../components/ParticleBackground';
 
 const AdminDashboard = () => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [timeRange, setTimeRange] = useState('all');
+  const [statusFilter] = useState('all');
+  const [timeRange] = useState('all');
   const [sortBy, setSortBy] = useState('timestamp');
   const [sortOrder, setSortOrder] = useState('desc');
   const [activeNav, setActiveNav] = useState('dashboard');
