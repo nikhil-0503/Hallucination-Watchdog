@@ -22,10 +22,10 @@ USER watchdog
 # Expose port
 EXPOSE 8000
 
-# Health check
+# Health check (uses urllib to avoid requests dependency)
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD python -c "import requests; requests.get('http://localhost:8000/api/health', timeout=5)"
+    CMD python -c "import urllib.request, os; port=os.getenv('PORT','8000'); urllib.request.urlopen(f'http://localhost:{port}/api/health', timeout=5)"
 
 # Run application from backend directory
 WORKDIR /app/backend
-CMD ["python", "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD exec python -m uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}
