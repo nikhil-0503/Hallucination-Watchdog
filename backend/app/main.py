@@ -7,6 +7,7 @@ Entry point for the WATCHDOG backend infrastructure.
 
 import os
 import time
+import logging
 from datetime import datetime
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -15,6 +16,9 @@ from dotenv import load_dotenv
 import uvicorn
 
 from .api.routes import router
+from .proxy.llm_proxy import llm_proxy
+
+logger = logging.getLogger(__name__)
 
 # Import demo_handler using absolute path (relative .. fails when app is imported as top-level)
 import sys
@@ -66,8 +70,10 @@ def _parse_cors_origins(raw: str | None) -> list[str]:
         return []
 
     raw = raw.strip()
-    if not raw or raw == "*":
+    if not raw:
         return []
+    if raw == "*":
+        return ["*"]
 
     origins: list[str] = []
     for origin in raw.split(","):
@@ -77,12 +83,24 @@ def _parse_cors_origins(raw: str | None) -> list[str]:
     return origins
 
 
+def _is_railway_environment() -> bool:
+    """Detect if running on Railway or similar managed platform."""
+    railway_vars = ["RAILWAY_ENVIRONMENT", "RAILWAY_STATIC_URL", "RAILWAY_SERVICE_NAME"]
+    return any(os.getenv(v) for v in railway_vars)
+
+
 def _resolve_cors_allowlist() -> list[str]:
     configured = _parse_cors_origins(os.getenv("CORS_ORIGINS"))
     if configured:
         return configured
 
-    # Safe defaults for local development and Railway-hosted frontend deployments.
+    # In Railway / managed platforms, default to permissive CORS since
+    # allow_credentials=False and we don't know the exact frontend URL.
+    if _is_railway_environment():
+        logger.info("Railway environment detected — using permissive CORS (*)")
+        return ["*"]
+
+    # Safe defaults for local development.
     return ["http://localhost:3000", "http://127.0.0.1:3000"]
 
 @app.middleware("http")
@@ -197,6 +215,15 @@ async def get_metrics():
         },
         "version": "1.0.0"
     }
+
+
+# ============================================
+# STARTUP DIAGNOSTICS
+# ============================================
+
+_cors_origins = _resolve_cors_allowlist()
+logger.info(f"WATCHDOG starting — CORS origins: {_cors_origins}")
+logger.info(f"LLM provider: {llm_proxy.provider}, mock_mode: {llm_proxy.mock_mode}, api_key_configured: {bool(llm_proxy.gemini_api_key or llm_proxy.api_key)}")
 
 
 # ============================================

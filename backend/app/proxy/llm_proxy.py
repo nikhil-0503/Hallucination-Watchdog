@@ -52,6 +52,13 @@ class LLMProxy:
         self.timeout = int(os.getenv("LLM_TIMEOUT", "30"))
         self.max_retries = int(os.getenv("LLM_MAX_RETRIES", "2"))
         self.fallback_enabled = os.getenv("FALLBACK_TO_MOCK", "false").lower() == "true"
+
+        # Startup diagnostics
+        logger.info(
+            f"LLMProxy initialized — provider={self.provider}, mock_mode={self.mock_mode}, "
+            f"gemini_key_set={bool(self.gemini_api_key)}, openrouter_key_set={bool(self.api_key)}, "
+            f"fallback_enabled={self.fallback_enabled}"
+        )
         
     async def forward_prompt(self, prompt: str, domain: str = "general") -> str:
         """
@@ -356,6 +363,19 @@ class LLMProxy:
 
 # Global proxy instance (initialized once)
 llm_proxy = LLMProxy()
+
+
+def get_llm_config_status() -> dict:
+    """Return safe configuration status for diagnostics."""
+    return {
+        "provider": llm_proxy.provider,
+        "mock_mode": llm_proxy.mock_mode,
+        "gemini_api_key_configured": bool(llm_proxy.gemini_api_key),
+        "openrouter_api_key_configured": bool(llm_proxy.api_key),
+        "gemini_model": llm_proxy.gemini_model,
+        "openrouter_model": llm_proxy.model,
+        "fallback_enabled": llm_proxy.fallback_enabled,
+    }
 
 
 async def get_llm_response(prompt: str, domain: str = "general") -> str:

@@ -651,16 +651,41 @@ async def get_dashboard_stats():
 
 
 # ============================================
+# CONFIG ENDPOINT — DEPLOYMENT DIAGNOSTICS
+# ============================================
+
+@router.get("/config")
+async def get_config():
+    """
+    **Get safe backend configuration for debugging deployments.**
+    """
+    from ..proxy.llm_proxy import get_llm_config_status
+    return {
+        "service": "WATCHDOG AI Safety Gateway",
+        "version": "1.0.0",
+        "llm": get_llm_config_status(),
+        "environment": "railway" if os.getenv("RAILWAY_ENVIRONMENT") else "local"
+    }
+
+
+# ============================================
 # HEALTH CHECK ENDPOINT
 # ============================================
 
 @router.get("/health")
 async def health_check():
     """Health check endpoint for monitoring"""
+    from ..proxy.llm_proxy import llm_proxy
     return {
         "status": "healthy",
         "service": "WATCHDOG AI Safety Gateway",
-        "version": "1.0.0"
+        "version": "1.0.0",
+        "config": {
+            "llm_provider": llm_proxy.provider,
+            "mock_mode": llm_proxy.mock_mode,
+            "api_key_configured": bool(llm_proxy.gemini_api_key or llm_proxy.api_key),
+            "fallback_enabled": llm_proxy.fallback_enabled,
+        }
     }
 
 

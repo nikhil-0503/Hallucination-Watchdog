@@ -46,7 +46,7 @@ let healthCheckCache = {
 
 export async function checkBackendHealth() {
   const now = Date.now();
-  
+
   // Return cached result if recent (within 5 seconds)
   if (healthCheckCache.status !== null && now - healthCheckCache.timestamp < 5000) {
     return healthCheckCache.status;
@@ -57,17 +57,36 @@ export async function checkBackendHealth() {
       return { healthy: false, message: 'API_BASE_URL not configured' };
     }
 
-    const response = await fetch(`${API_BASE_URL}/api/health`, { 
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 3000);
+
+    const response = await fetch(`${API_BASE_URL}/api/health`, {
       method: 'GET',
-      timeout: 3000 
+      signal: controller.signal,
     });
+    clearTimeout(timeoutId);
+
     const healthy = response.ok;
-    const result = { healthy, message: healthy ? 'Backend is reachable' : 'Backend returned error' };
-    
+    let result;
+    if (healthy) {
+      const data = await response.json().catch(() => ({}));
+      result = {
+        healthy: true,
+        message: 'Backend is reachable',
+        config: data.config || {},
+      };
+    } else {
+      result = { healthy: false, message: `Backend returned error: ${response.status}` };
+    }
+
     healthCheckCache = { status: result, timestamp: now };
     return result;
   } catch (error) {
-    const result = { healthy: false, message: `Cannot reach backend: ${error.message}` };
+    let message = `Cannot reach backend: ${error.message}`;
+    if (error.name === 'AbortError') {
+      message = 'Backend health check timed out after 3s';
+    }
+    const result = { healthy: false, message };
     healthCheckCache = { status: result, timestamp: now };
     return result;
   }
