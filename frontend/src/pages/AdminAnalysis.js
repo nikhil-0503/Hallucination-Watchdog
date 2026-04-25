@@ -8,8 +8,6 @@ import {
   Target,
   Database,
   FileCheck,
-  CheckCircle2,
-  XCircle,
   Shield
 } from 'lucide-react';
 import { useData } from '../context/DataContext';

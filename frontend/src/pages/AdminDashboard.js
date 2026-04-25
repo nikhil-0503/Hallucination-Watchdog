@@ -13,7 +13,6 @@ import {
   FlaskConical,
   Globe,
   BrainCircuit,
-  Users,
   BarChart3
 } from 'lucide-react';
 import { useData } from '../context/DataContext';

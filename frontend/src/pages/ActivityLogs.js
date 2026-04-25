@@ -9,8 +9,7 @@ import {
   Eye,
   Calendar,
   Database,
-  FileCheck,
-  Activity
+  FileCheck
 } from 'lucide-react';
 import { useData } from '../context/DataContext';
 import { useNavigate } from 'react-router-dom';
