@@ -6,6 +6,41 @@
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || '';
 
+// Health check cache to avoid excessive requests
+let healthCheckCache = {
+  status: null,
+  timestamp: 0,
+};
+
+export async function checkBackendHealth() {
+  const now = Date.now();
+  
+  // Return cached result if recent (within 5 seconds)
+  if (healthCheckCache.status !== null && now - healthCheckCache.timestamp < 5000) {
+    return healthCheckCache.status;
+  }
+
+  try {
+    if (!API_BASE_URL) {
+      return { healthy: false, message: 'API_BASE_URL not configured' };
+    }
+
+    const response = await fetch(`${API_BASE_URL}/health`, { 
+      method: 'GET',
+      timeout: 3000 
+    });
+    const healthy = response.ok;
+    const result = { healthy, message: healthy ? 'Backend is reachable' : 'Backend returned error' };
+    
+    healthCheckCache = { status: result, timestamp: now };
+    return result;
+  } catch (error) {
+    const result = { healthy: false, message: `Cannot reach backend: ${error.message}` };
+    healthCheckCache = { status: result, timestamp: now };
+    return result;
+  }
+}
+
 class WatchdogApiError extends Error {
   constructor(message, status, data = null) {
     super(message);
@@ -29,11 +64,29 @@ async function apiRequest(endpoint, options = {}) {
     const response = await fetch(url, config);
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => null);
+      // Try to parse as JSON, but handle HTML error pages gracefully
+      let errorData = null;
+      const contentType = response.headers.get('content-type');
+      
+      if (contentType && contentType.includes('application/json')) {
+        try {
+          errorData = await response.json();
+        } catch (e) {
+          // Ignore JSON parse errors
+        }
+      }
+      
+      const message = errorData?.detail || `HTTP ${response.status}`;
+      throw new WatchdogApiError(message, response.status, errorData);
+    }
+
+    const contentType = response.headers.get('content-type');
+    
+    // Verify we got JSON, not HTML
+    if (!contentType || !contentType.includes('application/json')) {
       throw new WatchdogApiError(
-        errorData?.detail || `HTTP ${response.status}`,
-        response.status,
-        errorData
+        `Server returned invalid content type: ${contentType || 'unknown'}`,
+        response.status
       );
     }
 

@@ -23,14 +23,17 @@ const ImpactDashboard = () => {
     organizations_helped: 45
   });
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     const fetchMetrics = async () => {
       try {
+        setError(null);
         const data = await getImpactMetrics();
         setMetrics(data);
       } catch (e) {
-        console.log('Using default impact metrics');
+        console.error('Failed to load impact metrics:', e);
+        setError('Using default metrics. Connect to backend for real-time data.');
       } finally {
         setLoading(false);
       }
@@ -85,6 +88,13 @@ const ImpactDashboard = () => {
             <p className="page-subtitle">Quantified protection against AI discrimination</p>
           </div>
         </motion.div>
+
+        {error && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="glass-card" style={{ borderColor: 'rgba(59, 130, 246, 0.3)', marginBottom: '1.5rem', padding: '1rem', display: 'flex', alignItems: 'center', gap: '0.75rem', color: 'var(--text-muted)' }}>
+            <span style={{ color: 'var(--primary)' }}>ℹ️</span>
+            <span>{error}</span>
+          </motion.div>
+        )}
 
         {/* Top Metrics */}
         <div className="metrics-grid-4">

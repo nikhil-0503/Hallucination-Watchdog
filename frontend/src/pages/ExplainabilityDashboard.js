@@ -7,15 +7,23 @@ import { getLatestExplainability } from '../services/api';
 const ExplainabilityDashboard = () => {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     let mounted = true;
     const fetch = async () => {
       try {
+        setError(null);
         const d = await getLatestExplainability();
         if (mounted) setData(d);
-      } catch (e) { console.error(e); }
-      finally { if (mounted) setLoading(false); }
+      } catch (e) {
+        if (mounted) {
+          console.error('Failed to load explainability data:', e);
+          setError('Could not load explainability data. Please ensure the backend is running.');
+        }
+      } finally {
+        if (mounted) setLoading(false);
+      }
     };
     fetch();
     return () => { mounted = false; };
@@ -56,6 +64,7 @@ const ExplainabilityDashboard = () => {
           <AlertCircle size={48} className="empty-state-icon" />
           <h3>No data available</h3>
           <p>Process some prompts first to see explainability analysis.</p>
+          {error && <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginTop: '0.5rem' }}>{error}</p>}
         </div>
       </AdminLayout>
     );

@@ -5,19 +5,37 @@ import AdminLayout from '../components/AdminLayout';
 import { getWhatIfState } from '../services/api';
 
 const WhatIfScenarios = () => {
-  const [scenario, setScenario] = useState({});
+  const [scenario, setScenario] = useState({
+    current_gender_gap: 15,
+    current_approval_rate: 80,
+    intervention: 'none'
+  });
   const [simulation, setSimulation] = useState(null);
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     let mounted = true;
     const fetch = async () => {
       try {
+        setError(null);
         const d = await getWhatIfState();
-        if (mounted && d) setScenario(d);
-      } catch (e) { console.error(e); }
-      finally { if (mounted) setInitialLoading(false); }
+        if (mounted && d) {
+          setScenario({
+            current_gender_gap: d.current_gender_gap || 15,
+            current_approval_rate: d.current_approval_rate || 80,
+            intervention: scenario.intervention
+          });
+        }
+      } catch (e) {
+        if (mounted) {
+          console.error('Failed to load what-if state:', e);
+          setError('Could not load scenario data. Using defaults.');
+        }
+      } finally {
+        if (mounted) setInitialLoading(false);
+      }
     };
     fetch();
     return () => { mounted = false; };
@@ -78,6 +96,13 @@ const WhatIfScenarios = () => {
             <p className="page-subtitle">Predict the impact of fairness interventions</p>
           </div>
         </div>
+
+        {error && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="glass-card" style={{ borderColor: 'rgba(59, 130, 246, 0.3)', marginBottom: '1.5rem', padding: '1rem', display: 'flex', alignItems: 'center', gap: '0.75rem', color: 'var(--text-muted)' }}>
+            <span style={{ color: 'var(--primary)' }}>ℹ️</span>
+            <span>{error}</span>
+          </motion.div>
+        )}
 
         <div className="grid-2">
           <motion.div className="section-card" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
