@@ -41,6 +41,7 @@ logger = logging.getLogger(__name__)
 
 class BiasAnalyzer:
     """Main bias analysis engine with Gemini integration"""
+    DEFAULT_GEMINI_MODEL = "gemini-1.5-flash"
     
     def __init__(self, api_key: Optional[str] = None):
         """
@@ -62,9 +63,10 @@ class BiasAnalyzer:
         
         try:
             genai.configure(api_key=api_key)
-            self.model = genai.GenerativeModel("gemini-pro")
+            self.model_name = os.getenv("GEMINI_MODEL", self.DEFAULT_GEMINI_MODEL)
+            self.model = genai.GenerativeModel(self.model_name)
             self.gemini_available = True
-            logger.info("Gemini API initialized successfully")
+            logger.info(f"Gemini API initialized successfully (model={self.model_name})")
         except Exception as e:
             self.gemini_available = False
             logger.error(f"Failed to initialize Gemini API: {e}")
@@ -286,7 +288,7 @@ Be concise and actionable.
             return {
                 "analysis": response.text,
                 "timestamp": datetime.now().isoformat(),
-                "model": "gemini-pro"
+                "model": self.model_name
             }
         except Exception as e:
             logger.error(f"Gemini API error: {e}")

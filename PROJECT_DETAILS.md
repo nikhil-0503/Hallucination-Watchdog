@@ -345,7 +345,7 @@ WATCHDOG is not a prototype notebook. It ships with:
 | **Backend** | Python | 3.11+ |
 | **API Framework** | FastAPI | 0.104+ with async Uvicorn |
 | **Frontend** | React | 19.2+ |
-| **AI Models** | Google Gemini API | `gemini-pro` for bias analysis & explanations |
+| **AI Models** | Google Gemini API | `gemini-1.5-flash` for bias analysis & explanations |
 | **LLM Proxy** | OpenRouter / Mock | Supports multiple LLM backends |
 | **Styling** | CSS3 + Framer Motion | Premium dark-mode dashboards |
 | **Deployment** | Docker | Multi-stage builds |
