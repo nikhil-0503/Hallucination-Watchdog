@@ -42,9 +42,11 @@ function resolveBackendConfig() {
 
 function getBackendConfigDebug() {
   const { selectedRaw, source, backendBaseUrl } = resolveBackendConfig();
+  const instance = process.env.RAILWAY_REPLICA_ID || process.env.HOSTNAME || `pid-${process.pid}`;
 
   return {
     configured: !!backendBaseUrl,
+    instance,
     selected_source: source,
     selected_value_present: !!selectedRaw,
     selected_value_preview: selectedRaw ? `${selectedRaw.slice(0, 28)}...` : null,
@@ -56,10 +58,15 @@ function proxyApiRequest(req, res) {
   const { backendBaseUrl } = resolveBackendConfig();
 
   if (!backendBaseUrl) {
-    res.writeHead(503, { 'Content-Type': 'application/json' });
+    const instance = process.env.RAILWAY_REPLICA_ID || process.env.HOSTNAME || `pid-${process.pid}`;
+    res.writeHead(503, {
+      'Content-Type': 'application/json',
+      'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate'
+    });
     res.end(JSON.stringify({
       error: 'Backend URL is not configured',
-      detail: 'Set BACKEND_URL, REACT_APP_API_URL, API_URL, or BACKEND_API_URL to your backend service URL'
+      detail: 'Set BACKEND_URL, REACT_APP_API_URL, API_URL, or BACKEND_API_URL to your backend service URL',
+      instance
     }));
     return;
   }
@@ -104,7 +111,10 @@ function proxyApiRequest(req, res) {
 
 http.createServer((req, res) => {
   if (req.url === '/api/_proxy-debug') {
-    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.writeHead(200, {
+      'Content-Type': 'application/json',
+      'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate'
+    });
     res.end(JSON.stringify(getBackendConfigDebug()));
     return;
   }
