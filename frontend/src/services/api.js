@@ -13,7 +13,16 @@ function normalizeApiBaseUrl(rawUrl) {
   return trimmed.replace(/\/api$/i, '');
 }
 
-const API_BASE_URL = normalizeApiBaseUrl(process.env.REACT_APP_API_URL || '');
+function resolveApiBaseUrl() {
+  // In production, prefer same-origin API calls and let frontend/server.js
+  // proxy /api/* to BACKEND_URL. This avoids browser CORS issues.
+  if (process.env.NODE_ENV === 'production') {
+    return '';
+  }
+  return normalizeApiBaseUrl(process.env.REACT_APP_API_URL || '');
+}
+
+const API_BASE_URL = resolveApiBaseUrl();
 
 // Health check cache to avoid excessive requests
 let healthCheckCache = {
