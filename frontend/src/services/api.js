@@ -4,7 +4,16 @@
  * No mock data — all endpoints call the live backend.
  */
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || '';
+function normalizeApiBaseUrl(rawUrl) {
+  if (!rawUrl) return '';
+  const trimmed = rawUrl.trim().replace(/\/+$/, '');
+  // Accept both forms:
+  // - https://backend.railway.app
+  // - https://backend.railway.app/api
+  return trimmed.replace(/\/api$/i, '');
+}
+
+const API_BASE_URL = normalizeApiBaseUrl(process.env.REACT_APP_API_URL || '');
 
 // Health check cache to avoid excessive requests
 let healthCheckCache = {
@@ -25,7 +34,7 @@ export async function checkBackendHealth() {
       return { healthy: false, message: 'API_BASE_URL not configured' };
     }
 
-    const response = await fetch(`${API_BASE_URL}/health`, { 
+    const response = await fetch(`${API_BASE_URL}/api/health`, {
       method: 'GET',
       timeout: 3000 
     });

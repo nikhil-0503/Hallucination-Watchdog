@@ -1,10 +1,73 @@
 const http = require('http');
+const https = require('https');
 const fs = require('fs');
 const path = require('path');
 
 const PORT = process.env.PORT || 3000;
+const rawBackendUrl = process.env.BACKEND_URL || process.env.REACT_APP_API_URL || '';
+
+function normalizeBackendUrl(rawUrl) {
+  if (!rawUrl) return '';
+  const trimmed = rawUrl.trim().replace(/\/+$/, '');
+  return trimmed.replace(/\/api$/i, '');
+}
+
+const backendBaseUrl = normalizeBackendUrl(rawBackendUrl);
+
+function proxyApiRequest(req, res) {
+  if (!backendBaseUrl) {
+    res.writeHead(503, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({
+      error: 'Backend URL is not configured',
+      detail: 'Set BACKEND_URL or REACT_APP_API_URL to your backend service URL'
+    }));
+    return;
+  }
+
+  let target;
+  try {
+    target = new URL(req.url, backendBaseUrl);
+  } catch (e) {
+    res.writeHead(500, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ error: 'Invalid backend URL configuration', detail: String(e) }));
+    return;
+  }
+
+  const transport = target.protocol === 'https:' ? https : http;
+  const headers = { ...req.headers, host: target.host };
+
+  const proxyReq = transport.request(
+    {
+      protocol: target.protocol,
+      hostname: target.hostname,
+      port: target.port || (target.protocol === 'https:' ? 443 : 80),
+      method: req.method,
+      path: `${target.pathname}${target.search}`,
+      headers,
+    },
+    (proxyRes) => {
+      res.writeHead(proxyRes.statusCode || 502, proxyRes.headers);
+      proxyRes.pipe(res);
+    }
+  );
+
+  proxyReq.on('error', (error) => {
+    res.writeHead(502, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({
+      error: 'Failed to reach backend service',
+      detail: String(error)
+    }));
+  });
+
+  req.pipe(proxyReq);
+}
 
 http.createServer((req, res) => {
+  if (req.url.startsWith('/api/')) {
+    proxyApiRequest(req, res);
+    return;
+  }
+
   let filePath = path.join(__dirname, req.url === '/' ? 'index.html' : req.url);
   const ext = path.extname(filePath);
   
