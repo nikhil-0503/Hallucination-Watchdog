@@ -1,7 +1,7 @@
 [build]
 builder = "DOCKERFILE"
-dockerfilePath = "backend/Dockerfile"
+dockerfilePath = "frontend/Dockerfile"
 
 [deploy]
-startCommand = "sh -c 'python -m uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8080}'"
+startCommand = "serve -s build -l 3000"
 
