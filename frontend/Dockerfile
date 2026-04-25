@@ -6,13 +6,13 @@ WORKDIR /build
 # Copy package files from frontend
 COPY package*.json ./
 
-# Install dependencies - use npm install as fallback
+# Install dependencies
 RUN npm install
 
 # Copy source code
 COPY public/ ./public/
 COPY src/ ./src/
-COPY tsconfig.json .eslintignore .gitignore ./ 2>/dev/null || true
+COPY tsconfig.json ./
 
 # Build the app
 ARG REACT_APP_API_URL=http://localhost:8000
