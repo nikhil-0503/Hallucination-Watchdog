@@ -46,7 +46,7 @@ class LLMProxy:
         
         # Google Gemini config
         self.gemini_api_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_GENERATIVEAI_API_KEY", "")
-        self.gemini_model = os.getenv("GEMINI_MODEL", "gemini-1.5-flash")
+        self.gemini_model = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
         
         # Common config
         self.timeout = int(os.getenv("LLM_TIMEOUT", "30"))
