@@ -14,7 +14,8 @@ COPY public/ ./public/
 COPY src/ ./src/
 
 # Build the app
-ARG REACT_APP_API_URL=http://localhost:8000
+# Default empty so frontend uses same-origin /api via server.js runtime proxy.
+ARG REACT_APP_API_URL=
 ENV REACT_APP_API_URL=${REACT_APP_API_URL}
 ENV CI=false
 
