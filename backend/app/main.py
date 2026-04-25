@@ -83,25 +83,14 @@ def _parse_cors_origins(raw: str | None) -> list[str]:
     return origins
 
 
-def _is_railway_environment() -> bool:
-    """Detect if running on Railway or similar managed platform."""
-    railway_vars = ["RAILWAY_ENVIRONMENT", "RAILWAY_STATIC_URL", "RAILWAY_SERVICE_NAME"]
-    return any(os.getenv(v) for v in railway_vars)
-
-
 def _resolve_cors_allowlist() -> list[str]:
     configured = _parse_cors_origins(os.getenv("CORS_ORIGINS"))
     if configured:
         return configured
 
-    # In Railway / managed platforms, default to permissive CORS since
-    # allow_credentials=False and we don't know the exact frontend URL.
-    if _is_railway_environment():
-        logger.info("Railway environment detected — using permissive CORS (*)")
-        return ["*"]
-
-    # Safe defaults for local development.
-    return ["http://localhost:3000", "http://127.0.0.1:3000"]
+    # Default to permissive CORS. This is safe because allow_credentials=False.
+    # Set CORS_ORIGINS env var explicitly if you need strict origin checking.
+    return ["*"]
 
 @app.middleware("http")
 async def rate_limit_middleware(request: Request, call_next):
