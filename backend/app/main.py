@@ -91,11 +91,11 @@ async def rate_limit_middleware(request: Request, call_next):
     Rate limiting middleware: 100 requests per minute per IP.
     Returns 429 Too Many Requests if limit exceeded.
     """
-    # Skip rate limiting for health checks
-    if request.url.path == "/api/health":
+    # Skip rate limiting for health checks and CORS preflight requests.
+    if request.url.path == "/api/health" or request.method.upper() == "OPTIONS":
         return await call_next(request)
     
-    client_ip = request.client.host
+    client_ip = request.client.host if request.client else "unknown"
     now = time.time()
     
     # Clean old entries
