@@ -3,5 +3,5 @@ builder = "DOCKERFILE"
 dockerfilePath = "./Dockerfile"
 
 [deploy]
-startCommand = "serve -s build -l 3000"
+startCommand = "node server.js"
 
