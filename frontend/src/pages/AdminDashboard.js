@@ -1,24 +1,16 @@
 import React, { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import {
-  Shield,
   Activity,
   XCircle,
   TrendingUp,
-  TrendingDown,
-  Clock,
-  BarChart3,
   Scale,
   FlaskConical,
   Globe,
   BrainCircuit,
   Users,
-  AlertTriangle,
-  Database,
-  FileCheck,
-  Eye
+  AlertTriangle
 } from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
 import { useNavigate } from 'react-router-dom';
 import AdminLayout from '../components/AdminLayout';
