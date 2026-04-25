@@ -1,20 +1,21 @@
+# Root-level Dockerfile for Railway - builds frontend
 # Build stage
 FROM node:22-alpine AS builder
 
 WORKDIR /build
 
 # Copy package files from frontend
-COPY package*.json ./
+COPY frontend/package*.json ./
 
-# Install dependencies - use npm install as fallback
+# Install dependencies
 RUN npm install
 
-# Copy source code
-COPY public/ ./public/
-COPY src/ ./src/
-COPY tsconfig.json .eslintignore .gitignore ./ 2>/dev/null || true
+# Copy frontend source code
+COPY frontend/public ./public/
+COPY frontend/src ./src/
+COPY frontend/tsconfig.json ./tsconfig.json 2>/dev/null || true
 
-# Build the app
+# Build the app with environment variables
 ARG REACT_APP_API_URL=http://localhost:8000
 ENV REACT_APP_API_URL=${REACT_APP_API_URL}
 ENV CI=false
@@ -26,10 +27,10 @@ FROM node:22-alpine
 
 WORKDIR /app
 
-# Install serve to run the app
+# Install serve
 RUN npm install -g serve
 
-# Copy built app from builder
+# Copy built frontend from builder
 COPY --from=builder /build/build ./build
 
 # Expose port

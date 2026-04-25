@@ -1,0 +1,46 @@
+# Git
+.git
+.gitignore
+.github
+
+# Node
+frontend/node_modules
+frontend/npm-debug.log
+frontend/.env.local
+frontend/.env*.local
+
+# Build artifacts
+frontend/build
+frontend/dist
+frontend/.next
+frontend/out
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Python
+backend/.venv
+backend/__pycache__
+backend/*.pyc
+backend/.pytest_cache
+backend/.env
+
+# Testing
+coverage
+.nyc_output
+
+# Cache
+.eslintcache
+.cache
