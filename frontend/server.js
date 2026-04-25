@@ -19,12 +19,25 @@ function resolveBackendConfig() {
     BACKEND_API_URL: process.env.BACKEND_API_URL || ''
   };
 
-  const selectedRaw =
+  let selectedRaw =
     candidates.BACKEND_URL ||
     candidates.REACT_APP_API_URL ||
     candidates.API_URL ||
     candidates.BACKEND_API_URL ||
     '';
+
+  // Emergency production fallback for mixed Railway instances where
+  // one replica may not receive latest env vars during rolling deploy.
+  if (!selectedRaw) {
+    selectedRaw = process.env.DEFAULT_BACKEND_URL || '';
+  }
+
+  if (!selectedRaw) {
+    const host = process.env.RAILWAY_PUBLIC_DOMAIN || process.env.HOSTNAME || '';
+    if (host.includes('hallucination-watchdog-frontend-production')) {
+      selectedRaw = 'https://hallucination-watchdog-production-e39c.up.railway.app';
+    }
+  }
 
   const source = candidates.BACKEND_URL
     ? 'BACKEND_URL'
@@ -34,6 +47,10 @@ function resolveBackendConfig() {
     ? 'API_URL'
     : candidates.BACKEND_API_URL
     ? 'BACKEND_API_URL'
+    : process.env.DEFAULT_BACKEND_URL
+    ? 'DEFAULT_BACKEND_URL'
+    : selectedRaw
+    ? 'HARDCODED_PROD_FALLBACK'
     : null;
 
   const backendBaseUrl = normalizeBackendUrl(selectedRaw);
