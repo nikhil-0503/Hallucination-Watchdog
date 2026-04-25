@@ -4,7 +4,6 @@ const fs = require('fs');
 const path = require('path');
 
 const PORT = process.env.PORT || 3000;
-const rawBackendUrl = process.env.BACKEND_URL || process.env.REACT_APP_API_URL || '';
 
 function normalizeBackendUrl(rawUrl) {
   if (!rawUrl) return '';
@@ -12,9 +11,7 @@ function normalizeBackendUrl(rawUrl) {
   return trimmed.replace(/\/api$/i, '');
 }
 
-const backendBaseUrl = normalizeBackendUrl(rawBackendUrl);
-
-function getBackendConfigDebug() {
+function resolveBackendConfig() {
   const candidates = {
     BACKEND_URL: process.env.BACKEND_URL || '',
     REACT_APP_API_URL: process.env.REACT_APP_API_URL || '',
@@ -29,36 +26,40 @@ function getBackendConfigDebug() {
     candidates.BACKEND_API_URL ||
     '';
 
-  let resolved = '';
-  try {
-    resolved = normalizeBackendUrl(selectedRaw);
-  } catch (_) {
-    resolved = '';
-  }
+  const source = candidates.BACKEND_URL
+    ? 'BACKEND_URL'
+    : candidates.REACT_APP_API_URL
+    ? 'REACT_APP_API_URL'
+    : candidates.API_URL
+    ? 'API_URL'
+    : candidates.BACKEND_API_URL
+    ? 'BACKEND_API_URL'
+    : null;
+
+  const backendBaseUrl = normalizeBackendUrl(selectedRaw);
+  return { candidates, selectedRaw, source, backendBaseUrl };
+}
+
+function getBackendConfigDebug() {
+  const { selectedRaw, source, backendBaseUrl } = resolveBackendConfig();
 
   return {
-    configured: !!resolved,
-    selected_source: candidates.BACKEND_URL
-      ? 'BACKEND_URL'
-      : candidates.REACT_APP_API_URL
-      ? 'REACT_APP_API_URL'
-      : candidates.API_URL
-      ? 'API_URL'
-      : candidates.BACKEND_API_URL
-      ? 'BACKEND_API_URL'
-      : null,
+    configured: !!backendBaseUrl,
+    selected_source: source,
     selected_value_present: !!selectedRaw,
     selected_value_preview: selectedRaw ? `${selectedRaw.slice(0, 28)}...` : null,
-    normalized_preview: resolved ? `${resolved.slice(0, 28)}...` : null
+    normalized_preview: backendBaseUrl ? `${backendBaseUrl.slice(0, 28)}...` : null
   };
 }
 
 function proxyApiRequest(req, res) {
+  const { backendBaseUrl } = resolveBackendConfig();
+
   if (!backendBaseUrl) {
     res.writeHead(503, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({
       error: 'Backend URL is not configured',
-      detail: 'Set BACKEND_URL or REACT_APP_API_URL to your backend service URL'
+      detail: 'Set BACKEND_URL, REACT_APP_API_URL, API_URL, or BACKEND_API_URL to your backend service URL'
     }));
     return;
   }
