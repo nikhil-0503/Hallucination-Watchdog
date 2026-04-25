@@ -1,5 +1,5 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { chatWithWatchdog, getAllPrompts, getPromptById as fetchPromptById } from '../services/api';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { chatWithWatchdog, getAllPrompts, getPromptById as fetchPromptById, getDashboardStats } from '../services/api';
 
 const DataContext = createContext();
 
@@ -16,21 +16,41 @@ export const DataProvider = ({ children }) => {
   const [currentPrompt, setCurrentPrompt] = useState(null);
   const [chatMessages, setChatMessages] = useState([]);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [stats, setStats] = useState({
+    total: 0, blocked: 0, warned: 0, allowed: 0,
+    avgConfidence: 0, blockRate: 0, allowRate: 0
+  });
 
-  // Load all prompts from backend
-  const loadPrompts = async () => {
+  const loadPrompts = useCallback(async () => {
     try {
       const records = await getAllPrompts();
       setPrompts(records);
     } catch (error) {
       console.error('Error loading prompts:', error);
     }
-  };
+  }, []);
 
-  // Load initial data on mount
+  const loadStats = useCallback(async () => {
+    try {
+      const s = await getDashboardStats();
+      setStats({
+        total: s.total || 0,
+        blocked: s.blocked || 0,
+        warned: s.warned || 0,
+        allowed: s.allowed || 0,
+        avgConfidence: Math.round((s.avg_confidence || 0) * 100),
+        blockRate: Math.round((s.block_rate || 0) * 100),
+        allowRate: Math.round((s.allow_rate || 0) * 100),
+      });
+    } catch (error) {
+      console.error('Error loading stats:', error);
+    }
+  }, []);
+
   useEffect(() => {
     loadPrompts();
-  }, []);
+    loadStats();
+  }, [loadPrompts, loadStats]);
 
   const getPromptById = async (id) => {
     try {
@@ -64,7 +84,8 @@ export const DataProvider = ({ children }) => {
         type: response.action === 'BLOCK' ? 'system' : 'assistant',
         content: response.user_output,
         status: response.action,
-        confidence: response.confidence ? response.confidence * 100 : undefined,
+      confidence: response.confidence ? response.confidence * 100 : undefined,
+        warning_text: response.warning_text || undefined,
         timestamp: new Date()
       };
 
@@ -97,11 +118,13 @@ export const DataProvider = ({ children }) => {
     currentPrompt,
     chatMessages,
     isProcessing,
+    stats,
     setCurrentPrompt,
     getPromptById,
     submitUserPrompt,
     clearChat,
-    loadPrompts
+    loadPrompts,
+    loadStats
   };
 
   return (

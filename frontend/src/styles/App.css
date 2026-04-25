@@ -777,7 +777,28 @@ body {
 @media (max-width: 480px) {
   .admin-main-content { padding: 0.75rem; }
   .glass-card, .section-card-body { padding: 1rem; }
-  .data-table th, .data-table td { padding: 0.625rem 0.5rem; font-size: 0.8rem; }
+.data-table th, .data-table td { padding: 0.625rem 0.5rem; font-size: 0.8rem; }
   .page-title { font-size: 1.2rem; }
 }
 
+/* What-If Simulator helpers */
+.sim-compare { display: flex; align-items: center; gap: 0.75rem; margin-top: 8px; }
+.sim-compare-box { text-align: center; }
+.sim-compare-val { font-size: 1.5rem; font-weight: 800; }
+.sim-compare-label { font-size: 0.75rem; color: var(--text-muted); }
+.sim-compare-arrow { color: var(--text-muted); }
+
+/* Stack list (Community Hub, etc.) */
+.stack-list { display: flex; flex-direction: column; gap: 0.75rem; }
+.stack-item {
+  padding: 1rem;
+  background: rgba(11,15,26,0.5);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  transition: var(--transition);
+}
+.stack-item:hover { border-color: var(--border-hover); background: rgba(11,15,26,0.7); }
+.stack-item-main { display: flex; flex-direction: column; gap: 0.25rem; }
+.stack-item-title-row { display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; }
+.stack-item-title { font-weight: 700; color: var(--text-primary); font-size: 0.95rem; }
+.stack-item-meta { display: flex; gap: 0.75rem; align-items: center; font-size: 0.8rem; color: var(--text-tertiary); flex-wrap: wrap; }

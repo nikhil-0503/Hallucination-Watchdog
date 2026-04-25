@@ -38,20 +38,20 @@ class LLMProxy:
     def __init__(self):
         self.mock_mode = os.getenv("MOCK_LLM", "false").lower() == "true"
         self.provider = os.getenv("LLM_PROVIDER", "gemini").lower()
-        
+
         # OpenRouter config
         self.api_key = os.getenv("OPENROUTER_API_KEY", "")
         self.model = os.getenv("OPENROUTER_MODEL", "meta-llama/llama-3.1-8b-instruct:free")
         self.openrouter_base_url = "https://openrouter.ai/api/v1/chat/completions"
-        
+
         # Google Gemini config
         self.gemini_api_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_GENERATIVEAI_API_KEY", "")
         self.gemini_model = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
-        
+
         # Common config
         self.timeout = int(os.getenv("LLM_TIMEOUT", "30"))
         self.max_retries = int(os.getenv("LLM_MAX_RETRIES", "2"))
-        self.fallback_enabled = os.getenv("FALLBACK_TO_MOCK", "true").lower() == "true"
+        self.fallback_enabled = os.getenv("FALLBACK_TO_MOCK", "false").lower() == "true"
         
     async def forward_prompt(self, prompt: str, domain: str = "general") -> str:
         """
