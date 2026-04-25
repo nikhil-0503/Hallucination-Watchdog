@@ -24,8 +24,8 @@ EXPOSE 8080
 
 # Health check (uses urllib to avoid requests dependency)
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8080/api/health', timeout=5)"
+    CMD python -c "import os, urllib.request; urllib.request.urlopen(f\"http://localhost:{os.getenv('PORT', '8080')}/api/health\", timeout=5)"
 
 # Run application from backend directory
 WORKDIR /app/backend
-CMD python -m uvicorn app.main:app --host 0.0.0.0 --port 8080
+CMD ["sh", "-c", "python -m uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8080}"]
