@@ -2,5 +2,13 @@
 @import 'bootstrap/dist/css/bootstrap.min.css';
 @import '@fortawesome/fontawesome-free/css/all.min.css';
 
-/* Import beautiful enterprise design from App.css */
+/* Import Design System - Premium UI */
+@import './design-system.css';
+
+/* Import App Styles */
 @import './App.css';
+
+/* Import Premium Page Styles */
+@import './login-premium.css';
+@import './admin-premium.css';
+@import './chat-premium.css';
