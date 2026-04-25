@@ -26,12 +26,32 @@ const WhatIfScenarios = () => {
   const runSimulation = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/what-if-state', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(scenario)
+      const { current_gender_gap, current_approval_rate, intervention } = scenario;
+      // Client-side simulation — no backend POST needed
+      const gapReduction = intervention === 'all' ? 0.85
+        : intervention === 'retrain' ? 0.70
+        : intervention === 'stratified' ? 0.60
+        : intervention === 'remove_criteria' ? 0.50
+        : 0;
+      const newGap = Math.max(0, Math.round(current_gender_gap * (1 - gapReduction)));
+      const improvement = current_gender_gap - newGap;
+      const approvalBoost = intervention === 'all' ? 12
+        : intervention === 'retrain' ? 8
+        : intervention === 'stratified' ? 6
+        : intervention === 'remove_criteria' ? 4
+        : 0;
+      const newApproval = Math.min(100, current_approval_rate + approvalBoost);
+
+      setSimulation({
+        original_gap: current_gender_gap,
+        new_gap: newGap,
+        improvement,
+        original_approval: current_approval_rate,
+        new_approval: newApproval,
+        recommendation: improvement > 0
+          ? `This intervention reduces the gender gap by ${improvement}pp and raises approvals to ${newApproval}%. Deploy recommended.`
+          : 'No intervention selected. Consider removing biased criteria or retraining for measurable improvement.'
       });
-      const data = await res.json();
-      setSimulation(data);
     } catch (e) { console.error(e); }
     finally { setLoading(false); }
   };

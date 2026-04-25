@@ -4,7 +4,7 @@
  * No mock data — all endpoints call the live backend.
  */
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+const API_BASE_URL = process.env.REACT_APP_API_URL || '';
 
 class WatchdogApiError extends Error {
   constructor(message, status, data = null) {

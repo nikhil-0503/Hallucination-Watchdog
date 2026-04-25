@@ -11,6 +11,7 @@ import {
   BarChart3
 } from 'lucide-react';
 import AdminLayout from '../components/AdminLayout';
+import { getImpactMetrics } from '../services/api';
 
 const ImpactDashboard = () => {
   const [metrics, setMetrics] = useState({
@@ -26,11 +27,8 @@ const ImpactDashboard = () => {
   useEffect(() => {
     const fetchMetrics = async () => {
       try {
-        const response = await fetch('/api/impact-metrics');
-        if (response.ok) {
-          const data = await response.json();
-          setMetrics(data);
-        }
+        const data = await getImpactMetrics();
+        setMetrics(data);
       } catch (e) {
         console.log('Using default impact metrics');
       } finally {

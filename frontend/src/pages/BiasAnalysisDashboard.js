@@ -14,6 +14,7 @@ import {
   Loader2
 } from 'lucide-react';
 import AdminLayout from '../components/AdminLayout';
+import { analyzeBias, auditDataset } from '../services/api';
 
 const BiasAnalysisDashboard = () => {
   const [activeTab, setActiveTab] = useState('single');
@@ -21,39 +22,27 @@ const BiasAnalysisDashboard = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const analyzeSingleDecision = async (decisionData) => {
+  const handleAnalyzeSingle = async (decisionData) => {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch('/api/analyze-bias', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ decision: decisionData, outcome_field: 'decision' })
-      });
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      const data = await response.json();
+      const data = await analyzeBias(decisionData, null, 'decision');
       setBiasAnalysis(data);
     } catch (err) {
-      setError(err.message);
+      setError(err.message || 'Bias analysis failed');
     } finally {
       setLoading(false);
     }
   };
 
-  const auditDataset = async (decisions) => {
+  const handleAuditDataset = async (decisions) => {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch('/api/audit-dataset', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ decisions: decisions, outcome_field: 'decision' })
-      });
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      const data = await response.json();
+      const data = await auditDataset(decisions, 'decision');
       setBiasAnalysis(data);
     } catch (err) {
-      setError(err.message);
+      setError(err.message || 'Dataset audit failed');
     } finally {
       setLoading(false);
     }
@@ -85,12 +74,12 @@ const BiasAnalysisDashboard = () => {
 
         {activeTab === 'single' && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-            <SingleDecisionForm onSubmit={analyzeSingleDecision} />
+            <SingleDecisionForm onSubmit={handleAnalyzeSingle} />
           </motion.div>
         )}
         {activeTab === 'dataset' && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-            <DatasetAuditForm onSubmit={auditDataset} />
+            <DatasetAuditForm onSubmit={handleAuditDataset} />
           </motion.div>
         )}
 
