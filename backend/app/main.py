@@ -60,6 +60,31 @@ request_counts = {}
 RATE_LIMIT = int(os.getenv("RATE_LIMIT", "100"))  # requests per minute
 RATE_WINDOW = 60  # seconds
 
+
+def _parse_cors_origins(raw: str | None) -> list[str]:
+    if raw is None:
+        return []
+
+    raw = raw.strip()
+    if not raw or raw == "*":
+        return []
+
+    origins: list[str] = []
+    for origin in raw.split(","):
+        cleaned = origin.strip().rstrip("/")
+        if cleaned:
+            origins.append(cleaned)
+    return origins
+
+
+def _resolve_cors_allowlist() -> list[str]:
+    configured = _parse_cors_origins(os.getenv("CORS_ORIGINS"))
+    if configured:
+        return configured
+
+    # Safe defaults for local development and Railway-hosted frontend deployments.
+    return ["http://localhost:3000", "http://127.0.0.1:3000"]
+
 @app.middleware("http")
 async def rate_limit_middleware(request: Request, call_next):
     """
@@ -105,8 +130,9 @@ async def rate_limit_middleware(request: Request, call_next):
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=os.getenv("CORS_ORIGINS", "*").split(","),
-    allow_credentials=True,
+    allow_origins=_resolve_cors_allowlist(),
+    allow_origin_regex=r"https://.*\.railway\.app",
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
