@@ -3,10 +3,12 @@ import { motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import ParticleBackground from '../components/ParticleBackground';
+import '../styles/login-premium.css';
 
 const LoginPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [selectedRole, setSelectedRole] = useState('user');
   const [error, setError] = useState('');
   const { login, isLoading } = useAuth();
@@ -28,96 +30,117 @@ const LoginPage = () => {
     }
   };
 
+  const demoUsers = [
+    { email: 'user@watchdog.ai', password: 'demo123', role: 'user' },
+    { email: 'admin@watchdog.ai', password: 'admin123', role: 'admin' }
+  ];
+
+  const handleDemoLogin = (email, password, role) => {
+    setEmail(email);
+    setPassword(password);
+    setSelectedRole(role);
+  };
+
   return (
-    <div style={{ position: 'relative', minHeight: '100vh', background: 'var(--color-bg-primary)' }}>
-      <ParticleBackground particleCount={80} />
+    <div className="login-page-premium">
+      <div className="login-background-premium">
+        <div className="gradient-blob blob-1"></div>
+        <div className="gradient-blob blob-2"></div>
+        <div className="gradient-blob blob-3"></div>
+      </div>
       
-      <div style={{ position: 'relative', zIndex: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', padding: 'var(--space-6)', width: '100%' }}>
+      <ParticleBackground particleCount={60} />
+      
+      <div className="login-container-premium">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="auth-card"
-          style={{ width: '100%', maxWidth: '480px' }}
+          className="login-card-premium"
         >
-        <div className="auth-header">
-          <motion.div
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ delay: 0.2, type: "spring" }}
-            className="auth-icon"
-          >
-            <i className="fas fa-shield-alt"></i>
-          </motion.div>
-          <h1 className="auth-title">WATCHDOG</h1>
-          <p className="auth-subtitle">Enterprise AI Safety Platform</p>
-        </div>
-
-        <div className="role-selector">
-          <motion.div
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={() => setSelectedRole('user')}
-            className={`role-btn ${selectedRole === 'user' ? 'active' : ''}`}
-          >
-            <i className="fas fa-user"></i>
-            <span>User</span>
-          </motion.div>
-          <motion.div
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={() => setSelectedRole('admin')}
-            className={`role-btn ${selectedRole === 'admin' ? 'active' : ''}`}
-          >
-            <i className="fas fa-shield-alt"></i>
-            <span>Admin</span>
-          </motion.div>
-        </div>
-
-        {error && (
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            style={{
-              padding: 'var(--space-3) var(--space-4)',
-              background: 'rgba(239, 68, 68, 0.1)',
-              border: '1px solid rgba(239, 68, 68, 0.3)',
-              borderRadius: 'var(--radius-md)',
-              color: '#ef4444',
-              fontSize: '0.875rem',
-              marginBottom: 'var(--space-4)'
-            }}
-          >
-            {error}
-          </motion.div>
-        )}
-
-        <form onSubmit={handleSubmit}>
-          <div className="form-group">
-            <label className="form-label">Email Address</label>
-            <motion.input
-              whileFocus={{ scale: 1.01 }}
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="Enter your email"
-              className="form-control"
-              required
-            />
+          <div className="login-header">
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ delay: 0.2, type: "spring" }}
+              className="login-icon-large"
+            >
+              <i className="fas fa-shield-alt"></i>
+            </motion.div>
+            <h1 className="login-title">WATCHDOG</h1>
+            <p className="login-subtitle">Enterprise AI Safety Platform</p>
           </div>
 
-          <div className="form-group">
-            <label className="form-label">Password</label>
-            <motion.input
-              whileFocus={{ scale: 1.01 }}
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Enter your password"
-              className="form-control"
-              required
-            />
+          <div className="role-selector-login">
+            <motion.button
+              type="button"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => setSelectedRole('user')}
+              className={`role-btn-login ${selectedRole === 'user' ? 'active' : ''}`}
+            >
+              <i className="fas fa-user"></i>
+              <span>User</span>
+            </motion.button>
+            <motion.button
+              type="button"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => setSelectedRole('admin')}
+              className={`role-btn-login ${selectedRole === 'admin' ? 'active' : ''}`}
+            >
+              <i className="fas fa-lock"></i>
+              <span>Admin</span>
+            </motion.button>
           </div>
+
+          {error && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="error-banner"
+            >
+              <i className="fas fa-exclamation-circle"></i>
+              <span>{error}</span>
+            </motion.div>
+          )}
+
+          <form onSubmit={handleSubmit} className="login-form">
+            <div className="form-group">
+              <label className="form-label">Email Address</label>
+              <motion.input
+                whileFocus={{ scale: 1.01 }}
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Enter your email"
+                className="form-control"
+                required
+              />
+            </motion.input>
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">Password</label>
+              <div className="password-input-wrapper">
+                <motion.input
+                  whileFocus={{ scale: 1.01 }}
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Enter your password"
+                  className="form-control"
+                  required
+                />
+                <button
+                  type="button"
+                  className="password-toggle"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  <i className={`fas fa-eye${showPassword ? '-slash' : ''}`}></i>
+                </button>
+              </div>
+            </div>
 
           <motion.button
             whileHover={{ scale: 1.02 }}
@@ -136,32 +159,40 @@ const LoginPage = () => {
                 <i className="fas fa-sign-in-alt"></i>
                 <span>Sign In</span>
               </>
-            )}
-          </motion.button>
-        </form>
+            </motion.button>
+          </form>
 
-        <div className="text-center" style={{ marginTop: 'var(--space-6)' }}>
-          <a href="/signup" style={{ color: 'var(--color-text-tertiary)', textDecoration: 'none' }}>
-            Don't have an account? <strong style={{ color: 'var(--color-brand-blue-light)' }}>Sign up</strong>
-          </a>
-        </div>
+          <div className="login-divider">
+            <span>Demo Credentials</span>
+          </div>
 
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.6 }}
-          style={{
-            marginTop: 'var(--space-6)',
-            padding: 'var(--space-4)',
-            background: 'rgba(59, 130, 246, 0.08)',
-            borderRadius: 'var(--radius-lg)',
-            border: '1px solid rgba(59, 130, 246, 0.2)'
-          }}
-        >
-          <p style={{ fontSize: '0.875rem', color: 'var(--color-text-tertiary)', marginBottom: 0, textAlign: 'center' }}>
-            Demo credentials are available in the project documentation.
-          </p>
-        </motion.div>
+          <div className="demo-buttons">
+            {demoUsers.map((user) => (
+              <motion.button
+                key={user.email}
+                type="button"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => {
+                  handleDemoLogin(user.email, user.password, user.role);
+                  setTimeout(() => {
+                    handleSubmit({ preventDefault: () => {} });
+                  }, 100);
+                }}
+                className="demo-btn"
+              >
+                <i className={`fas fa-${user.role === 'admin' ? 'user-tie' : 'user'}`}></i>
+                <div>
+                  <div className="demo-btn-title">{user.role.charAt(0).toUpperCase() + user.role.slice(1)}</div>
+                  <div className="demo-btn-email">{user.email}</div>
+                </div>
+              </motion.button>
+            ))}
+          </div>
+
+          <div className="login-footer">
+            <p>Don't have an account? <a href="/signup">Sign up</a></p>
+          </div>
         </motion.div>
       </div>
     </div>

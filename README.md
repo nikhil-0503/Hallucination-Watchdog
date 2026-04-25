@@ -173,13 +173,13 @@ WATCHDOG is a **real-time AI safety gateway** that intercepts decisions *before*
 **Admin Dashboard:**
 ```
 Email: admin@watchdog.ai
-Password: Admin123!
+Password: Admin123
 ```
 
 **User Portal:**
 ```
 Email: user@watchdog.ai
-Password: User123!
+Password: User123
 ```
 
 ### 1. Clone & Setup

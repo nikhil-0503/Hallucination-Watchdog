@@ -1,7 +1,6 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import 'bootstrap/dist/css/bootstrap.min.css';
 
 // Import all page components
 import LoginPage from './pages/LoginPage';
@@ -15,8 +14,17 @@ import WhatIfScenarios from './pages/WhatIfScenarios';
 import ImpactDashboard from './pages/ImpactDashboard';
 import ExplainabilityDashboard from './pages/ExplainabilityDashboard';
 import CommunityHub from './pages/CommunityHub';
+
+// Context providers
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { DataProvider } from './context/DataContext';
+
+// Premium Design System & Styles
+import './styles/design-system.css';
+import './styles/login-premium.css';
+import './styles/admin-premium.css';
+import './styles/chat-premium.css';
+import './styles/App.css';
 import './styles/index.css';
 import './styles/darkMode.css';
 

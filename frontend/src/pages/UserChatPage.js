@@ -1,26 +1,34 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
 import ParticleBackground from '../components/ParticleBackground';
+import '../styles/chat-premium.css';
 
 const UserChatPage = () => {
   const [prompt, setPrompt] = useState('');
   const [messages, setMessages] = useState([]);
+  const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef(null);
+  const chatContainerRef = useRef(null);
 
   const { user, logout } = useAuth();
   const { submitUserPrompt, isLoading } = useData();
   const navigate = useNavigate();
 
-  const scrollToBottom = () => {
+  const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
+  }, []);
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages]);
+  }, [messages, scrollToBottom]);
+
+  const handleClearChat = () => {
+    setMessages([]);
+    setPrompt('');
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -36,6 +44,7 @@ const UserChatPage = () => {
     setMessages(prev => [...prev, userMessage]);
     const currentPrompt = prompt;
     setPrompt('');
+    setIsTyping(true);
 
     try {
       const response = await submitUserPrompt(currentPrompt);
@@ -52,7 +61,7 @@ const UserChatPage = () => {
       };
 
       setMessages(prev => [...prev, assistantMessage]);
-    } catch {
+    } catch (error) {
       setMessages(prev => [
         ...prev,
         {
@@ -63,182 +72,222 @@ const UserChatPage = () => {
           isError: true
         }
       ]);
+    } finally {
+      setIsTyping(false);
     }
   };
 
   const handleLogout = () => {
     logout();
-    navigate('/');
+    navigate('/login');
   };
 
   return (
-    <div style={{ position: 'relative', minHeight: '100vh', background: 'var(--color-bg-primary)' }}>
-      <ParticleBackground particleCount={60} />
+    <div className="chat-page-premium">
+      <ParticleBackground particleCount={40} />
 
-      <div style={{ position: 'relative', zIndex: 10 }}>
-        {/* Top Navbar */}
-        <motion.div
-          initial={{ y: -20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          className="navbar"
-          style={{
-            width: '100%',
-            padding: 'var(--space-4) var(--space-6)',
-            margin: 0,
-            borderRadius: 0,
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center'
-          }}
-        >
-          {/* Left: Logo + title */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-4)' }}>
-            <div className="sidebar-brand-icon">
-              <i className="fas fa-shield-alt"></i>
+      {/* Chat Header */}
+      <motion.div
+        initial={{ y: -20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        className="chat-header-premium"
+      >
+        <div className="chat-header-left">
+          <div className="chat-logo-minimal">
+            <i className="fas fa-shield-alt" style={{ fontSize: '1.25rem' }}></i>
+            <span>WATCHDOG</span>
+          </div>
+          <div className="chat-status">
+            <div className="status-dot"></div>
+            <span>Live • AI Safety Gateway</span>
+          </div>
+        </div>
+
+        <div className="chat-header-right">
+          <div className="chat-user-info">
+            <div className="chat-user-avatar">
+              {user?.email?.[0]?.toUpperCase() || 'U'}
             </div>
             <div>
-              <h1 className="navbar-title">WATCHDOG</h1>
+              <div className="chat-user-name">{user?.email}</div>
             </div>
           </div>
 
-          {/* Right: User info + visible logout button */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-4)' }}>
-            <div className="user-info">
-              <div className="user-avatar">
-                {user?.email?.[0]?.toUpperCase() || 'U'}
-              </div>
-              <div>
-                <div className="user-name">{user?.email}</div>
-                <div className="user-role">User</div>
-              </div>
-            </div>
+          <motion.button
+            whileHover={{ scale: 1.08 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={handleClearChat}
+            title="Clear Chat"
+            className="btn-chat-action"
+            style={{ background: 'rgba(99, 102, 241, 0.1)' }}
+          >
+            <i className="fas fa-trash-alt"></i>
+          </motion.button>
 
-            <motion.button
-  whileHover={{ scale: 1.08 }}
-  whileTap={{ scale: 0.92 }}
-  onClick={handleLogout}
-  title="Logout"
-  style={{
-    width: '42px',
-    height: '42px',
-    borderRadius: '10px',
-    background: 'transparent',
-    border: '1px solid #ef4444',
-    color: '#ef4444',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    cursor: 'pointer'
-  }}
-  onMouseEnter={(e) => {
-    e.currentTarget.style.background = 'rgba(239,68,68,0.15)';
-  }}
-  onMouseLeave={(e) => {
-    e.currentTarget.style.background = 'transparent';
-  }}
->
-  <i className="fas fa-sign-out-alt"></i>
-</motion.button>
+          <motion.button
+            whileHover={{ scale: 1.08 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={handleLogout}
+            title="Logout"
+            className="btn-chat-logout"
+          >
+            <i className="fas fa-sign-out-alt"></i>
+          </motion.button>
+        </div>
+      </motion.div>
 
-          </div>
-        </motion.div>
-
-        {/* Chat Container */}
-        <div
-          className="chat-container"
-          style={{
-            padding: 'var(--space-6)',
-            paddingTop: 'var(--space-6)'
-          }}
+      {/* Chat Messages Container */}
+      <div className="chat-messages-container" ref={chatContainerRef}>
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.2 }}
+          className="chat-messages-premium"
         >
-          {/* Messages */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.2 }}
-            className="chat-messages"
-          >
-            {messages.length === 0 ? (
-              <div className="empty-state">
-                <div className="empty-state-icon">
-                  <i className="fas fa-comments"></i>
+          {messages.length === 0 ? (
+            <div className="chat-empty-state">
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ delay: 0.1, type: 'spring' }}
+                className="empty-state-icon-large"
+              >
+                <i className="fas fa-comments"></i>
+              </motion.div>
+              <h2>Start a Conversation</h2>
+              <p>Ask me anything – WATCHDOG will analyze the response for safety, bias, and accuracy</p>
+              <div className="empty-state-hints">
+                <div className="hint-card">
+                  <i className="fas fa-check-circle"></i>
+                  <span>Safe & Verified Responses</span>
                 </div>
-                <div className="empty-state-title">Start a Conversation</div>
-                <div className="empty-state-description">
-                  Ask anything - WATCHDOG will analyze and ensure safe responses
+                <div className="hint-card">
+                  <i className="fas fa-shield-alt"></i>
+                  <span>Real-Time Risk Analysis</span>
+                </div>
+                <div className="hint-card">
+                  <i className="fas fa-chart-line"></i>
+                  <span>Confidence Scoring</span>
                 </div>
               </div>
-            ) : (
-              <AnimatePresence>
-                {messages.map((msg) => (
-                  <motion.div
-                    key={msg.id}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0 }}
-                    className={`message ${msg.role}`}
-                  >
-                    <div className="message-avatar">
-                      {msg.role === 'user'
-                        ? <i className="fas fa-user"></i>
-                        : <i className="fas fa-robot"></i>}
+            </div>
+          ) : (
+            <AnimatePresence>
+              {messages.map((msg, index) => (
+                <motion.div
+                  key={msg.id}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ delay: 0.05 * index }}
+                  className={`message-bubble ${msg.role}`}
+                >
+                  <div className="message-bubble-header">
+                    <div className="message-bubble-avatar">
+                      {msg.role === 'user' ? (
+                        <i className="fas fa-user"></i>
+                      ) : (
+                        <i className="fas fa-robot"></i>
+                      )}
                     </div>
+                    <div className="message-bubble-meta">
+                      <span className="message-bubble-sender">
+                        {msg.role === 'user' ? 'You' : 'WATCHDOG AI'}
+                      </span>
+                      <span className="message-bubble-time">
+                        {msg.timestamp.toLocaleTimeString([], {
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </span>
+                    </div>
+                  </div>
 
-                    <div className="message-content">
-                      <div className="message-header">
-                        <span className="message-sender">
-                          {msg.role === 'user' ? 'You' : 'WATCHDOG AI'}
-                        </span>
-                        <span className="message-time">
-                          {msg.timestamp.toLocaleTimeString()}
-                        </span>
-                      </div>
+                  <div className="message-bubble-content">
+                    {msg.content}
+                  </div>
 
-                      <div className="message-text">
-                        {msg.content}
-                        {msg.warning_text && (
-                          <div style={{ marginTop: '8px', color: '#f59e0b', fontWeight: 600 }}>
-                            {msg.warning_text}
-                          </div>
-                        )}
-                        <div style={{ marginTop: 'var(--space-3)' }}>
-                          {msg.action && (
-                            <span
-                              className={`badge badge-${
-                                msg.action === 'ALLOW'
-                                  ? 'success'
-                                  : msg.action === 'WARN'
-                                  ? 'warning'
-                                  : 'error'
-                              }`}
-                            >
-                              {msg.action}
-                            </span>
-                          )}
-
-                          {typeof msg.confidence === 'number' && (
-                            <span style={{ marginLeft: '12px', color: '#9ca3af' }}>
-                              Confidence: {msg.confidence}%
-                            </span>
-                          )}
+                  {msg.role === 'assistant' && (
+                    <div className="message-bubble-footer">
+                      {msg.action && (
+                        <div className={`status-badge status-${msg.action.toLowerCase()}`}>
+                          <i className={`fas fa-${
+                            msg.action === 'ALLOW' ? 'check-circle' :
+                            msg.action === 'WARN' ? 'exclamation-triangle' :
+                            'ban'
+                          }`}></i>
+                          <span>{msg.action}</span>
                         </div>
-                      </div>
-                    </div>
-                  </motion.div>
-                ))}
-              </AnimatePresence>
-            )}
-            <div ref={messagesEndRef} />
-          </motion.div>
+                      )}
 
-          {/* Input */}
-          <motion.form
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-            onSubmit={handleSubmit}
-            className="chat-input-container"
-          >
+                      {msg.confidence !== undefined && (
+                        <div className="confidence-indicator">
+                          <span className="confidence-label">Confidence:</span>
+                          <div className="confidence-bar">
+                            <motion.div
+                              className={`confidence-fill confidence-${
+                                msg.confidence >= 80 ? 'high' :
+                                msg.confidence >= 50 ? 'medium' :
+                                'low'
+                              }`}
+                              initial={{ width: 0 }}
+                              animate={{ width: `${msg.confidence}%` }}
+                              transition={{ duration: 0.6 }}
+                            ></motion.div>
+                          </div>
+                          <span className="confidence-value">{msg.confidence}%</span>
+                        </div>
+                      )}
+
+                      {msg.warning_text && (
+                        <div className="warning-box">
+                          <i className="fas fa-exclamation-circle"></i>
+                          <span>{msg.warning_text}</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </motion.div>
+              ))}
+            </AnimatePresence>
+          )}
+
+          {isTyping && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              className="message-bubble assistant"
+            >
+              <div className="message-bubble-header">
+                <div className="message-bubble-avatar">
+                  <i className="fas fa-robot"></i>
+                </div>
+                <div className="message-bubble-meta">
+                  <span className="message-bubble-sender">WATCHDOG AI</span>
+                </div>
+              </div>
+              <div className="message-bubble-content typing-indicator">
+                <span></span>
+                <span></span>
+                <span></span>
+              </div>
+            </motion.div>
+          )}
+
+          <div ref={messagesEndRef} />
+        </motion.div>
+      </div>
+
+      {/* Chat Input Area */}
+      <motion.div
+        initial={{ y: 20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ delay: 0.3 }}
+        className="chat-input-area-premium"
+      >
+        <form onSubmit={handleSubmit} className="chat-form-premium">
+          <div className="chat-input-wrapper">
             <textarea
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
@@ -249,27 +298,32 @@ const UserChatPage = () => {
                 }
               }}
               placeholder="Type your message... (Shift+Enter for new line)"
-              className="chat-input"
-              rows={1}
+              className="chat-textarea-premium"
               disabled={isLoading}
+              rows="2"
             />
 
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               type="submit"
-              className="chat-send-btn"
+              className="btn-send-premium"
               disabled={isLoading || !prompt.trim()}
             >
               {isLoading ? (
-                <div className="spinner" style={{ width: '24px', height: '24px' }}></div>
+                <div className="send-spinner">
+                  <div></div>
+                </div>
               ) : (
                 <i className="fas fa-paper-plane"></i>
               )}
             </motion.button>
-          </motion.form>
-        </div>
-      </div>
+          </div>
+          <div className="chat-input-hint">
+            <span>💡 Tip: WATCHDOG analyzes every response for safety and accuracy</span>
+          </div>
+        </form>
+      </motion.div>
     </div>
   );
 };
