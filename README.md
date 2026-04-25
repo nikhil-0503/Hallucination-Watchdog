@@ -168,6 +168,20 @@ WATCHDOG is a **real-time AI safety gateway** that intercepts decisions *before*
 - Node.js 18+ and npm
 - (Optional) Docker for containerized deployment
 
+### Demo Credentials
+
+**Admin Dashboard:**
+```
+Email: admin@watchdog.ai
+Password: Admin123!
+```
+
+**User Portal:**
+```
+Email: user@watchdog.ai
+Password: User123!
+```
+
 ### 1. Clone & Setup
 
 ```bash

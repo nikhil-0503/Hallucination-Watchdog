@@ -153,22 +153,14 @@ const LoginPage = () => {
           style={{
             marginTop: 'var(--space-6)',
             padding: 'var(--space-4)',
-            background: 'rgba(15, 23, 42, 0.5)',
+            background: 'rgba(59, 130, 246, 0.08)',
             borderRadius: 'var(--radius-lg)',
-            border: '1px solid var(--color-border)'
+            border: '1px solid rgba(59, 130, 246, 0.2)'
           }}
         >
-          <p style={{ fontSize: '0.875rem', color: 'var(--color-text-tertiary)', marginBottom: 'var(--space-2)', textAlign: 'center' }}>
-            <strong>Demo Credentials</strong>
+          <p style={{ fontSize: '0.875rem', color: 'var(--color-text-tertiary)', marginBottom: 0, textAlign: 'center' }}>
+            Demo credentials are available in the project documentation.
           </p>
-          <div style={{ fontSize: '0.875rem', color: 'var(--color-text-secondary)' }}>
-            <div style={{ marginBottom: 'var(--space-2)' }}>
-              <strong style={{ color: 'var(--color-brand-blue-light)' }}>Admin:</strong> admin@watchdog.ai / admin123
-            </div>
-            <div>
-              <strong style={{ color: 'var(--color-brand-blue-light)' }}>User:</strong> user@test.com / user123
-            </div>
-          </div>
         </motion.div>
         </motion.div>
       </div>
