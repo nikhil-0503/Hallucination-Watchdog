@@ -1,78 +1,77 @@
-# WATCHDOG - AI Safety & Bias Prevention Platform
+# WATCHDOG - Real-Time AI Risk Analysis & Enforcement
 
-## 🎯 Project Overview
+## 🎯 What This Project Does
 
-**WATCHDOG** is a production-grade AI safety platform that detects bias and hallucinations in real-time, preventing discriminatory outcomes before they reach users. Unlike post-hoc analysis tools, WATCHDOG intercepts and enforces safety rules on AI decisions in real-time.
+**WATCHDOG** intercepts AI model outputs, analyzes them for hallucinations and bias, scores the risk level, and enforces policies (ALLOW/WARN/BLOCK) before sending responses to users.
+
+**Core Flow:**
+1. User submits prompt
+2. Forward to LLM → get response
+3. Risk Engine analyzes for hallucinations (RAG, contradictions, confidence)
+4. Bias Engine checks for discrimination (demographics, fairness metrics)
+5. Policy Engine decides: ALLOW/WARN/BLOCK
+6. Return appropriate response to user
+7. Log all decisions for admin visibility
 
 ---
 
 ## 🏆 Hackathon Connection
 
-### Google Solution Challenge 2024
+Submitted for **Google Solution Challenge 2024**  
+Uses: **Google Generative AI (Gemini)** for intelligent bias analysis and explanations
 
-WATCHDOG is submitted for the **Google Solution Challenge**, directly addressing:
-
-- **SDG 5: Gender Equality** — Detects and prevents gender-based AI discrimination
-- **SDG 10: Reduced Inequalities** — Prevents racial, age, and economic bias in automated decisions
-- **SDG 16: Peace, Justice & Strong Institutions** — Promotes fair AI governance and transparency
-
-**Challenge Requirements Met:**
-✅ Cloud deployment on Google Cloud Run  
-✅ Google Generative AI (Gemini) integration  
-✅ Production-grade application with real impact  
-✅ Addresses critical global inequality issues  
+Addresses:
+- **SDG 5** (Gender Equality) — Detects gender bias in AI decisions
+- **SDG 10** (Reduced Inequalities) — Detects racial, age, economic bias
+- **SDG 16** (Justice & Institutions) — Enables transparent AI governance  
 
 ---
 
-## 💡 The Problem We Solve
+## 💡 Problems This Project Prevents
 
-Every day, AI systems make millions of critical decisions with discriminatory outcomes:
+**Hallucinations in LLM responses:**
+- Factual errors presented as truth
+- Medical/financial advice that's wrong
+- Contradictions in generated content
 
-| Domain | Problem | Impact |
-|--------|---------|--------|
-| **Banking** | Women denied loans 18% more than men | $24.4M in wrongful denials |
-| **Hiring** | Candidates 45+ receive 45% fewer callbacks | 5,500+ lost opportunities |
-| **Healthcare** | Minority patients 25% less likely for ICU beds | Lives at risk |
-| **LLMs** | Hallucinated medical/financial advice | Personal & financial harm |
+**Bias in decision-making systems:**
+- Gender discrimination in lending/hiring
+- Age bias in job screening  
+- Racial bias in healthcare/judicial systems
 
-**The Gap:** Existing tools analyze bias *after* damage is done. WATCHDOG prevents it in real-time.
+**Solution:**
+WATCHDOG detects these in real-time and blocks or warns before user sees harmful output
 
 ---
 
-## 🚀 Our Solution: WATCHDOG
+## 🚀 How It Works
 
-### Core Concept
+### Three Analysis Engines
 
-**Real-time AI safety gateway** that intercepts every decision, analyzes it for bias and hallucinations, scores risk (0-100), and enforces policies (ALLOW/WARN/BLOCK) — all before reaching users.
+**1. Risk Engine**
+- Analyzes LLM responses for hallucinations
+- Checks RAG (Retrieval-Augmented Generation) verification
+- Detects internal contradictions
+- Calculates confidence/trust score
 
-### Five-Layer Safety Stack
+**2. Bias Engine**  
+- Extracts demographic data (age, gender, race, etc.)
+- Calculates fairness metrics (demographic parity, equal opportunity)
+- Uses Google Gemini to generate explanations
+- Scores bias level (0-100)
 
-```
-┌─────────────────────────────────────────┐
-│   1. HALLUCINATION DETECTION            │
-│      → Catch false facts in LLMs        │
-├─────────────────────────────────────────┤
-│   2. BIAS DETECTION                     │
-│      → Spot discrimination patterns     │
-├─────────────────────────────────────────┤
-│   3. RISK SCORING (0-100)               │
-│      → Quantify threat level            │
-├─────────────────────────────────────────┤
-│   4. POLICY ENFORCEMENT                 │
-│      → ALLOW / WARN / BLOCK             │
-├─────────────────────────────────────────┤
-│   5. AUDIT LOGGING                      │
-│      → Full transparency & trace        │
-└─────────────────────────────────────────┘
-```
+**3. Policy Engine**
+- Makes enforcement decision based on risk + bias scores
+- Three outcomes:
+  - **ALLOW** — Safe, send full response to user
+  - **WARN** — Potentially risky, send with warning
+  - **BLOCK** — Dangerous, don't send to user
 
-### How It Works
-
-1. **Intercept** — AI decision passes through WATCHDOG
-2. **Analyze** — Check for bias (6+ protected attributes) + hallucinations
-3. **Score** — Composite risk score with explainable factors
-4. **Enforce** — Policy engine decides: safe → allow, risky → warn, dangerous → block
-5. **Log** — Immutable audit trail for compliance and debugging
+### Admin Visibility
+- Dashboard shows all decisions
+- Filter by ALLOW/WARN/BLOCK status
+- View risk scores, confidence levels
+- Historical trends and patterns
 
 ---
 
@@ -97,85 +96,68 @@ Every day, AI systems make millions of critical decisions with discriminatory ou
 
 ## ✨ What Makes WATCHDOG Different
 
-### Comparison Matrix
+### Real-Time vs Post-Hoc
+- **Traditional tools:** Analyze decisions after they've been made
+- **WATCHDOG:** Intercepts and blocks before users see harmful output
 
-| Feature | Existing Solutions | WATCHDOG |
-|---------|---|---|
-| **Detection Model** | Post-hoc (after damage) | **Real-time prevention** |
-| **Technology** | Rule-based filters | **AI-powered (Gemini + metrics)** |
-| **Fairness Metrics** | Single metric | **5+ metrics combined** |
-| **Tools** | Separate bias/safety | **Unified gateway** |
-| **Explainability** | Black-box scoring | **Gemini-generated insights** |
-| **Compatibility** | Needs model retraining | **Model-agnostic wrapper** |
-| **Action** | Detection only | **Active enforcement** |
-| **Speed** | N/A | **<2 seconds per decision** |
+### Multiple Analysis Types
+- **Hallucination detection** (most tools focus on bias only)
+- **Bias detection** (demographic + fairness metrics)
+- **Combined scoring** (not just single metric)
 
-### Five Unique Selling Points
+### Enforcement Action
+- **Traditional:** Reports showing bias
+- **WATCHDOG:** Active enforcement (ALLOW/WARN/BLOCK)
 
-1. **Enforcement-First Design**  
-   Doesn't just *detect* bias; actively *prevents* it by blocking/warning on dangerous outputs
-
-2. **Model-Agnostic Wrapper**  
-   Works with OpenAI, Gemini, Claude, or custom models without retraining
-
-3. **Gemini-Powered Explainability**  
-   Generates human-readable explanations of *why* decisions are flagged
-
-4. **Dual-Threat Detection**  
-   Only system catching both discrimination AND hallucinations in one pipeline
-
-5. **Production-Ready Infrastructure**  
-   Dockerized, auto-scaling on Google Cloud Run, 99.99% uptime, structured logging
+### Single Unified System
+- Not separate tools for bias/hallucination
+- One gateway analyzing all AI outputs
+- One dashboard showing all decisions
 
 ---
 
-## ⚡ Key Features
+## ⚡ Features
 
-### Safety Analysis
-- ✅ **Hallucination Detection** — RAG verification, contradiction detection, overconfidence flagging
-- ✅ **Bias Detection** — Age, gender, race, ethnicity, disability, religion
-- ✅ **Fairness Metrics** — Demographic parity, equal opportunity, 4/5ths rule, calibration
-- ✅ **Risk Scoring** — 0-100 composite score with weighted factor breakdown
-- ✅ **Policy Enforcement** — Configurable ALLOW/WARN/BLOCK thresholds
-- ✅ **Audit Logging** — Immutable decision trail with full metadata
+### Risk Analysis
+- ✅ **Hallucination Detection** — RAG verification, contradiction detection
+- ✅ **Confidence Scoring** — Trust score for LLM responses (0-1)
+- ✅ **Demographic Analysis** — Age, gender, race, ethnicity extraction
+- ✅ **Fairness Metrics** — Demographic parity, equal opportunity calculations
+- ✅ **Risk Scoring** — Combined score (0-100) based on hallucination + bias
 
-### AI & Analytics
-- ✅ **Gemini Integration** — Intelligent analysis and explanations
-- ✅ **Single Decision Analysis** — Real-time bias check on individual decisions
-- ✅ **Dataset Auditing** — Upload CSVs for comprehensive fairness reports
-- ✅ **Explainable AI** — Human-readable explanations of why bias was detected
-- ✅ **What-If Simulator** — Project fairness improvements from interventions
+### Enforcement
+- ✅ **Policy Engine** — ALLOW/WARN/BLOCK decisions
+- ✅ **Dynamic Responses** — Users get blocked message or warning as needed
+- ✅ **Audit Trail** — All decisions logged with metadata
 
-### Technical
-- ✅ **Model Agnostic** — Works with any LLM or decision API
-- ✅ **FastAPI Backend** — Async Python, OpenAPI/Swagger docs
-- ✅ **React Frontend** — Modern dashboard with interactive visualizations
-- ✅ **Docker Deploy** — Single-command deployment
-- ✅ **Google Cloud Run** — Auto-scaling, serverless, managed by Google
-- ✅ **Graceful Degradation** — Works without Gemini (reduced features)
+### Frontend  
+- ✅ **User Chat** — Submit prompts, see responses with enforcement
+- ✅ **Admin Dashboard** — View all decisions, filter by action type
+- ✅ **Activity Logs** — Search and filter decision history
+- ✅ **Real-time Updates** — See decisions as they come in
 
-### Dashboards
-- ✅ **Admin Dashboard** — Historical analysis with trend tracking
-- ✅ **Bias Analysis Dashboard** — Interactive fairness metrics
-- ✅ **Activity Logs** — Searchable decision history
-- ✅ **Real-Time Chat** — User interface with safety enforcement
-- ✅ **Export Reports** — Downloadable audit results
+### Backend
+- ✅ **FastAPI** — Modern async API
+- ✅ **Google Gemini Integration** — AI-powered bias analysis
+- ✅ **Rate Limiting** — 100 requests/minute per IP
+- ✅ **CORS Security** — Configurable cross-origin policies
+- ✅ **Docker Ready** — Containerized deployment
 
 ---
 
-## 🏗️ Technical Architecture
+## 🏗️ Architecture
 
 ```
 ┌─────────────────────────────────────────────┐
-│          Frontend (React 19)                 │
-│  User Chat | Admin Dash | Bias Analysis    │
+│          Frontend (React)                    │
+│  User Chat | Admin Dashboard                │
 └────────────────┬────────────────────────────┘
                  │
          ┌───────▼────────┐
          │  FastAPI (Port 8000)
-         │  - /api/chat
-         │  - /api/analyze-bias
-         │  - /api/audit-dataset
+         │  /api/chat
+         │  /api/analyze-bias
+         │  /api/health
          └───────┬────────┘
                  │
       ┌──────────┼──────────┐
@@ -198,6 +180,17 @@ Every day, AI systems make millions of critical decisions with discriminatory ou
          │  (JSON lines)  │
          └────────────────┘
 ```
+
+### Data Flow
+
+1. **User Input** → Chat prompt or bias analysis request
+2. **LLM Proxy** → Forward to language model
+3. **Risk Engine** → Analyze response for hallucinations
+4. **Bias Engine** → Check for discrimination patterns
+5. **Policy Engine** → Decide: ALLOW/WARN/BLOCK
+6. **Response** → Send appropriate output to user
+7. **Audit Log** → Record decision with full metadata
+8. **Admin View** → Dashboard shows all decisions
 
 ---
 
