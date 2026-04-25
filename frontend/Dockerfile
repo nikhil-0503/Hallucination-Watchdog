@@ -12,7 +12,6 @@ RUN npm install
 # Copy source code
 COPY public/ ./public/
 COPY src/ ./src/
-COPY tsconfig.json ./
 
 # Build the app
 ARG REACT_APP_API_URL=http://localhost:8000

@@ -13,7 +13,6 @@ RUN npm install
 # Copy frontend source code
 COPY frontend/public/ ./public/
 COPY frontend/src/ ./src/
-COPY frontend/tsconfig.json ./
 
 # Build the app with environment variables
 ARG REACT_APP_API_URL=http://localhost:8000
