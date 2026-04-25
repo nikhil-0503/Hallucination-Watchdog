@@ -11,6 +11,11 @@ function normalizeBackendUrl(rawUrl) {
   return trimmed.replace(/\/api$/i, '');
 }
 
+function normalizeHost(value) {
+  if (!value) return '';
+  return String(value).trim().toLowerCase().replace(/:\d+$/, '');
+}
+
 function resolveBackendConfig() {
   const candidates = {
     BACKEND_URL: process.env.BACKEND_URL || '',
@@ -57,6 +62,12 @@ function resolveBackendConfig() {
 function getBackendConfigDebug() {
   const { selectedRaw, source, backendBaseUrl } = resolveBackendConfig();
   const instance = process.env.RAILWAY_REPLICA_ID || process.env.HOSTNAME || `pid-${process.pid}`;
+  let backendHost = '';
+  try {
+    backendHost = backendBaseUrl ? new URL(backendBaseUrl).host : '';
+  } catch (_) {
+    backendHost = '';
+  }
 
   return {
     configured: !!backendBaseUrl,
@@ -64,7 +75,9 @@ function getBackendConfigDebug() {
     selected_source: source,
     selected_value_present: !!selectedRaw,
     selected_value_preview: selectedRaw ? `${selectedRaw.slice(0, 28)}...` : null,
-    normalized_preview: backendBaseUrl ? `${backendBaseUrl.slice(0, 28)}...` : null
+    normalized_preview: backendBaseUrl ? `${backendBaseUrl.slice(0, 28)}...` : null,
+    backend_host: backendHost,
+    backend_base_url: backendBaseUrl || null
   };
 }
 
@@ -91,6 +104,18 @@ function proxyApiRequest(req, res) {
   } catch (e) {
     res.writeHead(500, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ error: 'Invalid backend URL configuration', detail: String(e) }));
+    return;
+  }
+
+  // Guard against recursive proxy loops (e.g. BACKEND_URL accidentally set to frontend URL).
+  const incomingHost = normalizeHost(req.headers.host);
+  const targetHost = normalizeHost(target.host);
+  if (incomingHost && targetHost && incomingHost === targetHost) {
+    res.writeHead(500, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({
+      error: 'Proxy loop detected',
+      detail: 'BACKEND_URL points to the frontend host. Set it to the backend Railway URL.'
+    }));
     return;
   }
 
