@@ -14,6 +14,45 @@ function normalizeBackendUrl(rawUrl) {
 
 const backendBaseUrl = normalizeBackendUrl(rawBackendUrl);
 
+function getBackendConfigDebug() {
+  const candidates = {
+    BACKEND_URL: process.env.BACKEND_URL || '',
+    REACT_APP_API_URL: process.env.REACT_APP_API_URL || '',
+    API_URL: process.env.API_URL || '',
+    BACKEND_API_URL: process.env.BACKEND_API_URL || ''
+  };
+
+  const selectedRaw =
+    candidates.BACKEND_URL ||
+    candidates.REACT_APP_API_URL ||
+    candidates.API_URL ||
+    candidates.BACKEND_API_URL ||
+    '';
+
+  let resolved = '';
+  try {
+    resolved = normalizeBackendUrl(selectedRaw);
+  } catch (_) {
+    resolved = '';
+  }
+
+  return {
+    configured: !!resolved,
+    selected_source: candidates.BACKEND_URL
+      ? 'BACKEND_URL'
+      : candidates.REACT_APP_API_URL
+      ? 'REACT_APP_API_URL'
+      : candidates.API_URL
+      ? 'API_URL'
+      : candidates.BACKEND_API_URL
+      ? 'BACKEND_API_URL'
+      : null,
+    selected_value_present: !!selectedRaw,
+    selected_value_preview: selectedRaw ? `${selectedRaw.slice(0, 28)}...` : null,
+    normalized_preview: resolved ? `${resolved.slice(0, 28)}...` : null
+  };
+}
+
 function proxyApiRequest(req, res) {
   if (!backendBaseUrl) {
     res.writeHead(503, { 'Content-Type': 'application/json' });
@@ -63,6 +102,12 @@ function proxyApiRequest(req, res) {
 }
 
 http.createServer((req, res) => {
+  if (req.url === '/api/_proxy-debug') {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify(getBackendConfigDebug()));
+    return;
+  }
+
   if (req.url.startsWith('/api/')) {
     proxyApiRequest(req, res);
     return;
