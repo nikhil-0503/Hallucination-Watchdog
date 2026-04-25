@@ -33,10 +33,7 @@ function resolveBackendConfig() {
   }
 
   if (!selectedRaw) {
-    const host = process.env.RAILWAY_PUBLIC_DOMAIN || process.env.HOSTNAME || '';
-    if (host.includes('hallucination-watchdog-frontend-production')) {
-      selectedRaw = 'https://hallucination-watchdog-production-e39c.up.railway.app';
-    }
+    selectedRaw = 'https://hallucination-watchdog-production-e39c.up.railway.app';
   }
 
   const source = candidates.BACKEND_URL
