@@ -1,25 +1,20 @@
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Shield, 
-  LogOut, 
-  User, 
-  Search, 
+import {
+  Search,
   Download,
   RefreshCw,
-  AlertTriangle,
-  CheckCircle,
+  CheckCircle2,
   XCircle,
   Eye,
   Calendar,
-  BarChart3,
   Database,
-  FileCheck
+  FileCheck,
+  Activity
 } from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
 import { useNavigate } from 'react-router-dom';
-import ParticleBackground from '../components/ParticleBackground';
+import AdminLayout from '../components/AdminLayout';
 
 const ActivityLogs = () => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -27,68 +22,52 @@ const ActivityLogs = () => {
   const [timeRange, setTimeRange] = useState('all');
   const [sortBy, setSortBy] = useState('timestamp');
   const [sortOrder, setSortOrder] = useState('desc');
-  const [activeNav, setActiveNav] = useState('logs');
-  
-  const { user, logout } = useAuth();
+
   const { prompts } = useData();
   const navigate = useNavigate();
 
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
-  };
-
   const handleSort = (field) => {
-    setSortBy(field);
-    setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc');
+    if (sortBy === field) {
+      setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc');
+    } else {
+      setSortBy(field);
+      setSortOrder('desc');
+    }
   };
 
-  const handleViewDetails = (prompt) => {
-    navigate(`/admin/current/${prompt.id}`);
-  };
-
-  // Helper to check if a date is within the time range
   const isWithinTimeRange = (timestampStr, range) => {
     const promptDate = new Date(timestampStr);
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const promptDay = new Date(promptDate.getFullYear(), promptDate.getMonth(), promptDate.getDate());
-    
+
     switch (range) {
-      case 'today':
-        return promptDay.getTime() === today.getTime();
+      case 'today': return promptDay.getTime() === today.getTime();
       case 'week':
-        const weekAgo = new Date(today);
-        weekAgo.setDate(weekAgo.getDate() - 7);
+        const weekAgo = new Date(today); weekAgo.setDate(weekAgo.getDate() - 7);
         return promptDay >= weekAgo;
       case 'month':
-        const monthAgo = new Date(today);
-        monthAgo.setMonth(monthAgo.getMonth() - 1);
+        const monthAgo = new Date(today); monthAgo.setMonth(monthAgo.getMonth() - 1);
         return promptDay >= monthAgo;
-      case 'all':
-      default:
-        return true;
+      default: return true;
     }
   };
 
-  // Filter and sort prompts
   const filteredPrompts = useMemo(() => {
     let filtered = prompts.filter(prompt => {
-      const matchesSearch = prompt.prompt.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          prompt.gpt_raw_answer.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          prompt.user_visible_answer.toLowerCase().includes(searchQuery.toLowerCase());
-      
+      const q = searchQuery.toLowerCase();
+      const matchesSearch = !q ||
+        (prompt.prompt && prompt.prompt.toLowerCase().includes(q)) ||
+        (prompt.gpt_raw_answer && prompt.gpt_raw_answer.toLowerCase().includes(q)) ||
+        (prompt.user_visible_answer && prompt.user_visible_answer.toLowerCase().includes(q));
       const matchesStatus = statusFilter === 'all' || prompt.action === statusFilter;
-      const matchesTimeRange = isWithinTimeRange(prompt.timestamp, timeRange);
-      
-      return matchesSearch && matchesStatus && matchesTimeRange;
+      const matchesTime = isWithinTimeRange(prompt.timestamp, timeRange);
+      return matchesSearch && matchesStatus && matchesTime;
     });
 
-    // Sort
     filtered.sort((a, b) => {
       let aVal = a[sortBy];
       let bVal = b[sortBy];
-      
       if (sortBy === 'timestamp') {
         aVal = new Date(aVal);
         bVal = new Date(bVal);
@@ -96,285 +75,190 @@ const ActivityLogs = () => {
         aVal = aVal.toLowerCase();
         bVal = bVal.toLowerCase();
       }
-      
-      if (sortOrder === 'desc') {
-        return bVal > aVal ? 1 : -1;
-      } else {
-        return aVal > bVal ? 1 : -1;
-      }
+      return sortOrder === 'desc' ? (bVal > aVal ? 1 : -1) : (aVal > bVal ? 1 : -1);
     });
 
     return filtered;
   }, [prompts, searchQuery, statusFilter, sortBy, sortOrder, timeRange]);
 
   const getConfidenceColor = (confidence) => {
-    if (confidence >= 80) return 'var(--status-safe)';
-    if (confidence >= 50) return 'var(--status-warning)';
-    return 'var(--status-blocked)';
+    const pct = Math.round((confidence || 0) * 100);
+    if (pct >= 80) return 'var(--success)';
+    if (pct >= 50) return 'var(--warning)';
+    return 'var(--danger)';
+  };
+
+  const handleExport = () => {
+    const dataStr = JSON.stringify(filteredPrompts, null, 2);
+    const blob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `watchdog-logs-${new Date().toISOString().slice(0,10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
   return (
-    <div className="admin-dashboard-layout" style={{position: 'relative'}}>
-      <ParticleBackground particleCount={40} />
-      {/* Top Navbar */}
-      <nav className="admin-navbar" style={{position: 'relative', zIndex: 100}}>
-        <div className="navbar-left">
-          <div className="navbar-logo">
-            <Shield size={24} />
-            <span>WATCHDOG</span>
+    <AdminLayout>
+      <div>
+        <motion.div
+          initial={{ opacity: 0, y: -12 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="page-header"
+        >
+          <div>
+            <h1 className="page-title page-title-gradient">Activity Logs</h1>
+            <p className="page-subtitle">Searchable, filterable decision history</p>
           </div>
-        </div>
-        
-        <div className="navbar-right">
-          <div className="navbar-user">
-            <User size={16} />
-            <span className="user-name">{user?.name || user?.email}</span>
-            <span className="user-role">Administrator</span>
-          </div>
-          <motion.button
-            className="navbar-logout"
-            onClick={handleLogout}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            title="Logout"
-          >
-            <LogOut size={16} />
-          </motion.button>
-        </div>
-      </nav>
+        </motion.div>
 
-      {/* Main Layout Container */}
-      <div className="admin-layout-container">
-        {/* Left Sidebar */}
-        <aside className="admin-sidebar">
-          <nav className="sidebar-nav">
-            <motion.button className={`nav-item ${activeNav === 'dashboard' ? 'active' : ''}`} onClick={() => { setActiveNav('dashboard'); navigate('/admin/dashboard'); }} whileHover={{ x: 4 }} whileTap={{ x: 2 }} style={{ color: activeNav === 'dashboard' ? '#60a5fa' : '#000', background: activeNav === 'dashboard' ? '#1e3a4c' : '#e5e7eb' }}>
-              <BarChart3 size={18} /><span>Dashboard</span>
-            </motion.button>
-            <motion.button className={`nav-item ${activeNav === 'analysis' ? 'active' : ''}`} onClick={() => { setActiveNav('analysis'); navigate('/admin/current'); }} whileHover={{ x: 4 }} whileTap={{ x: 2 }} style={{ color: activeNav === 'analysis' ? '#60a5fa' : '#000', background: activeNav === 'analysis' ? '#1e3a4c' : '#e5e7eb' }}>
-              <AlertTriangle size={18} /><span>Current Prompt</span>
-            </motion.button>
-            <motion.button className={`nav-item ${activeNav === 'bias' ? 'active' : ''}`} onClick={() => { setActiveNav('bias'); navigate('/admin/bias'); }} whileHover={{ x: 4 }} whileTap={{ x: 2 }} style={{ color: activeNav === 'bias' ? '#60a5fa' : '#000', background: activeNav === 'bias' ? '#1e3a4c' : '#e5e7eb' }}>
-              <span style={{fontSize: '18px'}}>&#x2696;</span><span>Bias Analysis</span>
-            </motion.button>
-            <motion.button className={`nav-item ${activeNav === 'whatif' ? 'active' : ''}`} onClick={() => { setActiveNav('whatif'); navigate('/admin/what-if'); }} whileHover={{ x: 4 }} whileTap={{ x: 2 }} style={{ color: activeNav === 'whatif' ? '#60a5fa' : '#000', background: activeNav === 'whatif' ? '#1e3a4c' : '#e5e7eb' }}>
-              <span style={{fontSize: '18px'}}>&#x1F504;</span><span>What-If Scenarios</span>
-            </motion.button>
-            <motion.button className={`nav-item ${activeNav === 'impact' ? 'active' : ''}`} onClick={() => { setActiveNav('impact'); navigate('/admin/impact'); }} whileHover={{ x: 4 }} whileTap={{ x: 2 }} style={{ color: activeNav === 'impact' ? '#60a5fa' : '#000', background: activeNav === 'impact' ? '#1e3a4c' : '#e5e7eb' }}>
-              <span style={{fontSize: '18px'}}>&#x1F4CA;</span><span>Impact Dashboard</span>
-            </motion.button>
-            <motion.button className={`nav-item ${activeNav === 'explain' ? 'active' : ''}`} onClick={() => { setActiveNav('explain'); navigate('/admin/explainability'); }} whileHover={{ x: 4 }} whileTap={{ x: 2 }} style={{ color: activeNav === 'explain' ? '#60a5fa' : '#000', background: activeNav === 'explain' ? '#1e3a4c' : '#e5e7eb' }}>
-              <span style={{fontSize: '18px'}}>&#x1F50D;</span><span>Explainability</span>
-            </motion.button>
-            <motion.button className={`nav-item ${activeNav === 'community' ? 'active' : ''}`} onClick={() => { setActiveNav('community'); navigate('/admin/community'); }} whileHover={{ x: 4 }} whileTap={{ x: 2 }} style={{ color: activeNav === 'community' ? '#60a5fa' : '#000', background: activeNav === 'community' ? '#1e3a4c' : '#e5e7eb' }}>
-              <span style={{fontSize: '18px'}}>&#x1F310;</span><span>Community Hub</span>
-            </motion.button>
-            <motion.button className={`nav-item ${activeNav === 'logs' ? 'active' : ''}`} onClick={() => { setActiveNav('logs'); navigate('/admin/activity-logs'); }} whileHover={{ x: 4 }} whileTap={{ x: 2 }} style={{ color: activeNav === 'logs' ? '#60a5fa' : '#000', background: activeNav === 'logs' ? '#1e3a4c' : '#e5e7eb' }}>
-              <span style={{fontSize: '18px'}}>&#x1F4CB;</span><span>Activity Logs</span>
-            </motion.button>
-          </nav>
-        </aside>
-
-
-        {/* Main Content Area */}
-        <main className="admin-main-content">
-          {/* Content Card */}
-          <motion.div
-            className="content-card"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-          >
-            {/* Card Header with Controls */}
-            <div className="card-header">
-              <h2 className="card-title">Activity Logs</h2>
-              
-              <div className="card-controls">
-                <div className="search-box">
-                  <Search size={16} />
-                  <input
-                    type="text"
-                    placeholder="Search prompts, users..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                  />
-                </div>
-                
-                <select
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value)}
-                  className="control-select"
-                >
-                  <option value="all">All Status</option>
-                  <option value="ALLOW">ALLOW</option>
-                  <option value="WARN">WARN</option>
-                  <option value="BLOCK">BLOCK</option>
-                </select>
-
-                <select
-                  value={timeRange}
-                  onChange={(e) => setTimeRange(e.target.value)}
-                  className="control-select"
-                >
-                  <option value="today">Today</option>
-                  <option value="week">This Week</option>
-                  <option value="month">This Month</option>
-                  <option value="all">All Time</option>
-                </select>
-
-                <motion.button
-                  className="control-button"
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  title="Export data"
-                >
-                  <Download size={16} />
-                </motion.button>
-
-                <motion.button
-                  className="control-button"
-                  whileHover={{ scale: 1.05, rotate: 180 }}
-                  whileTap={{ scale: 0.95 }}
-                  title="Refresh"
-                >
-                  <RefreshCw size={16} />
-                </motion.button>
-              </div>
+        {/* Filters */}
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="glass-card"
+          style={{ marginBottom: '1.5rem' }}
+        >
+          <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', alignItems: 'center' }}>
+            <div className="search-box" style={{ flex: 1, minWidth: 200 }}>
+              <Search size={16} />
+              <input
+                type="text"
+                placeholder="Search prompts, responses..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="form-control"
+              />
             </div>
+            <select className="form-select" style={{ width: 'auto' }} value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+              <option value="all">All Status</option>
+              <option value="ALLOW">ALLOW</option>
+              <option value="WARN">WARN</option>
+              <option value="BLOCK">BLOCK</option>
+            </select>
+            <select className="form-select" style={{ width: 'auto' }} value={timeRange} onChange={(e) => setTimeRange(e.target.value)}>
+              <option value="all">All Time</option>
+              <option value="today">Today</option>
+              <option value="week">This Week</option>
+              <option value="month">This Month</option>
+            </select>
+            <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={handleExport} className="btn btn-secondary btn-icon-only" title="Export">
+              <Download size={16} />
+            </motion.button>
+            <motion.button whileHover={{ scale: 1.05, rotate: 180 }} whileTap={{ scale: 0.95 }} className="btn btn-ghost btn-icon-only" title="Refresh">
+              <RefreshCw size={16} />
+            </motion.button>
+          </div>
+        </motion.div>
 
-            {/* Table */}
-            <div className="table-wrapper">
-              <motion.table 
-                className="data-table"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.5, delay: 0.3 }}
-              >
-                <thead>
-                  <tr>
-                    <th onClick={() => handleSort('timestamp')}>
-                      <Calendar size={14} />
-                      Timestamp
-                    </th>
-                    <th>Prompt</th>
-                    <th>GPT Answer</th>
-                    <th onClick={() => handleSort('confidence')}>
-                      Confidence
-                    </th>
-                    <th>
-                      <Database size={14} />
-                      RAG
-                    </th>
-                    <th>
-                      <FileCheck size={14} />
-                      Contradiction
-                    </th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <AnimatePresence>
-                    {filteredPrompts.map((prompt, index) => (
-                      <motion.tr
-                        key={prompt.id}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -20 }}
-                        transition={{ duration: 0.3, delay: index * 0.02 }}
-                        className="table-row"
-                      >
-                        <td className="cell-timestamp">
-                          <span className="timestamp-badge">{new Date(prompt.timestamp).toLocaleString()}</span>
-                        </td>
-                        <td className="cell-prompt">
-                          <div className="text-truncate" title={prompt.prompt}>
-                            {prompt.prompt.length > 50 
-                              ? `${prompt.prompt.substring(0, 50)}...`
-                              : prompt.prompt
-                            }
+        {/* Table */}
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="section-card"
+        >
+          <div className="data-table-wrapper">
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th onClick={() => handleSort('timestamp')} style={{ cursor: 'pointer' }}>
+                    <Calendar size={14} style={{ verticalAlign: 'middle', marginRight: 4 }} />
+                    Timestamp {sortBy === 'timestamp' && (sortOrder === 'desc' ? '↓' : '↑')}
+                  </th>
+                  <th>Prompt</th>
+                  <th>GPT Answer</th>
+                  <th onClick={() => handleSort('confidence')} style={{ cursor: 'pointer' }}>
+                    Confidence {sortBy === 'confidence' && (sortOrder === 'desc' ? '↓' : '↑')}
+                  </th>
+                  <th><Database size={14} style={{ verticalAlign: 'middle', marginRight: 4 }} />RAG</th>
+                  <th><FileCheck size={14} style={{ verticalAlign: 'middle', marginRight: 4 }} />Contradiction</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <AnimatePresence>
+                  {filteredPrompts.map((prompt, index) => (
+                    <motion.tr
+                      key={prompt.id}
+                      initial={{ opacity: 0, y: 12 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -12 }}
+                      transition={{ delay: index * 0.015 }}
+                    >
+                      <td>
+                        <span className="badge badge-neutral font-mono">
+                          {new Date(prompt.timestamp).toLocaleString()}
+                        </span>
+                      </td>
+                      <td className="truncate" style={{ maxWidth: 200 }} title={prompt.prompt}>
+                        {prompt.prompt?.length > 40 ? `${prompt.prompt.substring(0, 40)}...` : prompt.prompt}
+                      </td>
+                      <td className="truncate" style={{ maxWidth: 240 }} title={prompt.gpt_raw_answer}>
+                        {prompt.gpt_raw_answer?.length > 50 ? `${prompt.gpt_raw_answer.substring(0, 50)}...` : prompt.gpt_raw_answer}
+                      </td>
+                      <td>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                          <div className="confidence-track" style={{ width: 60 }}>
+                            <motion.div
+                              className="confidence-fill"
+                              style={{ background: getConfidenceColor(prompt.confidence) }}
+                              initial={{ width: 0 }}
+                              animate={{ width: `${(prompt.confidence || 0) * 100}%` }}
+                              transition={{ duration: 0.6, delay: 0.2 + index * 0.02 }}
+                            />
                           </div>
-                        </td>
-                        <td className="cell-response">
-                          <div className="text-truncate" title={prompt.gpt_raw_answer}>
-                            {prompt.gpt_raw_answer.length > 60 
-                              ? `${prompt.gpt_raw_answer.substring(0, 60)}...`
-                              : prompt.gpt_raw_answer
-                            }
-                          </div>
-                        </td>
-                        <td className="cell-confidence">
-                          <div className="confidence-display">
-                            <div className="confidence-bar">
-                              <motion.div 
-                                className="confidence-fill"
-                                style={{ backgroundColor: getConfidenceColor(prompt.confidence * 100) }}
-                                initial={{ width: 0 }}
-                                animate={{ width: `${prompt.confidence * 100}%` }}
-                                transition={{ duration: 0.8, delay: 0.3 + index * 0.02 }}
-                              />
-                            </div>
-                            <span style={{ color: getConfidenceColor(prompt.confidence * 100) }}>
-                              {Math.round(prompt.confidence * 100)}%
-                            </span>
-                          </div>
-                        </td>
-                        <td className="cell-rag">
-                          <span 
-                            className={`badge badge-${prompt.rag_status.toLowerCase()}`}
-                          >
-                            {prompt.rag_status}
+                          <span style={{ fontSize: '0.75rem', fontWeight: 700, color: getConfidenceColor(prompt.confidence) }}>
+                            {Math.round((prompt.confidence || 0) * 100)}%
                           </span>
-                        </td>
-                        <td className="cell-contradiction">
-                          <div className="status-indicator">
-                            {prompt.contradiction_check === 'PASS' ? (
-                              <>
-                                <CheckCircle size={14} className="icon-safe" />
-                                <span className="text-safe">Pass</span>
-                              </>
-                            ) : (
-                              <>
-                                <XCircle size={14} className="icon-blocked" />
-                                <span className="text-blocked">Fail</span>
-                              </>
-                            )}
-                          </div>
-                        </td>
-                        <td className="cell-actions">
-                          <motion.button
-                            className="action-button"
-                            onClick={() => handleViewDetails(prompt)}
-                            whileHover={{ scale: 1.15 }}
-                            whileTap={{ scale: 0.9 }}
-                            title="View details"
-                          >
-                            <Eye size={16} />
-                          </motion.button>
-                        </td>
-                      </motion.tr>
-                    ))}
-                  </AnimatePresence>
-                </tbody>
-              </motion.table>
-              
-              {filteredPrompts.length === 0 && prompts.length > 0 && (
-                <motion.div 
-                  className="empty-state"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.3 }}
-                >
-                  <Search size={48} />
-                  <h3>No prompts found</h3>
-                  <p>Try adjusting your search criteria or filters</p>
-                </motion.div>
-              )}
-            </div>
-          </motion.div>
-        </main>
+                        </div>
+                      </td>
+                      <td>
+                        <span className={`badge badge-${prompt.rag_status?.toLowerCase() === 'verified' ? 'success' : 'warning'}`}>
+                          {prompt.rag_status}
+                        </span>
+                      </td>
+                      <td>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+                          {prompt.contradiction_check === 'PASS' ? (
+                            <><CheckCircle2 size={14} style={{ color: 'var(--success)' }} /><span style={{ color: 'var(--success-light)', fontSize: '0.8rem' }}>Pass</span></>
+                          ) : (
+                            <><XCircle size={14} style={{ color: 'var(--danger)' }} /><span style={{ color: 'var(--danger-light)', fontSize: '0.8rem' }}>Fail</span></>
+                          )}
+                        </div>
+                      </td>
+                      <td>
+                        <motion.button
+                          className="btn btn-secondary btn-icon-only"
+                          onClick={() => navigate(`/admin/current/${prompt.id}`)}
+                          whileHover={{ scale: 1.1 }}
+                          whileTap={{ scale: 0.9 }}
+                          title="View details"
+                        >
+                          <Eye size={16} />
+                        </motion.button>
+                      </td>
+                    </motion.tr>
+                  ))}
+                </AnimatePresence>
+              </tbody>
+            </table>
+
+            {filteredPrompts.length === 0 && (
+              <motion.div className="empty-state" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                <Search size={48} className="empty-state-icon" />
+                <h3>No prompts found</h3>
+                <p>Try adjusting your search criteria or filters</p>
+              </motion.div>
+            )}
+          </div>
+        </motion.div>
       </div>
-    </div>
+    </AdminLayout>
   );
 };
 
 export default ActivityLogs;
+

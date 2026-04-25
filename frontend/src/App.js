@@ -1,11 +1,15 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence } from 'framer-motion';
 
-// Import all page components
+// Auth pages
 import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
+
+// User pages
 import UserChatPage from './pages/UserChatPage';
+
+// Admin pages
 import AdminDashboard from './pages/AdminDashboard';
 import ActivityLogs from './pages/ActivityLogs';
 import AdminAnalysis from './pages/AdminAnalysis';
@@ -19,81 +23,76 @@ import CommunityHub from './pages/CommunityHub';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { DataProvider } from './context/DataContext';
 
-// Premium Design System & Styles
+// Global styles (order matters: design tokens first, then component styles)
 import './styles/design-system.css';
-import './styles/login-premium.css';
-import './styles/admin-premium.css';
-import './styles/chat-premium.css';
 import './styles/App.css';
+import './styles/login-premium.css';
+import './styles/chat-premium.css';
+import './styles/admin-premium.css';
 import './styles/index.css';
-import './styles/darkMode.css';
 
 function AppRoutes() {
   const { user, isAuthenticated } = useAuth();
 
+  const isAdmin = isAuthenticated && user?.role === 'admin';
+  const isUser = isAuthenticated && user?.role !== 'admin';
+
   return (
-    <Routes>
-      <Route path="/login" element={
-        !isAuthenticated ? <LoginPage /> : <Navigate to={user?.role === 'admin' ? '/admin/dashboard' : '/chat'} replace />
-      } />
-      <Route path="/signup" element={
-        !isAuthenticated ? <SignupPage /> : <Navigate to={user?.role === 'admin' ? '/admin/dashboard' : '/chat'} replace />
-      } />
-      <Route path="/chat" element={
-        isAuthenticated && user?.role !== 'admin' ? <UserChatPage /> : <Navigate to="/login" replace />
-      } />
-      <Route path="/admin" element={
-        isAuthenticated && user?.role === 'admin' ? <Navigate to="/admin/dashboard" replace /> : <Navigate to="/login" replace />
-      } />
-      <Route path="/admin/dashboard" element={
-        isAuthenticated && user?.role === 'admin' ? <AdminDashboard /> : <Navigate to="/login" replace />
-      } />
-      <Route path="/admin/logs" element={
-        isAuthenticated && user?.role === 'admin' ? <ActivityLogs /> : <Navigate to="/login" replace />
-      } />
-      <Route path="/admin/current/:id" element={
-        isAuthenticated && user?.role === 'admin' ? <AdminAnalysis /> : <Navigate to="/login" replace />
-      } />
-      <Route path="/admin/current" element={
-        isAuthenticated && user?.role === 'admin' ? <AdminAnalysis /> : <Navigate to="/login" replace />
-      } />
-      <Route path="/admin/bias-analysis" element={
-        isAuthenticated && user?.role === 'admin' ? <BiasAnalysisDashboard /> : <Navigate to="/login" replace />
-      } />
-      <Route path="/admin/what-if" element={
-        isAuthenticated && user?.role === 'admin' ? <WhatIfScenarios /> : <Navigate to="/login" replace />
-      } />
-      <Route path="/admin/impact" element={
-        isAuthenticated && user?.role === 'admin' ? <ImpactDashboard /> : <Navigate to="/login" replace />
-      } />
-      <Route path="/admin/explainability" element={
-        isAuthenticated && user?.role === 'admin' ? <ExplainabilityDashboard /> : <Navigate to="/login" replace />
-      } />
-      <Route path="/admin/community" element={
-        isAuthenticated && user?.role === 'admin' ? <CommunityHub /> : <Navigate to="/login" replace />
-      } />
-      <Route path="/" element={<Navigate to="/login" replace />} />
-      <Route path="*" element={<Navigate to="/login" replace />} />
-    </Routes>
+    <AnimatePresence mode="wait">
+      <Routes>
+        <Route path="/login" element={
+          !isAuthenticated ? <LoginPage /> : <Navigate to={isAdmin ? '/admin/dashboard' : '/chat'} replace />
+        } />
+        <Route path="/signup" element={
+          !isAuthenticated ? <SignupPage /> : <Navigate to={isAdmin ? '/admin/dashboard' : '/chat'} replace />
+        } />
+        <Route path="/chat" element={
+          isUser ? <UserChatPage /> : <Navigate to="/login" replace />
+        } />
+        <Route path="/admin" element={
+          isAdmin ? <Navigate to="/admin/dashboard" replace /> : <Navigate to="/login" replace />
+        } />
+        <Route path="/admin/dashboard" element={
+          isAdmin ? <AdminDashboard /> : <Navigate to="/login" replace />
+        } />
+        <Route path="/admin/logs" element={
+          isAdmin ? <ActivityLogs /> : <Navigate to="/login" replace />
+        } />
+        <Route path="/admin/current/:id" element={
+          isAdmin ? <AdminAnalysis /> : <Navigate to="/login" replace />
+        } />
+        <Route path="/admin/current" element={
+          isAdmin ? <AdminAnalysis /> : <Navigate to="/login" replace />
+        } />
+        <Route path="/admin/bias-analysis" element={
+          isAdmin ? <BiasAnalysisDashboard /> : <Navigate to="/login" replace />
+        } />
+        <Route path="/admin/what-if" element={
+          isAdmin ? <WhatIfScenarios /> : <Navigate to="/login" replace />
+        } />
+        <Route path="/admin/impact" element={
+          isAdmin ? <ImpactDashboard /> : <Navigate to="/login" replace />
+        } />
+        <Route path="/admin/explainability" element={
+          isAdmin ? <ExplainabilityDashboard /> : <Navigate to="/login" replace />
+        } />
+        <Route path="/admin/community" element={
+          isAdmin ? <CommunityHub /> : <Navigate to="/login" replace />
+        } />
+        <Route path="/" element={<Navigate to="/login" replace />} />
+        <Route path="*" element={<Navigate to="/login" replace />} />
+      </Routes>
+    </AnimatePresence>
   );
 }
 
 function App() {
   return (
-    <div className="app min-vh-100">
+    <div className="app" style={{ minHeight: '100vh' }}>
       <Router>
         <AuthProvider>
           <DataProvider>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.5 }}
-              className="h-100"
-            >
-              <AnimatePresence mode="wait">
-                <AppRoutes />
-              </AnimatePresence>
-            </motion.div>
+            <AppRoutes />
           </DataProvider>
         </AuthProvider>
       </Router>
@@ -102,3 +101,4 @@ function App() {
 }
 
 export default App;
+

@@ -3,7 +3,17 @@ import { motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import ParticleBackground from '../components/ParticleBackground';
-import '../styles/login-premium.css';
+import {
+  Shield,
+  Mail,
+  Lock,
+  Eye,
+  EyeOff,
+  LogIn,
+  User,
+  UserCog,
+  AlertCircle
+} from 'lucide-react';
 
 const LoginPage = () => {
   const [email, setEmail] = useState('');
@@ -25,21 +35,14 @@ const LoginPage = () => {
         setError(result.error || 'Login failed');
       }
     } catch (error) {
-      console.error('Login failed:', error);
       setError(error.message || 'Login failed');
     }
   };
 
   const demoUsers = [
-    { email: 'user@watchdog.ai', password: 'demo123', role: 'user' },
-    { email: 'admin@watchdog.ai', password: 'admin123', role: 'admin' }
+    { email: 'user@watchdog.ai', password: 'User123', role: 'user' },
+    { email: 'admin@watchdog.ai', password: 'Admin123', role: 'admin' }
   ];
-
-  const handleDemoLogin = (email, password, role) => {
-    setEmail(email);
-    setPassword(password);
-    setSelectedRole(role);
-  };
 
   return (
     <div className="login-page-premium">
@@ -48,12 +51,11 @@ const LoginPage = () => {
         <div className="gradient-blob blob-2"></div>
         <div className="gradient-blob blob-3"></div>
       </div>
-      
-      <ParticleBackground particleCount={60} />
-      
+      <ParticleBackground particleCount={50} />
+
       <div className="login-container-premium">
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
           className="login-card-premium"
@@ -62,10 +64,10 @@ const LoginPage = () => {
             <motion.div
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
-              transition={{ delay: 0.2, type: "spring" }}
+              transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
               className="login-icon-large"
             >
-              <i className="fas fa-shield-alt"></i>
+              <Shield size={40} />
             </motion.div>
             <h1 className="login-title">WATCHDOG</h1>
             <p className="login-subtitle">Enterprise AI Safety Platform</p>
@@ -79,7 +81,7 @@ const LoginPage = () => {
               onClick={() => setSelectedRole('user')}
               className={`role-btn-login ${selectedRole === 'user' ? 'active' : ''}`}
             >
-              <i className="fas fa-user"></i>
+              <User size={20} />
               <span>User</span>
             </motion.button>
             <motion.button
@@ -89,7 +91,7 @@ const LoginPage = () => {
               onClick={() => setSelectedRole('admin')}
               className={`role-btn-login ${selectedRole === 'admin' ? 'active' : ''}`}
             >
-              <i className="fas fa-lock"></i>
+              <UserCog size={20} />
               <span>Admin</span>
             </motion.button>
           </div>
@@ -100,7 +102,7 @@ const LoginPage = () => {
               animate={{ opacity: 1, y: 0 }}
               className="error-banner"
             >
-              <i className="fas fa-exclamation-circle"></i>
+              <AlertCircle size={18} />
               <span>{error}</span>
             </motion.div>
           )}
@@ -108,57 +110,63 @@ const LoginPage = () => {
           <form onSubmit={handleSubmit} className="login-form">
             <div className="form-group">
               <label className="form-label">Email Address</label>
-              <motion.input
-                whileFocus={{ scale: 1.01 }}
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="Enter your email"
-                className="form-control"
-                required
-              />
-            </motion.input>
+              <div style={{ position: 'relative' }}>
+                <Mail size={16} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--color-text-muted)', zIndex: 2 }} />
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="Enter your email"
+                  className="form-control"
+                  style={{ paddingLeft: '2.5rem' }}
+                  required
+                />
+              </div>
             </div>
 
             <div className="form-group">
               <label className="form-label">Password</label>
               <div className="password-input-wrapper">
-                <motion.input
-                  whileFocus={{ scale: 1.01 }}
+                <Lock size={16} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--color-text-muted)', zIndex: 2 }} />
+                <input
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Enter your password"
                   className="form-control"
+                  style={{ paddingLeft: '2.5rem', paddingRight: '2.5rem' }}
                   required
                 />
                 <button
                   type="button"
                   className="password-toggle"
                   onClick={() => setShowPassword(!showPassword)}
+                  tabIndex={-1}
                 >
-                  <i className={`fas fa-eye${showPassword ? '-slash' : ''}`}></i>
+                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
             </div>
 
-          <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            type="submit"
-            className="btn btn-primary btn-lg w-100"
-            disabled={isLoading}
-          >
-            {isLoading ? (
-              <>
-                <div className="spinner"></div>
-                <span>Signing in...</span>
-              </>
-            ) : (
-              <>
-                <i className="fas fa-sign-in-alt"></i>
-                <span>Sign In</span>
-              </>
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              type="submit"
+              className="btn btn-primary btn-lg w-100"
+              disabled={isLoading}
+              style={{ marginTop: '0.5rem' }}
+            >
+              {isLoading ? (
+                <>
+                  <div className="spinner"></div>
+                  <span>Signing in...</span>
+                </>
+              ) : (
+                <>
+                  <LogIn size={18} />
+                  <span>Sign In</span>
+                </>
+              )}
             </motion.button>
           </form>
 
@@ -167,31 +175,33 @@ const LoginPage = () => {
           </div>
 
           <div className="demo-buttons">
-            {demoUsers.map((user) => (
+            {demoUsers.map((u) => (
               <motion.button
-                key={user.email}
+                key={u.email}
                 type="button"
-                whileHover={{ scale: 1.02 }}
+                whileHover={{ scale: 1.02, x: 4 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={() => {
-                  handleDemoLogin(user.email, user.password, user.role);
+                  setEmail(u.email);
+                  setPassword(u.password);
+                  setSelectedRole(u.role);
                   setTimeout(() => {
                     handleSubmit({ preventDefault: () => {} });
-                  }, 100);
+                  }, 150);
                 }}
                 className="demo-btn"
               >
-                <i className={`fas fa-${user.role === 'admin' ? 'user-tie' : 'user'}`}></i>
+                {u.role === 'admin' ? <UserCog size={20} /> : <User size={20} />}
                 <div>
-                  <div className="demo-btn-title">{user.role.charAt(0).toUpperCase() + user.role.slice(1)}</div>
-                  <div className="demo-btn-email">{user.email}</div>
+                  <div className="demo-btn-title">{u.role.charAt(0).toUpperCase() + u.role.slice(1)}</div>
+                  <div className="demo-btn-email">{u.email}</div>
                 </div>
               </motion.button>
             ))}
           </div>
 
           <div className="login-footer">
-            <p>Don't have an account? <a href="/signup">Sign up</a></p>
+            <p>Don&apos;t have an account? <a href="/signup">Sign up</a></p>
           </div>
         </motion.div>
       </div>
@@ -200,3 +210,4 @@ const LoginPage = () => {
 };
 
 export default LoginPage;
+

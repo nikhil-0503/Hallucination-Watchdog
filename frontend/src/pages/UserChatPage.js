@@ -4,14 +4,26 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
 import ParticleBackground from '../components/ParticleBackground';
-import '../styles/chat-premium.css';
+import {
+  Shield,
+  Send,
+  Trash2,
+  LogOut,
+  User,
+  Bot,
+  CheckCircle2,
+  AlertTriangle,
+  Ban,
+  Sparkles,
+  ShieldCheck,
+  BarChart3
+} from 'lucide-react';
 
 const UserChatPage = () => {
   const [prompt, setPrompt] = useState('');
   const [messages, setMessages] = useState([]);
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef(null);
-  const chatContainerRef = useRef(null);
 
   const { user, logout } = useAuth();
   const { submitUserPrompt, isLoading } = useData();
@@ -48,8 +60,6 @@ const UserChatPage = () => {
 
     try {
       const response = await submitUserPrompt(currentPrompt);
-      console.log('Response from backend:', response);
-
       const assistantMessage = {
         id: Date.now() + 1,
         role: 'assistant',
@@ -59,7 +69,6 @@ const UserChatPage = () => {
         confidence: response.confidence ? Math.round(response.confidence * 100) : undefined,
         warning_text: response.warning_text || undefined
       };
-
       setMessages(prev => [...prev, assistantMessage]);
     } catch (error) {
       setMessages(prev => [
@@ -82,35 +91,42 @@ const UserChatPage = () => {
     navigate('/login');
   };
 
+  const getStatusIcon = (action) => {
+    switch (action) {
+      case 'ALLOW': return <CheckCircle2 size={14} />;
+      case 'WARN': return <AlertTriangle size={14} />;
+      case 'BLOCK': return <Ban size={14} />;
+      default: return <ShieldCheck size={14} />;
+    }
+  };
+
   return (
     <div className="chat-page-premium">
-      <ParticleBackground particleCount={40} />
+      <ParticleBackground particleCount={30} />
 
-      {/* Chat Header */}
-      <motion.div
+      {/* Header */}
+      <motion.header
         initial={{ y: -20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         className="chat-header-premium"
       >
         <div className="chat-header-left">
           <div className="chat-logo-minimal">
-            <i className="fas fa-shield-alt" style={{ fontSize: '1.25rem' }}></i>
+            <Shield size={20} className="chat-logo-icon" />
             <span>WATCHDOG</span>
           </div>
           <div className="chat-status">
-            <div className="status-dot"></div>
-            <span>Live • AI Safety Gateway</span>
+            <span className="status-dot"></span>
+            <span>Live &middot; AI Safety Gateway</span>
           </div>
         </div>
 
         <div className="chat-header-right">
           <div className="chat-user-info">
             <div className="chat-user-avatar">
-              {user?.email?.[0]?.toUpperCase() || 'U'}
+              <User size={14} />
             </div>
-            <div>
-              <div className="chat-user-name">{user?.email}</div>
-            </div>
+            <span className="chat-user-name">{user?.email}</span>
           </div>
 
           <motion.button
@@ -119,9 +135,8 @@ const UserChatPage = () => {
             onClick={handleClearChat}
             title="Clear Chat"
             className="btn-chat-action"
-            style={{ background: 'rgba(99, 102, 241, 0.1)' }}
           >
-            <i className="fas fa-trash-alt"></i>
+            <Trash2 size={16} />
           </motion.button>
 
           <motion.button
@@ -131,19 +146,14 @@ const UserChatPage = () => {
             title="Logout"
             className="btn-chat-logout"
           >
-            <i className="fas fa-sign-out-alt"></i>
+            <LogOut size={16} />
           </motion.button>
         </div>
-      </motion.div>
+      </motion.header>
 
-      {/* Chat Messages Container */}
-      <div className="chat-messages-container" ref={chatContainerRef}>
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.2 }}
-          className="chat-messages-premium"
-        >
+      {/* Messages */}
+      <div className="chat-messages-container">
+        <div className="chat-messages-premium">
           {messages.length === 0 ? (
             <div className="chat-empty-state">
               <motion.div
@@ -152,21 +162,21 @@ const UserChatPage = () => {
                 transition={{ delay: 0.1, type: 'spring' }}
                 className="empty-state-icon-large"
               >
-                <i className="fas fa-comments"></i>
+                <Sparkles size={48} />
               </motion.div>
               <h2>Start a Conversation</h2>
-              <p>Ask me anything – WATCHDOG will analyze the response for safety, bias, and accuracy</p>
+              <p>Ask me anything &ndash; WATCHDOG will analyze the response for safety, bias, and accuracy</p>
               <div className="empty-state-hints">
                 <div className="hint-card">
-                  <i className="fas fa-check-circle"></i>
+                  <ShieldCheck size={22} />
                   <span>Safe & Verified Responses</span>
                 </div>
                 <div className="hint-card">
-                  <i className="fas fa-shield-alt"></i>
+                  <Shield size={22} />
                   <span>Real-Time Risk Analysis</span>
                 </div>
                 <div className="hint-card">
-                  <i className="fas fa-chart-line"></i>
+                  <BarChart3 size={22} />
                   <span>Confidence Scoring</span>
                 </div>
               </div>
@@ -178,27 +188,19 @@ const UserChatPage = () => {
                   key={msg.id}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ delay: 0.05 * index }}
+                  transition={{ delay: 0.03 * index }}
                   className={`message-bubble ${msg.role}`}
                 >
                   <div className="message-bubble-header">
                     <div className="message-bubble-avatar">
-                      {msg.role === 'user' ? (
-                        <i className="fas fa-user"></i>
-                      ) : (
-                        <i className="fas fa-robot"></i>
-                      )}
+                      {msg.role === 'user' ? <User size={14} /> : <Bot size={14} />}
                     </div>
                     <div className="message-bubble-meta">
                       <span className="message-bubble-sender">
                         {msg.role === 'user' ? 'You' : 'WATCHDOG AI'}
                       </span>
                       <span className="message-bubble-time">
-                        {msg.timestamp.toLocaleTimeString([], {
-                          hour: '2-digit',
-                          minute: '2-digit'
-                        })}
+                        {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </span>
                     </div>
                   </div>
@@ -211,18 +213,14 @@ const UserChatPage = () => {
                     <div className="message-bubble-footer">
                       {msg.action && (
                         <div className={`status-badge status-${msg.action.toLowerCase()}`}>
-                          <i className={`fas fa-${
-                            msg.action === 'ALLOW' ? 'check-circle' :
-                            msg.action === 'WARN' ? 'exclamation-triangle' :
-                            'ban'
-                          }`}></i>
+                          {getStatusIcon(msg.action)}
                           <span>{msg.action}</span>
                         </div>
                       )}
 
                       {msg.confidence !== undefined && (
                         <div className="confidence-indicator">
-                          <span className="confidence-label">Confidence:</span>
+                          <span className="confidence-label">Confidence</span>
                           <div className="confidence-bar">
                             <motion.div
                               className={`confidence-fill confidence-${
@@ -233,7 +231,7 @@ const UserChatPage = () => {
                               initial={{ width: 0 }}
                               animate={{ width: `${msg.confidence}%` }}
                               transition={{ duration: 0.6 }}
-                            ></motion.div>
+                            />
                           </div>
                           <span className="confidence-value">{msg.confidence}%</span>
                         </div>
@@ -241,7 +239,7 @@ const UserChatPage = () => {
 
                       {msg.warning_text && (
                         <div className="warning-box">
-                          <i className="fas fa-exclamation-circle"></i>
+                          <AlertTriangle size={14} />
                           <span>{msg.warning_text}</span>
                         </div>
                       )}
@@ -261,7 +259,7 @@ const UserChatPage = () => {
             >
               <div className="message-bubble-header">
                 <div className="message-bubble-avatar">
-                  <i className="fas fa-robot"></i>
+                  <Bot size={14} />
                 </div>
                 <div className="message-bubble-meta">
                   <span className="message-bubble-sender">WATCHDOG AI</span>
@@ -276,10 +274,10 @@ const UserChatPage = () => {
           )}
 
           <div ref={messagesEndRef} />
-        </motion.div>
+        </div>
       </div>
 
-      {/* Chat Input Area */}
+      {/* Input Area */}
       <motion.div
         initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
@@ -300,7 +298,7 @@ const UserChatPage = () => {
               placeholder="Type your message... (Shift+Enter for new line)"
               className="chat-textarea-premium"
               disabled={isLoading}
-              rows="2"
+              rows={2}
             />
 
             <motion.button
@@ -311,16 +309,14 @@ const UserChatPage = () => {
               disabled={isLoading || !prompt.trim()}
             >
               {isLoading ? (
-                <div className="send-spinner">
-                  <div></div>
-                </div>
+                <div className="send-spinner" />
               ) : (
-                <i className="fas fa-paper-plane"></i>
+                <Send size={18} />
               )}
             </motion.button>
           </div>
           <div className="chat-input-hint">
-            <span>💡 Tip: WATCHDOG analyzes every response for safety and accuracy</span>
+            <span>WATCHDOG analyzes every response for safety and accuracy</span>
           </div>
         </form>
       </motion.div>
@@ -329,3 +325,4 @@ const UserChatPage = () => {
 };
 
 export default UserChatPage;
+
