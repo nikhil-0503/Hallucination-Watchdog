@@ -75,13 +75,13 @@ const ExplainabilityDashboard = () => {
           <motion.div className="metric-card" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
             <div className="metric-label">Bias Score</div>
             <div className="metric-value" style={{ color: getScoreColor(data.score) }}>{data.score}</div>
-            <div className="metric-subtext">{data.level} RIKK</div>
+            <div className="metric-subtext">{data.level} RISK</div>
           </motion.div>
-          <notion.div className="metric-card" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+          <motion.div className="metric-card" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
             <div className="metric-label">Confidence</div>
             <div className="metric-value">{Math.round((data.confidence || 0) * 100)}%</div>
             <div className="metric-subtext">Analysis confidence</div>
-          </notion.div>
+          </motion.div>
           <motion.div className="metric-card" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
             <div className="metric-label">Action Taken</div>
             <div className="metric-value"><span className={`badge badge-${getLevelColor(data.level)}`}>{data.action}</span></div>
@@ -107,8 +107,8 @@ const ExplainabilityDashboard = () => {
                   transition={{ delay: 0.4 + idx * 0.1 }}
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
-                    <h4 style={{ margin: 0, fontSize: '1rem', color: 'var(--text-primary' }}>{factor.name}</h4>
-                    <span className="badge badge-info">~(factor.contribution * 100).toFixed(0)}%</span>
+                    <h4 style={{ margin: 0, fontSize: '1rem', color: 'var(--text-primary)' }}>{factor.name}</h4>
+                    <span className="badge badge-info">${(factor.contribution * 100).toFixed(0)}%</span>
                   </div>
                   <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '0.75rem' }}>{factor.explanation}</p>
                   <div className="progress-track">
@@ -129,7 +129,7 @@ const ExplainabilityDashboard = () => {
           <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'flex-start' }}>
             <CheckCircle size={20} style={{ color: 'var(--success)', marginTop: 2, flexShrink: 0 }} />
             <div>
-              <h4 style={{ margin: '0 0 0.5rem', color: 'var(--text-primary' }}>Recommendation</h4>
+              <h4 style={{ margin: '0 0 0.5rem', color: 'var(--text-primary)' }}>Recommendation</h4>
               <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '0.95rem' }}>
                 {data.level === 'LOW' && 'This decision appears fair. Continue monitoring.'}
                 {data.level === 'MEDIUM' && 'Review decision criteria. Consider bias mitigation techniques.'}
