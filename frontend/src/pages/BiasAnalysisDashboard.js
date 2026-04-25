@@ -122,12 +122,14 @@ const BiasScoreDisplay = ({ analysis }) => {
         <div className="score-display">
           <div className="score-value" style={{ color: getRiskColor(bias_score.level) }}>{bias_score.score.toFixed(1)}/100</div>
           <div className="score-level" style={{ color: getRiskColor(bias_score.level) }}>{bias_score.level}</div>
+        </div>
         <div className="score-interpretation">
           {bias_score.level === 'LOW' && '✅ Low bias risk detected'}
           {bias_score.level === 'MEDIUM' && '⚠️ Moderate bias concerns'}
           {bias_score.level === 'HIGH' && '⛔ High bias risk'}
           {bias_score.level === 'CRITICAL' && '🚨 Critical fairness violation'}
         </div>
+      </div>
       <div className="demographics-section">
         <h4>Protected Attributes Detected:</h4>
         <div className="demographics-list">
@@ -135,13 +137,15 @@ const BiasScoreDisplay = ({ analysis }) => {
             <div key={attr} className="demographic-item"><span className="attr-name">{attr}</span><span className="attr-value">{info.value}</span></div>
           ))}
         </div>
+      </div>
       <div className="metrics-section">
         <h4>Fairness Metrics:</h4>
         <div className="metrics-list">
           {Object.entries(bias_score.factors).map(([factor, value]) => (
-            <div key={factor} className="metric-item"><span>{factor}</span><div className="metric-bar"><div className="metric-fill" style={{ width: Math.min(value, 100) + '%' }}></div><span className="metric-value">{value.toFixed(1)}</span></div>
+            <div key={factor} className="metric-item"><span>{factor}</span><div className="metric-bar"><div className="metric-fill" style={{ width: Math.min(value, 100) + '%' }}></div><span className="metric-value">{value.toFixed(1)}</span></div></div>
           ))}
         </div>
+      </div>
       <div className="recommendation-box"><strong>Recommendation:</strong> {recommendation}<span className="confidence">Confidence: {(confidence * 100).toFixed(0)}%</span></div>
       {gemini_analysis && <div className="gemini-analysis"><h4>🤖 Gemini AI Analysis:</h4><p>{gemini_analysis.analysis}</p></div>}
     </div>
