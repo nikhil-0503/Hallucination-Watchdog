@@ -68,7 +68,17 @@ def _parse_cors_origins(raw: str | None) -> list[str]:
     if not raw:
         return ["*"]
     origins = [o.strip() for o in raw.split(",")]
-    origins = [o for o in origins if o]
+    cleaned: list[str] = []
+    for origin in origins:
+        if not origin:
+            continue
+        # Normalize common Railway/env-var formatting issues
+        if (origin.startswith('"') and origin.endswith('"')) or (origin.startswith("'") and origin.endswith("'")):
+            origin = origin[1:-1].strip()
+        origin = origin.rstrip("/")
+        if origin:
+            cleaned.append(origin)
+    origins = cleaned
     return origins or ["*"]
 
 
