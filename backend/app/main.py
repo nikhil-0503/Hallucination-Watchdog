@@ -60,6 +60,23 @@ request_counts = {}
 RATE_LIMIT = int(os.getenv("RATE_LIMIT", "100"))  # requests per minute
 RATE_WINDOW = 60  # seconds
 
+
+def _parse_cors_origins(raw: str | None) -> list[str]:
+    if raw is None:
+        return ["*"]
+    raw = raw.strip()
+    if not raw:
+        return ["*"]
+    origins = [o.strip() for o in raw.split(",")]
+    origins = [o for o in origins if o]
+    return origins or ["*"]
+
+
+def _parse_bool(raw: str | None, default: bool = False) -> bool:
+    if raw is None:
+        return default
+    return raw.strip().lower() in {"1", "true", "yes", "y", "on"}
+
 @app.middleware("http")
 async def rate_limit_middleware(request: Request, call_next):
     """
@@ -68,6 +85,10 @@ async def rate_limit_middleware(request: Request, call_next):
     """
     # Skip rate limiting for health checks
     if request.url.path == "/api/health":
+        return await call_next(request)
+
+    # Skip rate limiting for CORS preflight requests
+    if request.method.upper() == "OPTIONS":
         return await call_next(request)
     
     client_ip = request.client.host
@@ -105,8 +126,9 @@ async def rate_limit_middleware(request: Request, call_next):
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=os.getenv("CORS_ORIGINS", "*").split(","),
-    allow_credentials=True,
+    allow_origins=_parse_cors_origins(os.getenv("CORS_ORIGINS")),
+    # Default to False so '*' works safely; enable only if you need cookie-based auth.
+    allow_credentials=_parse_bool(os.getenv("CORS_ALLOW_CREDENTIALS"), default=False),
     allow_methods=["*"],
     allow_headers=["*"],
 )
