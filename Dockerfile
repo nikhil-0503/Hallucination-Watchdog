@@ -32,6 +32,9 @@ COPY --from=builder /build/build ./
 # Copy server script
 COPY frontend/server.js ./
 
+# If Railway (or a platform setting) runs `npm start`, ensure /app/package.json exists.
+COPY frontend/runtime.package.json ./package.json
+
 # Expose port
 EXPOSE 3000
 

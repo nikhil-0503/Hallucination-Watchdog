@@ -31,6 +31,9 @@ COPY --from=builder /build/build ./
 # Copy server script
 COPY server.js ./
 
+# If a platform runs `npm start`, ensure /app/package.json exists.
+COPY runtime.package.json ./package.json
+
 # Expose port
 EXPOSE 3000
 
