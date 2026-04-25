@@ -1,46 +1,38 @@
-# Full Implementation TODO - All .md Features ✅ COMPLETE
+# Task: Fix Frontend Navigation & Backend LLM Configuration
 
-## Plan: Implement all 15 missing features from .md documentation
+## Summary
+Fix navigation sidebar consistency across admin pages and change backend to use real Gemini LLM instead of defaulting to mock mode.
 
-### Frontend Components ✅
-- [x] WhatIfScenarios.js - Fairness scenario simulator with sliders
-- [x] ImpactDashboard.js - Real-world impact metrics display
-- [x] ExplainabilityDashboard.js - Bias score explanation tree
-- [x] CommunityHub.js - Community fairness patterns hub
-- [x] App.js - Wire all new pages + BiasAnalysisDashboard into routes
-- [x] darkMode.css - Dark mode theme support
+## Completed Steps
 
-### Backend Components ✅
-- [x] routes.py - Add /api/batch-analyze endpoint + /api/impact-metrics
-- [x] main.py - Add rate limiting middleware + /metrics endpoint
-- [x] auth.py - API key authentication
-- [x] anonymization.py - Data anonymization for PII
-- [x] security.py - PII encryption
-- [x] compliance.py - GDPR compliance helpers
+- [x] Created shared `AdminLayout.js` component with 8 navigation items
+- [x] Created 4 new admin page components: `WhatIfScenarios`, `ImpactDashboard`, `ExplainabilityDashboard`, `CommunityHub`
+- [x] Fixed `App.js` to include routes for all new admin pages
+- [x] Expanded `AdminDashboard.js` sidebar to 8 items (Dashboard, Current Prompt, Bias Analysis, What-If, Impact, Explainability, Community, Logs)
+- [x] Expanded `AdminAnalysis.js` sidebar to match
+- [x] Expanded `ActivityLogs.js` sidebar to match
+- [x] Restored `BiasAnalysisDashboard.js` to clean working state
+- [x] Fixed backend `llm_proxy.py`: default `MOCK_LLM` changed from `true` to `false`
+- [x] Fixed backend `llm_proxy.py`: now reads both `GEMINI_API_KEY` and `GOOGLE_GENERATIVEAI_API_KEY`
 
-### Verification ✅
-- [x] Backend starts successfully (uvicorn app.main:app)
-- [x] /api/health - returns 200 OK
-- [x] /api/impact-metrics - returns metrics
-- [x] /metrics - returns performance metrics
-- [x] /api/batch-analyze - processes multiple prompts
-- [x] Frontend syntax check - all 5 new files pass brace matching
-- [x] App.js routes - all 6 new routes wired correctly
+## What was fixed
 
-### New Routes Added
-- /admin/bias-analysis → BiasAnalysisDashboard
-- /admin/what-if → WhatIfScenarios
-- /admin/impact → ImpactDashboard
-- /admin/explainability → ExplainabilityDashboard
-- /admin/community → CommunityHub
+| File | Issue | Fix |
+|---|---|---|
+| `frontend/src/components/AdminLayout.js` | Did not exist | Created shared layout with 8 nav items |
+| `frontend/src/pages/WhatIfScenarios.js` | Did not exist | Created |
+| `frontend/src/pages/ImpactDashboard.js` | Did not exist | Created |
+| `frontend/src/pages/ExplainabilityDashboard.js` | Did not exist | Created |
+| `frontend/src/pages/CommunityHub.js` | Did not exist | Created |
+| `frontend/src/App.js` | Missing routes | Added 4 new routes |
+| `frontend/src/pages/AdminDashboard.js` | Only 2 sidebar items | Expanded to 8 |
+| `frontend/src/pages/AdminAnalysis.js` | Only 2 sidebar items | Expanded to 8 |
+| `frontend/src/pages/ActivityLogs.js` | Only 2 sidebar items | Expanded to 8 |
+| `frontend/src/pages/BiasAnalysisDashboard.js` | Duplicate imports | Cleaned up |
+| `backend/app/proxy/llm_proxy.py` | Mock LLM default true | Changed to false |
+| `backend/app/proxy/llm_proxy.py` | Only read GEMINI_API_KEY | Now reads both env var names |
 
-### New API Endpoints
-- POST /api/batch-analyze - Batch process multiple prompts
-- GET /api/impact-metrics - Real-world impact statistics
-- GET /metrics - Performance monitoring metrics
-
-### New Backend Modules
-- app/auth.py - API key authentication
-- app/security.py - PII encryption/decryption
-- app/compliance.py - GDPR compliance (consent, erasure, portability)
-- bias_engine/anonymization.py - k-anonymity and data anonymization
+## Next Steps
+1. Set `GOOGLE_GENERATIVEAI_API_KEY` in environment for production
+2. Test navigation between all admin pages
+3. Verify Gemini API responses are working

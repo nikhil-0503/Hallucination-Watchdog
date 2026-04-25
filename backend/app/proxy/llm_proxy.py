@@ -36,7 +36,7 @@ class LLMProxy:
     """
     
     def __init__(self):
-        self.mock_mode = os.getenv("MOCK_LLM", "true").lower() == "true"
+        self.mock_mode = os.getenv("MOCK_LLM", "false").lower() == "true"
         self.provider = os.getenv("LLM_PROVIDER", "openrouter").lower()
         
         # OpenRouter config
@@ -45,7 +45,7 @@ class LLMProxy:
         self.openrouter_base_url = "https://openrouter.ai/api/v1/chat/completions"
         
         # Google Gemini config
-        self.gemini_api_key = os.getenv("GEMINI_API_KEY", "")
+        self.gemini_api_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_GENERATIVEAI_API_KEY", "")
         self.gemini_model = os.getenv("GEMINI_MODEL", "gemini-1.5-flash")
         
         # Common config

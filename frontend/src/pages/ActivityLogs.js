@@ -147,36 +147,33 @@ const ActivityLogs = () => {
       <div className="admin-layout-container">
         {/* Left Sidebar */}
         <aside className="admin-sidebar">
-  <nav className="sidebar-nav">
-    <motion.button
-      className={`nav-item ${activeNav === 'dashboard' ? 'active' : ''}`}
-      onClick={() => { setActiveNav('dashboard'); navigate('/admin/dashboard'); }}
-      whileHover={{ x: 4 }}
-      whileTap={{ x: 2 }}
-      style={{
-        color: activeNav === 'dashboard' ? '#60a5fa' : '#000',   // active blue, inactive black
-        background: activeNav === 'dashboard' ? '#1e3a4c' : '#e5e7eb'
-      }}
-    >
-      <BarChart3 size={18} />
-      <span>Dashboard</span>
-    </motion.button>
-
-    <motion.button
-      className={`nav-item ${activeNav === 'analysis' ? 'active' : ''}`}
-      onClick={() => { setActiveNav('analysis'); navigate('/admin/current'); }}
-      whileHover={{ x: 4 }}
-      whileTap={{ x: 2 }}
-      style={{
-        color: activeNav === 'analysis' ? '#60a5fa' : '#000',   // black text when not active
-        background: activeNav === 'analysis' ? '#1e3a4c' : '#e5e7eb'
-      }}
-    >
-      <AlertTriangle size={18} />
-      <span>Current Prompt</span>
-    </motion.button>
-  </nav>
-</aside>
+          <nav className="sidebar-nav">
+            <motion.button className={`nav-item ${activeNav === 'dashboard' ? 'active' : ''}`} onClick={() => { setActiveNav('dashboard'); navigate('/admin/dashboard'); }} whileHover={{ x: 4 }} whileTap={{ x: 2 }} style={{ color: activeNav === 'dashboard' ? '#60a5fa' : '#000', background: activeNav === 'dashboard' ? '#1e3a4c' : '#e5e7eb' }}>
+              <BarChart3 size={18} /><span>Dashboard</span>
+            </motion.button>
+            <motion.button className={`nav-item ${activeNav === 'analysis' ? 'active' : ''}`} onClick={() => { setActiveNav('analysis'); navigate('/admin/current'); }} whileHover={{ x: 4 }} whileTap={{ x: 2 }} style={{ color: activeNav === 'analysis' ? '#60a5fa' : '#000', background: activeNav === 'analysis' ? '#1e3a4c' : '#e5e7eb' }}>
+              <AlertTriangle size={18} /><span>Current Prompt</span>
+            </motion.button>
+            <motion.button className={`nav-item ${activeNav === 'bias' ? 'active' : ''}`} onClick={() => { setActiveNav('bias'); navigate('/admin/bias'); }} whileHover={{ x: 4 }} whileTap={{ x: 2 }} style={{ color: activeNav === 'bias' ? '#60a5fa' : '#000', background: activeNav === 'bias' ? '#1e3a4c' : '#e5e7eb' }}>
+              <span style={{fontSize: '18px'}}>&#x2696;</span><span>Bias Analysis</span>
+            </motion.button>
+            <motion.button className={`nav-item ${activeNav === 'whatif' ? 'active' : ''}`} onClick={() => { setActiveNav('whatif'); navigate('/admin/what-if'); }} whileHover={{ x: 4 }} whileTap={{ x: 2 }} style={{ color: activeNav === 'whatif' ? '#60a5fa' : '#000', background: activeNav === 'whatif' ? '#1e3a4c' : '#e5e7eb' }}>
+              <span style={{fontSize: '18px'}}>&#x1F504;</span><span>What-If Scenarios</span>
+            </motion.button>
+            <motion.button className={`nav-item ${activeNav === 'impact' ? 'active' : ''}`} onClick={() => { setActiveNav('impact'); navigate('/admin/impact'); }} whileHover={{ x: 4 }} whileTap={{ x: 2 }} style={{ color: activeNav === 'impact' ? '#60a5fa' : '#000', background: activeNav === 'impact' ? '#1e3a4c' : '#e5e7eb' }}>
+              <span style={{fontSize: '18px'}}>&#x1F4CA;</span><span>Impact Dashboard</span>
+            </motion.button>
+            <motion.button className={`nav-item ${activeNav === 'explain' ? 'active' : ''}`} onClick={() => { setActiveNav('explain'); navigate('/admin/explainability'); }} whileHover={{ x: 4 }} whileTap={{ x: 2 }} style={{ color: activeNav === 'explain' ? '#60a5fa' : '#000', background: activeNav === 'explain' ? '#1e3a4c' : '#e5e7eb' }}>
+              <span style={{fontSize: '18px'}}>&#x1F50D;</span><span>Explainability</span>
+            </motion.button>
+            <motion.button className={`nav-item ${activeNav === 'community' ? 'active' : ''}`} onClick={() => { setActiveNav('community'); navigate('/admin/community'); }} whileHover={{ x: 4 }} whileTap={{ x: 2 }} style={{ color: activeNav === 'community' ? '#60a5fa' : '#000', background: activeNav === 'community' ? '#1e3a4c' : '#e5e7eb' }}>
+              <span style={{fontSize: '18px'}}>&#x1F310;</span><span>Community Hub</span>
+            </motion.button>
+            <motion.button className={`nav-item ${activeNav === 'logs' ? 'active' : ''}`} onClick={() => { setActiveNav('logs'); navigate('/admin/activity-logs'); }} whileHover={{ x: 4 }} whileTap={{ x: 2 }} style={{ color: activeNav === 'logs' ? '#60a5fa' : '#000', background: activeNav === 'logs' ? '#1e3a4c' : '#e5e7eb' }}>
+              <span style={{fontSize: '18px'}}>&#x1F4CB;</span><span>Activity Logs</span>
+            </motion.button>
+          </nav>
+        </aside>
 
 
         {/* Main Content Area */}

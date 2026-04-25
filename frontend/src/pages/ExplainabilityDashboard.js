@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import './BiasAnalysisDashboard.css';
+import AdminLayout from '../components/AdminLayout';
 
 const ExplainabilityDashboard = () => {
   const [biasScore] = useState({
@@ -68,85 +69,93 @@ const ExplainabilityDashboard = () => {
   };
 
   return (
-    <div className="explainability-dashboard container mt-5">
-      <div className="card shadow-lg">
-        <div className="card-header bg-info text-white">
-          <h2>🔍 Explainable AI Dashboard</h2>
-          <p className="mb-0">Understand why this decision was flagged</p>
-        </div>
-        <div className="card-body">
-          <div className="text-center mb-4">
-            <h1 className={`display-1 fw-bold ${getScoreColor(biasScore.score)}`}>
-              {biasScore.score}
-            </h1>
-            <h4>
-              <span className={`badge bg-${getLevelColor(biasScore.level)}`}>
-                {biasScore.level} BIAS
-              </span>
-            </h4>
+    <AdminLayout>
+      <div className="explainability-dashboard container mt-5">
+        <div className="card shadow-lg">
+          <div className="card-header bg-info text-white">
+            <h2>🔍 Explainable AI Dashboard</h2>
+            <p className="mb-0">Understand why this decision was flagged</p>
           </div>
-
-          <h4 className="mb-3">📊 Factor Contributions</h4>
-          <div className="row g-3 mb-4">
-            {biasScore.factors.map((factor, idx) => (
-              <div key={idx} className="col-md-6">
-                <div className="card h-100">
-                  <div className="card-body">
-                    <div className="d-flex justify-content-between align-items-start">
-                      <h5 className="card-title">{factor.name}</h5>
-                      <span className="badge bg-primary">
-                        {(factor.contribution * 100).toFixed(0)}%
-                      </span>
-                    </div>
-                    <p className="card-text text-muted">{factor.explanation}</p>
-                    {factor.sub_factors && (
-                      <ul className="list-group list-group-flush mt-2">
-                        {factor.sub_factors.map((sf, i) => (
-                          <li key={i} className="list-group-item d-flex justify-content-between">
-                            <span>{sf.name}</span>
-                            <span className="fw-bold">{(sf.value * 100).toFixed(1)}%</span>
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                  </div>
-              </div>
-            ))}
-          </div>
-
-          <h4 className="mb-3">🎯 Most Impactful Factors</h4>
-          <div className="card mb-4">
-            <div className="card-body">
-              <ul className="list-group list-group-flush">
-                {biasScore.top_factors.map((f, idx) => (
-                  <li key={idx} className="list-group-item d-flex justify-content-between align-items-center">
-                    <div>
-                      <span className="badge bg-secondary me-2">#{idx + 1}</span>
-                      {f.factor_name}
-                    </div>
-                    <div className="progress flex-grow-1 mx-3" style={{height: '20px'}}>
-                      <div
-                        className={`progress-bar bg-${idx === 0 ? 'danger' : idx === 1 ? 'warning' : 'info'}`}
-                        style={{width: `${f.impact * 100}%`}}
-                      >
-                        {(f.impact * 100).toFixed(0)}%
-                      </div>
-                  </li>
-                ))}
-              </ul>
+          <div className="card-body">
+            <div className="text-center mb-4">
+              <h1 className={`display-1 fw-bold ${getScoreColor(biasScore.score)}`}>
+                {biasScore.score}
+              </h1>
+              <h4>
+                <span className={`badge bg-${getLevelColor(biasScore.level)}`}>
+                  {biasScore.level} BIAS
+                </span>
+              </h4>
             </div>
 
-          <div className={`alert alert-${getLevelColor(biasScore.level)}`} role="alert">
-            <h5>💡 Recommendation</h5>
-            <p className="mb-0">
-              {biasScore.level === 'LOW' && "✅ This decision appears fair. Continue monitoring."}
-              {biasScore.level === 'MEDIUM' && "⚠️ Review decision criteria. Consider bias mitigation techniques."}
-              {biasScore.level === 'HIGH' && "🔴 Significant bias detected. Retrain model or remove biased features."}
-              {biasScore.level === 'CRITICAL' && "🚨 Critical fairness violation. Halt deployment immediately."}
-            </p>
+            <h4 className="mb-3">📊 Factor Contributions</h4>
+            <div className="row g-3 mb-4">
+              {biasScore.factors.map((factor, idx) => (
+                <div key={idx} className="col-md-6">
+                  <div className="card h-100">
+                    <div className="card-body">
+                      <div className="d-flex justify-content-between align-items-start">
+                        <h5 className="card-title">{factor.name}</h5>
+                        <span className="badge bg-primary">
+                          {(factor.contribution * 100).toFixed(0)}%
+                        </span>
+                      </div>
+                      <p className="card-text text-muted">{factor.explanation}</p>
+                      {factor.sub_factors && (
+                        <ul className="list-group list-group-flush mt-2">
+                          {factor.sub_factors.map((sf, i) => (
+                            <li key={i} className="list-group-item d-flex justify-content-between">
+                              <span>{sf.name}</span>
+                              <span className="fw-bold">{(sf.value * 100).toFixed(1)}%</span>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <h4 className="mb-3">🎯 Most Impactful Factors</h4>
+            <div className="card mb-4">
+              <div className="card-body">
+                <ul className="list-group list-group-flush">
+                  {biasScore.top_factors.map((f, idx) => (
+                    <li key={idx} className="list-group-item d-flex justify-content-between align-items-center">
+                      <div>
+                        <span className="badge bg-secondary me-2">#{idx + 1}</span>
+                        {f.factor_name}
+                      </div>
+                      <div className="progress flex-grow-1 mx-3" style={{height: '20px'}}>
+                        <div
+                          className={`progress-bar bg-${idx === 0 ? 'danger' : idx === 1 ? 'warning' : 'info'}`}
+                          style={{width: `${f.impact * 100}%`}}
+                        >
+                          {(f.impact * 100).toFixed(0)}%
+                        </div>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+
+            <div className={`alert alert-${getLevelColor(biasScore.level)}`} role="alert">
+              <h5>💡 Recommendation</h5>
+              <p className="mb-0">
+                {biasScore.level === 'LOW' && "✅ This decision appears fair. Continue monitoring."}
+                {biasScore.level === 'MEDIUM' && "⚠️ Review decision criteria. Consider bias mitigation techniques."}
+                {biasScore.level === 'HIGH' && "🔴 Significant bias detected. Retrain model or remove biased features."}
+                {biasScore.level === 'CRITICAL' && "🚨 Critical fairness violation. Halt deployment immediately."}
+              </p>
+            </div>
           </div>
+        </div>
       </div>
+    </AdminLayout>
   );
 };
 
 export default ExplainabilityDashboard;
+

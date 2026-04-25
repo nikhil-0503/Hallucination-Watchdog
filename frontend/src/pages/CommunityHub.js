@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import './BiasAnalysisDashboard.css';
+import AdminLayout from '../components/AdminLayout';
 
 const CommunityHub = () => {
   const [patterns] = useState([
@@ -30,76 +31,82 @@ const CommunityHub = () => {
   };
 
   return (
-    <div className="community-hub container mt-5">
-      <div className="card shadow-lg">
-        <div className="card-header bg-dark text-white">
-          <h2>🌍 Community Fairness Hub</h2>
-          <p className="mb-0">Shared patterns, templates, and fairness leaderboards</p>
-        </div>
-        <div className="card-body">
-          <section className="mb-5">
-            <h4 className="mb-3">📈 Shared Bias Patterns</h4>
-            <div className="row g-3">
-              {patterns.map((p, idx) => (
-                <div key={idx} className="col-md-6">
-                  <div className="card border-primary h-100">
-                    <div className="card-body">
-                      <div className="d-flex justify-content-between align-items-start">
-                        <h5 className="card-title">{p.title}</h5>
-                        <span className={`badge bg-${getSeverityColor(p.severity)}`}>{p.severity}</span>
+    <AdminLayout>
+      <div className="community-hub container mt-5">
+        <div className="card shadow-lg">
+          <div className="card-header bg-dark text-white">
+            <h2>🌍 Community Fairness Hub</h2>
+            <p className="mb-0">Shared patterns, templates, and fairness leaderboards</p>
+          </div>
+          <div className="card-body">
+            <section className="mb-5">
+              <h4 className="mb-3">📈 Shared Bias Patterns</h4>
+              <div className="row g-3">
+                {patterns.map((p, idx) => (
+                  <div key={idx} className="col-md-6">
+                    <div className="card border-primary h-100">
+                      <div className="card-body">
+                        <div className="d-flex justify-content-between align-items-start">
+                          <h5 className="card-title">{p.title}</h5>
+                          <span className={`badge bg-${getSeverityColor(p.severity)}`}>{p.severity}</span>
+                        </div>
+                        <p><span className="badge bg-secondary me-2">{p.domain}</span></p>
+                        <p className="mb-1">Average Gap: <strong>{p.avg_gap}</strong></p>
+                        <p className="mb-0">Datasets Analyzed: <strong>{p.datasets_analyzed}</strong></p>
                       </div>
-                      <p><span className="badge bg-secondary me-2">{p.domain}</span></p>
-                      <p className="mb-1">Average Gap: <strong>{p.avg_gap}</strong></p>
-                      <p className="mb-0">Datasets Analyzed: <strong>{p.datasets_analyzed}</strong></p>
                     </div>
-                </div>
-              ))}
-            </div>
-          </section>
+                  </div>
+                ))}
+              </div>
+            </section>
 
-          <section className="mb-5">
-            <h4 className="mb-3">✅ Fair Decision Templates</h4>
-            <div className="table-responsive">
-              <table className="table table-hover">
-                <thead className="table-success"><tr><th>Template</th><th>Author</th><th>Downloads</th><th>Rating</th><th>Action</th></tr></thead>
-                <tbody>
-                  {templates.map((t, idx) => (
-                    <tr key={idx}><td>{t.name}</td><td>{t.author}</td><td>{t.downloads}</td><td>⭐ {t.rating}</td><td><button className="btn btn-sm btn-success">Download</button></td></tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </section>
+            <section className="mb-5">
+              <h4 className="mb-3">✅ Fair Decision Templates</h4>
+              <div className="table-responsive">
+                <table className="table table-hover">
+                  <thead className="table-success"><tr><th>Template</th><th>Author</th><th>Downloads</th><th>Rating</th><th>Action</th></tr></thead>
+                  <tbody>
+                    {templates.map((t, idx) => (
+                      <tr key={idx}><td>{t.name}</td><td>{t.author}</td><td>{t.downloads}</td><td>⭐ {t.rating}</td><td><button className="btn btn-sm btn-success">Download</button></td></tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </section>
 
-          <section>
-            <h4 className="mb-3">🏆 Fairness Leaderboard</h4>
-            <div className="table-responsive">
-              <table className="table table-striped">
-                <thead className="table-dark"><tr><th>Rank</th><th>Organization</th><th>Fairness Score</th><th>Decisions Analyzed</th><th>Badge</th></tr></thead>
-                <tbody>
-                  {leaderboard.map((e, idx) => (
-                    <tr key={idx}>
-                      <td>{e.rank <= 3 ? ['🥇','🥈','🥉'][e.rank-1] : e.rank}</td>
-                      <td>{e.org}</td>
-                      <td>
-                        <div className="progress" style={{height: '20px'}}>
-                          <div className={`progress-bar ${e.score >= 90 ? 'bg-success' : e.score >= 80 ? 'bg-info' : 'bg-warning'}`} style={{width: `${e.score}%`}}>{e.score}%</div>
-                      </td>
-                      <td>{e.decisions.toLocaleString()}</td>
-                      <td>
-                        <span className={`badge ${e.score >= 90 ? 'bg-success' : e.score >= 80 ? 'bg-info' : 'bg-warning'}`}>
-                          {e.score >= 90 ? 'Gold' : e.score >= 80 ? 'Silver' : 'Bronze'}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </section>
+            <section>
+              <h4 className="mb-3">🏆 Fairness Leaderboard</h4>
+              <div className="table-responsive">
+                <table className="table table-striped">
+                  <thead className="table-dark"><tr><th>Rank</th><th>Organization</th><th>Fairness Score</th><th>Decisions Analyzed</th><th>Badge</th></tr></thead>
+                  <tbody>
+                    {leaderboard.map((e, idx) => (
+                      <tr key={idx}>
+                        <td>{e.rank <= 3 ? ['🥇','🥈','🥉'][e.rank-1] : e.rank}</td>
+                        <td>{e.org}</td>
+                        <td>
+                          <div className="progress" style={{height: '20px'}}>
+                            <div className={`progress-bar ${e.score >= 90 ? 'bg-success' : e.score >= 80 ? 'bg-info' : 'bg-warning'}`} style={{width: `${e.score}%`}}>{e.score}%</div>
+                          </div>
+                        </td>
+                        <td>{e.decisions.toLocaleString()}</td>
+                        <td>
+                          <span className={`badge ${e.score >= 90 ? 'bg-success' : e.score >= 80 ? 'bg-info' : 'bg-warning'}`}>
+                            {e.score >= 90 ? 'Gold' : e.score >= 80 ? 'Silver' : 'Bronze'}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          </div>
         </div>
-    </div>
+      </div>
+    </AdminLayout>
   );
 };
 
 export default CommunityHub;
+
