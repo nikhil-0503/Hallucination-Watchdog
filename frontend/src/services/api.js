@@ -4,7 +4,39 @@
  * No mock data — all endpoints call the live backend.
  */
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || '';
+function normalizeApiBaseUrl(rawUrl) {
+  if (!rawUrl) return '';
+  const trimmed = String(rawUrl).trim().replace(/\/+$/, '');
+  return trimmed.replace(/\/api$/i, '');
+}
+
+function getRuntimeApiBaseUrl() {
+  if (typeof window === 'undefined') {
+    return '';
+  }
+
+  const runtimeConfig = window.__WATCHDOG_RUNTIME_CONFIG__ || {};
+  return normalizeApiBaseUrl(runtimeConfig.API_BASE_URL || '');
+}
+
+function resolveApiBaseUrl() {
+  const runtimeBaseUrl = getRuntimeApiBaseUrl();
+  if (runtimeBaseUrl) {
+    return runtimeBaseUrl;
+  }
+
+  return normalizeApiBaseUrl(
+    process.env.REACT_APP_API_URL ||
+    process.env.REACT_APP_API_URI ||
+    process.env.BACKEND_URL ||
+    process.env.BACKEND_URI ||
+    process.env.API_URL ||
+    process.env.API_URI ||
+    ''
+  );
+}
+
+const API_BASE_URL = resolveApiBaseUrl();
 
 // Health check cache to avoid excessive requests
 let healthCheckCache = {
@@ -25,7 +57,7 @@ export async function checkBackendHealth() {
       return { healthy: false, message: 'API_BASE_URL not configured' };
     }
 
-    const response = await fetch(`${API_BASE_URL}/health`, { 
+    const response = await fetch(`${API_BASE_URL}/api/health`, { 
       method: 'GET',
       timeout: 3000 
     });
