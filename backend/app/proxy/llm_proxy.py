@@ -37,7 +37,7 @@ class LLMProxy:
     
     def __init__(self):
         self.mock_mode = os.getenv("MOCK_LLM", "false").lower() == "true"
-        self.provider = os.getenv("LLM_PROVIDER", "openrouter").lower()
+        self.provider = os.getenv("LLM_PROVIDER", "gemini").lower()
         
         # OpenRouter config
         self.api_key = os.getenv("OPENROUTER_API_KEY", "")
