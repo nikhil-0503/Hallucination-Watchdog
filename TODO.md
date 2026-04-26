@@ -33,3 +33,6 @@
 - [ ] Verify timestamps show IST
 - [ ] Test "Analyze All Prompts" tab with stored prompts
 
+## README Update
+- [x] Updated README.md with complete feature list capturing all app capabilities
+

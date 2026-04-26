@@ -1,6 +1,6 @@
-# WATCHDOG — Unbiased AI Decision System
+# WATCHDOG — AI Safety Gateway
 
-> **Production-grade AI safety platform that detects bias, prevents hallucinations, and enforces fairness in automated decisions before they harm real people.**
+> **Production-grade AI safety platform that detects bias, prevents hallucinations, and enforces fairness in automated decisions before they reach users.**
 
 [![Python](https://img.shields.io/badge/Python-3.11-blue)](https://python.org)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.104-green)](https://fastapi.tiangolo.com)
@@ -11,12 +11,12 @@
 
 ## 🎯 The Problem
 
-AI systems make millions of decisions daily — loan approvals, hiring screenings, medical prioritization, content moderation. Yet these systems routinely discriminate:
+AI systems make millions of decisions daily — loan approvals, hiring screenings, medical prioritization, content moderation. Yet these systems routinely discriminate and hallucinate:
 
-- **Lending:** Women denied loans 18% more often than men with identical credentials  
-- **Hiring:** Candidates over 45 receive 45% fewer callbacks due to age-biased screening  
-- **Healthcare:** Minority patients 25% less likely to receive critical ICU allocation  
-- **LLMs:** Hallucinated medical or financial advice putting lives and assets at risk  
+- **Lending:** Women denied loans 18% more often than men with identical credentials
+- **Hiring:** Candidates over 45 receive 45% fewer callbacks due to age-biased screening
+- **Healthcare:** Minority patients 25% less likely to receive critical ICU allocation
+- **LLMs:** Hallucinated medical or financial advice putting lives and assets at risk
 
 Most existing "AI safety" tools are **post-hoc dashboards** — they analyze bias *after* the damage is done. WATCHDOG is different.
 
@@ -24,7 +24,7 @@ Most existing "AI safety" tools are **post-hoc dashboards** — they analyze bia
 
 ## 💡 Our Solution
 
-WATCHDOG is a **real-time AI safety gateway** that intercepts decisions *before* they reach users. It combines five protective layers:
+WATCHDOG is a **real-time AI safety gateway** that intercepts AI outputs *before* they reach users. It combines five protective layers:
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -40,11 +40,11 @@ WATCHDOG is a **real-time AI safety gateway** that intercepts decisions *before*
 
 ### How It Works
 
-1. **Intercept** — Every AI output passes through WATCHDOG before reaching the user  
-2. **Analyze** — Risk engine checks for hallucinations + Bias engine checks for discrimination  
-3. **Score** — Combined risk score (0–100) with explainable factor breakdown  
-4. **Enforce** — Policy engine decides: `ALLOW` (safe), `WARN` (flagged), or `BLOCK` (dangerous)  
-5. **Log** — Immutable audit trail for compliance, debugging, and continuous improvement  
+1. **Intercept** — Every AI output passes through WATCHDOG before reaching the user
+2. **Analyze** — Risk engine checks for hallucinations; Bias engine checks for discrimination
+3. **Score** — Combined risk score (0–100) with explainable factor breakdown
+4. **Enforce** — Policy engine decides: `ALLOW` (safe), `WARN` (flagged), or `BLOCK` (dangerous)
+5. **Log** — Immutable audit trail for compliance, debugging, and continuous improvement
 
 ---
 
@@ -68,9 +68,61 @@ WATCHDOG is a **real-time AI safety gateway** that intercepts decisions *before*
 
 3. **Gemini-Powered Explainability** — Uses Google Generative AI to generate human-readable explanations of *why* a decision was flagged, not just scores.
 
-4. **Dual-Threat Detection** — The only system that simultaneously catches **discrimination** (fairness bias) and **hallucinations** (factual errors) in a single pipeline.
+4. **Dual-Threat Detection** — Simultaneously catches **discrimination** (fairness bias) and **hallucinations** (factual errors) in a single pipeline.
 
 5. **Production-Ready Infrastructure** — Dockerized, auto-scaling on Google Cloud Run, with health checks, structured logging, and 99.99% uptime.
+
+---
+
+## ✨ Complete Feature List
+
+### Core Safety Engine
+- ✅ **Hallucination Detection** — RAG verification, internal contradiction detection, overconfidence flagging
+- ✅ **Bias Detection** — Protected attribute detection (age, gender, race, ethnicity, disability, religion)
+- ✅ **Fairness Metrics** — Demographic parity, equal opportunity, equalized odds, calibration, 4/5ths rule
+- ✅ **Risk Scoring** — Composite 0–100 score with weighted factor breakdown
+- ✅ **Policy Enforcement** — `ALLOW` / `WARN` / `BLOCK` with configurable thresholds
+- ✅ **Audit Logging** — Immutable decision trail with full metadata
+
+### Bias Analysis & Fairness
+- ✅ **Single Decision Analysis** — Real-time bias check on individual decisions with protected attribute detection
+- ✅ **Dataset Audit** — Upload CSV files to analyze systemic fairness patterns across gender, age, race, and more
+- ✅ **Analyze All Prompts** — One-click fairness audit on every stored decision in WATCHDOG
+- ✅ **Gemini AI Analysis** — Natural-language explanations of bias detection results
+- ✅ **Fairness Metrics Visualization** — Interactive charts showing disparity gaps and approval rates
+- ✅ **Protected Attributes Detection** — Automatic identification of sensitive demographic fields
+
+### Dashboards & Analytics
+- ✅ **Admin Dashboard** — Real-time stats (total prompts, blocked, warned, allowed, avg confidence, block rate), trend tracking, quick-access links to all tools
+- ✅ **Activity Logs** — Searchable, filterable decision history with status filters, time ranges, sortable columns
+- ✅ **Prompt Analysis Detail** — Deep-dive into any single prompt: confidence, RAG status, contradiction check, bias detection, full prompt/response text
+- ✅ **Impact Dashboard** — Quantified real-world protection metrics: people protected, financial harm prevented, fairness improvement, disparities detected
+- ✅ **Explainability Dashboard** — Factor-by-factor breakdown of why decisions were flagged (RAG unverified, internal contradiction, overconfidence)
+- ✅ **What-If Scenarios** — Simulate fairness interventions and project their impact on decision outcomes
+- ✅ **Community Hub** — Shared bias patterns, templates, and leaderboard across organizations
+
+### User Experience
+- ✅ **Real-Time Chat** — User-facing chat interface with live safety enforcement, confidence bars, warning badges, and status indicators
+- ✅ **Role-Based Access** — Separate admin and user portals with protected routes
+- ✅ **Authentication** — Secure login/signup with email/password, role-based routing
+- ✅ **IST Timezone** — All timestamps displayed in Indian Standard Time (Asia/Kolkata)
+
+### Data Export & Management
+- ✅ **Multi-Format Export** — Download responses and logs as JSON, CSV, or TXT from both Admin Dashboard and Activity Logs
+- ✅ **Persistent Storage** — JSON-based file persistence for all prompt records
+- ✅ **Auto-Refresh** — Live dashboard updates every 5 seconds with toggle control
+
+### Technical & Deployment
+- ✅ **Model Agnostic** — Works with any LLM or decision API via proxy layer
+- ✅ **FastAPI Backend** — Async Python with OpenAPI/Swagger auto-docs
+- ✅ **React Frontend** — Modern SPA with Framer Motion animations, Lucide icons, responsive design
+- ✅ **Docker Deploy** — Single-command containerized deployment
+- ✅ **Google Cloud Run** — Auto-scaling serverless deployment script included
+- ✅ **Railway Deploy** — One-click deployment with `railway.toml` config
+- ✅ **Health Checks** — `/api/health` endpoint with LLM provider status
+- ✅ **CORS Security** — Configurable cross-origin policies
+- ✅ **Graceful Degradation** — Works without Gemini API key (reduced explainability)
+- ✅ **Batch Analysis** — Analyze multiple prompts in a single API call
 
 ---
 
@@ -85,42 +137,6 @@ WATCHDOG is a **real-time AI safety gateway** that intercepts decisions *before*
 
 ---
 
-## ✨ Feature List
-
-### Core Safety Features
-- ✅ **Hallucination Detection** — RAG verification, internal contradiction detection, overconfidence flagging
-- ✅ **Bias Detection** — Protected attribute detection (age, gender, race, ethnicity, disability, religion)
-- ✅ **Fairness Metrics** — Demographic parity, equal opportunity, equalized odds, calibration, 4/5ths rule
-- ✅ **Risk Scoring** — Composite 0–100 score with weighted factor breakdown
-- ✅ **Policy Enforcement** — `ALLOW` / `WARN` / `BLOCK` with configurable thresholds
-- ✅ **Audit Logging** — Immutable decision trail with full metadata
-
-### AI & Analysis Features
-- ✅ **Gemini Integration** — Intelligent bias reasoning and natural-language explanations
-- ✅ **Dataset Auditing** — Upload CSVs for comprehensive fairness reports on historical decisions
-- ✅ **Single Decision Analysis** — Real-time bias check on individual decisions
-- ✅ **Explainable AI** — Human-readable explanations of *why* bias was detected
-- ✅ **What-If Simulator** — Project fairness improvements from interventions (future)
-
-### Technical Features
-- ✅ **Model Agnostic** — Works with any LLM or decision API
-- ✅ **FastAPI Backend** — Async Python with OpenAPI/Swagger docs
-- ✅ **React Frontend** — Modern dashboard with bias visualizations
-- ✅ **Docker Deploy** — Single-command container deployment
-- ✅ **Google Cloud Run** — Auto-scaling serverless deployment
-- ✅ **Health Checks** — Container health monitoring
-- ✅ **CORS Security** — Configurable cross-origin policies
-- ✅ **Graceful Degradation** — Works without Gemini (reduced features)
-
-### Dashboard Features
-- ✅ **Admin Dashboard** — Historical decision analysis with trend tracking
-- ✅ **Bias Analysis Dashboard** — Interactive fairness metrics visualization
-- ✅ **Activity Logs** — Searchable, filterable decision history
-- ✅ **Real-Time Chat** — User-facing chat with safety enforcement
-- ✅ **Export Reports** — Downloadable audit results
-
----
-
 ## 🏗️ Architecture
 
 ```
@@ -128,6 +144,8 @@ WATCHDOG is a **real-time AI safety gateway** that intercepts decisions *before*
 │                        Frontend (React)                      │
 │  ┌─────────────┐ ┌──────────────┐ ┌─────────────────────┐  │
 │  │ User Chat   │ │ Admin Dash   │ │ Bias Analysis       │  │
+│  │ Activity    │ │ Impact Dash  │ │ Explainability      │  │
+│  │ Logs        │ │ What-If      │ │ Community Hub       │  │
 │  └──────┬──────┘ └──────┬───────┘ └──────────┬──────────┘  │
 └─────────┼───────────────┼────────────────────┼─────────────┘
           │               │                    │
@@ -137,14 +155,15 @@ WATCHDOG is a **real-time AI safety gateway** that intercepts decisions *before*
 │                    FastAPI Gateway                          │
 │  ┌────────────┐  ┌──────────┐  ┌──────────┐  ┌─────────┐ │
 │  │ /api/chat  │  │/api/     │  │/api/     │  │/api/    │ │
-│  │            │  │analyze-  │  │audit-    │  │health   │ │
-│  └─────┬──────┘  │bias      │  │dataset   │  └─────────┘ │
-└────────┼─────────┴────┬─────┴───┴────┬─────┴──────────────┘
+│  │ /api/      │  │analyze-  │  │audit-    │  │health   │ │
+│  │analyze     │  │bias      │  │dataset   │  │/config  │ │
+│  └─────┬──────┘  └────┬─────┴───┴────┬─────┴────────────┘ │
+└────────┼──────────────┼──────────────┼────────────────────┘
          │              │              │
     ┌────▼─────┐  ┌────▼──────┐  ┌────▼──────┐
     │ LLM      │  │ Bias      │  │ Risk      │
     │ Proxy    │  │ Engine    │  │ Engine    │
-    │          │  │ (Gemini)  │  │           │
+    │ (Gemini) │  │ (Gemini)  │  │           │
     └────┬─────┘  └────┬──────┘  └─────┬─────┘
          │             │               │
          └─────────────┴───────────────┘
@@ -156,6 +175,7 @@ WATCHDOG is a **real-time AI safety gateway** that intercepts decisions *before*
                        │
               ┌────────▼────────┐
               │ Audit Logger    │
+              │ Storage (JSON)  │
               └─────────────────┘
 ```
 
@@ -173,13 +193,13 @@ WATCHDOG is a **real-time AI safety gateway** that intercepts decisions *before*
 **Admin Dashboard:**
 ```
 Email: admin@watchdog.ai
-Password: Admin123
+Password: admin123
 ```
 
 **User Portal:**
 ```
 Email: user@watchdog.ai
-Password: User123
+Password: user123
 ```
 
 ### 1. Clone & Setup
@@ -235,11 +255,37 @@ chmod +x deploy-gcp.sh
 
 ### Railway
 
-Push to GitHub. Railway auto-detects `railway.json` and deploys using the Dockerfile.
+Push to GitHub. Railway auto-detects `railway.toml` and deploys using the Dockerfile.
 
 ---
 
 ## 📡 API Endpoints
+
+### Core Safety
+
+```bash
+# Chat with safety enforcement
+POST /api/chat
+{
+  "prompt": "What are the side effects of ibuprofen?",
+  "role": "user",
+  "domain": "health"
+}
+
+# Analyze a prompt
+POST /api/analyze
+{
+  "prompt": "Your prompt here",
+  "domain": "general"
+}
+
+# Batch analyze multiple prompts
+POST /api/batch-analyze
+{
+  "prompts": ["prompt1", "prompt2"],
+  "domain": "general"
+}
+```
 
 ### Bias Analysis
 
@@ -269,19 +315,39 @@ POST /api/audit-dataset
 }
 ```
 
-### Core Safety
+### Data & Analytics
 
 ```bash
-# Chat with safety enforcement
-POST /api/chat
-{
-  "prompt": "What are the side effects of ibuprofen?",
-  "role": "user",
-  "domain": "health"
-}
+# Get all stored prompts
+GET /api/prompts
 
+# Get a single prompt by ID
+GET /api/prompts/{prompt_id}
+
+# Get dashboard statistics
+GET /api/stats
+
+# Get impact metrics
+GET /api/impact-metrics
+
+# Get latest explainability analysis
+GET /api/explainability/latest
+
+# Get what-if simulator state
+GET /api/what-if-state
+
+# Get community patterns
+GET /api/community-patterns
+```
+
+### System
+
+```bash
 # Health check
 GET /api/health
+
+# Config diagnostics
+GET /api/config
 ```
 
 ---
@@ -292,7 +358,7 @@ GET /api/health
 |---|---|
 | **Backend** | Python 3.11, FastAPI, Uvicorn |
 | **Frontend** | React 19, Framer Motion, Lucide React |
-| **AI Models** | Google Gemini API (bias analysis), OpenRouter (LLM proxy) |
+| **AI Models** | Google Gemini API (bias analysis + explainability), OpenRouter (LLM proxy) |
 | **Deployment** | Docker, Google Cloud Run, Railway |
 | **Testing** | pytest, httpx |
 
@@ -314,6 +380,6 @@ MIT License — see [LICENSE](LICENSE) for details.
 
 ---
 
-**Built for the Google Solution Challenge**  
+**Built for the Google Solution Challenge**
 *Challenge Track: Unbiased AI Decision — Ensuring Fairness and Detecting Bias in Automated Decisions*
 
