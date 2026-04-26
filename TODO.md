@@ -1,4 +1,4 @@
-# WATCHDOG Bug Fixes & Improvements — Progress Tracker
+   # WATCHDOG Bug Fixes & Improvements — Progress Tracker
 
 ## Issues Fixed
 
@@ -19,6 +19,7 @@
 
 5. **Dashboard click glitch**
    - [x] `AdminAnalysis.js` — Removed `prompts` from `useEffect` dependency array to stop infinite re-render loop
+   - [x] `DataContext.js` — Wrapped `getPromptById` in `useCallback([])` so its reference stays stable and doesn't trigger the AdminAnalysis effect on every DataContext re-render
 
 6. **IST timezone**
    - [x] `frontend/src/utils/timezone.js` — Created `toISTString()` helper
