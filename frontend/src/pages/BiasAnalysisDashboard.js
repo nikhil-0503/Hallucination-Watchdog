@@ -61,6 +61,14 @@ const BiasAnalysisDashboard = () => {
           </div>
         </motion.div>
 
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="glass-card" style={{ marginBottom: '1rem' }}>
+          <h3 style={{ margin: '0 0 0.5rem', fontSize: '1rem', color: 'var(--text-primary)' }}>How To Use This Panel</h3>
+          <p style={{ margin: 0, color: 'var(--text-secondary)', lineHeight: 1.6 }}>
+            Use Single Decision to inspect one case, then use Dataset Audit for systemic fairness patterns.
+            Focus on disparity gaps, recommendation, and protected attributes to decide policy changes.
+          </p>
+        </motion.div>
+
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
           <div className="tab-bar">
             <button className={`tab-btn ${activeTab === 'single' ? 'active' : ''}`} onClick={() => setActiveTab('single')}>
@@ -116,6 +124,15 @@ const SingleDecisionForm = ({ onSubmit }) => {
   const [formData, setFormData] = useState({ age: '', gender: '', race: '', credit_score: '', decision: 'approved' });
   const handleChange = (e) => setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
   const handleSubmit = (e) => { e.preventDefault(); onSubmit(formData); };
+  const loadSampleBiasCase = () => {
+    setFormData({
+      age: '24',
+      gender: 'female',
+      race: 'black',
+      credit_score: '710',
+      decision: 'denied',
+    });
+  };
 
   return (
     <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="glass-card">
@@ -123,6 +140,12 @@ const SingleDecisionForm = ({ onSubmit }) => {
         <BarChart3 size={18} style={{ verticalAlign: 'middle', marginRight: 8 }} />
         Analyze Single Decision for Bias
       </h3>
+      <div style={{ marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+        <span style={{ color: 'var(--text-muted)', fontSize: '0.82rem' }}>Tip: start with a known edge-case to validate sensitivity.</span>
+        <button type="button" className="btn btn-secondary" style={{ padding: '0.35rem 0.6rem', fontSize: '0.75rem' }} onClick={loadSampleBiasCase}>
+          Load Sample Biased Case
+        </button>
+      </div>
       <form onSubmit={handleSubmit}>
         <div className="grid-2" style={{ gap: '1rem' }}>
           <div className="form-group">
@@ -247,6 +270,10 @@ const BiasScoreDisplay = ({ analysis }) => {
   const likelyBiasAreas = Object.entries(demographics || {})
     .filter(([, info]) => info?.detected)
     .map(([attr]) => attr.replace(/_/g, ' '));
+  const fairnessMetrics = Object.entries(bias_score?.factors || {});
+  const highRiskFactors = fairnessMetrics
+    .filter(([, value]) => Number(value) >= 25)
+    .map(([factor]) => factor.replace(/_/g, ' '));
 
   const getLevelColor = (level) => {
     switch (level) {
@@ -268,6 +295,25 @@ const BiasScoreDisplay = ({ analysis }) => {
         </span>
       </div>
       <div className="section-card-body">
+        <div className="metrics-grid-4" style={{ marginBottom: '1rem' }}>
+          <div className="metric-card">
+            <div className="metric-label">Detected Attributes</div>
+            <div className="metric-value">{likelyBiasAreas.length}</div>
+          </div>
+          <div className="metric-card">
+            <div className="metric-label">High-Risk Metrics</div>
+            <div className="metric-value">{highRiskFactors.length}</div>
+          </div>
+          <div className="metric-card">
+            <div className="metric-label">Recommendation</div>
+            <div className="metric-value" style={{ fontSize: '1.25rem' }}>{recommendation || 'N/A'}</div>
+          </div>
+          <div className="metric-card">
+            <div className="metric-label">Analysis Confidence</div>
+            <div className="metric-value">{((confidence || 0) * 100).toFixed(0)}%</div>
+          </div>
+        </div>
+
         <div className="grid-2" style={{ marginBottom: '1.5rem' }}>
           <div className="glass-card" style={{ borderColor: `${style.color}40` }}>
             <div style={{ fontSize: '3rem', fontWeight: 800, color: style.color }}>
@@ -311,6 +357,16 @@ const BiasScoreDisplay = ({ analysis }) => {
           </div>
         )}
 
+        <div className="glass-card" style={{ marginBottom: '1.5rem' }}>
+          <h4 style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '0.75rem' }}>
+            What This Means
+          </h4>
+          <p style={{ margin: 0, color: 'var(--text-secondary)', lineHeight: 1.65 }}>
+            Bias score reflects aggregate fairness risk across protected attributes and decision consistency.
+            Prioritize reviewing metrics with highest gaps and compare outcomes for similarly qualified profiles.
+          </p>
+        </div>
+
         {bias_score?.factors && (
           <div style={{ marginBottom: '1.5rem' }}>
             <h4 style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '0.75rem' }}>
@@ -334,6 +390,19 @@ const BiasScoreDisplay = ({ analysis }) => {
                 </div>
               ))}
             </div>
+          </div>
+        )}
+
+        {highRiskFactors.length > 0 && (
+          <div className="glass-card" style={{ marginBottom: '1rem', borderColor: 'rgba(245,158,11,0.25)' }}>
+            <h4 style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '0.75rem' }}>
+              Recommended Next Actions
+            </h4>
+            <ul style={{ margin: 0, paddingLeft: '1rem', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
+              {highRiskFactors.map((factor) => (
+                <li key={factor}>Audit decision logic related to {factor} and add fairness constraints.</li>
+              ))}
+            </ul>
           </div>
         )}
 
@@ -362,6 +431,7 @@ const BiasScoreDisplay = ({ analysis }) => {
 
 const DatasetAuditDisplay = ({ analysis }) => {
   const { dataset_size, fairness_metrics, overall_recommendation, summary, gemini_audit_report } = analysis;
+  const disparities = Object.values(fairness_metrics || {}).filter((metric) => metric?.disparity_detected).length;
 
   return (
     <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="section-card" style={{ marginTop: '1.5rem' }}>
@@ -376,6 +446,18 @@ const DatasetAuditDisplay = ({ analysis }) => {
           <div className="metric-card">
             <div className="metric-label">Dataset Size</div>
             <div className="metric-value">{dataset_size?.toLocaleString?.() ?? dataset_size}</div>
+          </div>
+          <div className="metric-card">
+            <div className="metric-label">Attributes Audited</div>
+            <div className="metric-value">{Object.keys(fairness_metrics || {}).length}</div>
+          </div>
+          <div className="metric-card">
+            <div className="metric-label">Disparities Detected</div>
+            <div className="metric-value">{disparities}</div>
+          </div>
+          <div className="metric-card">
+            <div className="metric-label">Recommendation</div>
+            <div className="metric-value" style={{ fontSize: '1.15rem' }}>{overall_recommendation || 'N/A'}</div>
           </div>
         </div>
 

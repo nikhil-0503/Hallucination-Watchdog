@@ -123,6 +123,12 @@ async def chat_with_watchdog(request: ChatRequest):
         warning_text = None
         if action == ActionType.WARN:
             warning_text = "⚠️ Warning: This response may be unreliable. Please verify before acting."
+        elif action == ActionType.BLOCK:
+            bias_types = (risk_report.metadata or {}).get("bias_types", [])
+            if bias_types:
+                warning_text = f"Blocked due to detected bias: {', '.join(bias_types)}"
+            else:
+                warning_text = "Blocked due to high-risk safety signals."
 
         record_id = save_prompt_record(
             prompt=request.prompt,
@@ -135,6 +141,7 @@ async def chat_with_watchdog(request: ChatRequest):
             risk_score=risk_score,
             explanation=risk_report.explanation,
             metadata={
+                **(risk_report.metadata or {}),
                 "signals": risk_report.signals.model_dump(),
                 "risk_score": risk_report.risk_score,
                 "warning_text": warning_text

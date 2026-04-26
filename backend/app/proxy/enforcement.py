@@ -163,11 +163,20 @@ def apply_enforcement(risk_report: RiskReport, llm_response: str, user_context: 
         )
         
         action = ActionType(policy_decision['action'])
+        risk_metadata = risk_report.metadata or {}
+        bias_types = risk_metadata.get('bias_types', []) or []
+        bias_summary = ", ".join(bias_types)
         
         # Apply enforcement based on policy decision
         if action == ActionType.BLOCK:
             # BLOCK: User never sees the LLM output - core safety feature
-            final_response = "The output cannot be displayed."
+            if bias_summary:
+                final_response = (
+                    "The output cannot be displayed. "
+                    f"Detected bias categories: {bias_summary}."
+                )
+            else:
+                final_response = "The output cannot be displayed due to high-risk safety signals."
             
         elif action == ActionType.WARN:
             # WARN: Allow but mark as potentially risky
