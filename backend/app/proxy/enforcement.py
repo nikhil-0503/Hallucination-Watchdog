@@ -6,6 +6,7 @@ THIS IS THE CRITICAL COMPONENT - WHERE WATCHDOG PROVES ITS VALUE
 """
 
 import asyncio
+import re
 from typing import Dict, Tuple
 import sys
 import os
@@ -166,6 +167,31 @@ def apply_enforcement(risk_report: RiskReport, llm_response: str, user_context: 
         risk_metadata = risk_report.metadata or {}
         bias_types = risk_metadata.get('bias_types', []) or []
         bias_summary = ", ".join(bias_types)
+        prompt_text = (user_context or {}).get("prompt", "")
+        prompt_text_lower = prompt_text.lower()
+
+        discriminatory_intent_patterns = [
+            r'\bdeny\b',
+            r'\breject\b',
+            r'\bexclude\b',
+            r'\bdo not hire\b',
+            r'\bnot hire\b',
+            r'\bprefer\b',
+            r'\bfilter out\b',
+            r'\bunfit\b',
+            r'\bless capable\b',
+        ]
+
+        has_discriminatory_intent = bool(bias_types) and any(
+            re.search(pattern, prompt_text_lower, re.IGNORECASE)
+            for pattern in discriminatory_intent_patterns
+        )
+
+        if risk_metadata.get("auto_block"):
+            action = ActionType.BLOCK
+
+        if has_discriminatory_intent:
+            action = ActionType.BLOCK
         
         # Apply enforcement based on policy decision
         if action == ActionType.BLOCK:

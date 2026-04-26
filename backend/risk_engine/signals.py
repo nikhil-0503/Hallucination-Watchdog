@@ -718,6 +718,14 @@ STRICT_HIGH_PATTERNS = [
     r'\bblow\s+up\b', r'\bexplode\b', r'\bmassacre\b', r'\bgenocide\b',
     r'\bterrorist\b', r'\bterrorism\b', r'\bassassinate\b', r'\beliminate\b',
     r'how to (build|make|create).+bomb', r'how to .+kill', r'how to .+attack',
+    # Psychological manipulation / coercion
+    r'how (can|to) .*pressure .*psychologically',
+    r'how (can|to) .*manipulat(e|ing) .*decision',
+    r'how (can|to) .*coerc(e|ion)',
+    r'\bpsychological manipulation\b',
+    r'\bsocial engineering\b',
+    r'\bgaslight\b',
+    r'\bblackmail\b',
 ]
 
 # Medium severity patterns

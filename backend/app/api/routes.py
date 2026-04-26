@@ -100,7 +100,10 @@ async def chat_with_watchdog(request: ChatRequest):
         action, user_visible_answer = apply_enforcement(
             risk_report=risk_report,
             llm_response=llm_response,
-            user_context={'domain': request.domain.value}
+            user_context={
+                'domain': request.domain.value,
+                'prompt': request.prompt,
+            }
         )
         logger.warning(f"ENFORCEMENT - Action: {action.value}, Risk: {risk_score}")
         
@@ -268,7 +271,10 @@ async def analyze_prompt(request: AnalyzeRequest):
         action, final_response = apply_enforcement(
             risk_report=risk_report,
             llm_response=llm_response,
-            user_context={'domain': request.domain.value}
+            user_context={
+                'domain': request.domain.value,
+                'prompt': request.prompt,
+            }
         )
         logger.warning(f"ENFORCEMENT APPLIED - Action: {action.value}, Risk: {risk_report.risk_score}")
         
