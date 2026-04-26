@@ -1,15 +1,16 @@
 # Dockerfile for WATCHDOG backend
-# Optimized for Railway deployment
+# Build context MUST be the backend/ directory (set Root Directory = "backend" in Railway)
 
 FROM python:3.11-slim
 
 WORKDIR /app
 
-# Install dependencies
+# Install dependencies first (layer caching)
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy application code
+# Copy all backend application code into /app
+# When built from backend/ directory, this copies app/, audit/, bias_engine/, etc.
 COPY . .
 
 # Set Python unbuffered mode for proper logging
@@ -22,10 +23,10 @@ USER watchdog
 # Expose port
 EXPOSE 8080
 
-# Health check (uses urllib to avoid requests dependency)
+# Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD python -c "import os, urllib.request; urllib.request.urlopen(f\"http://localhost:{os.getenv('PORT', '8080')}/api/health\", timeout=5)"
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8080/api/health', timeout=5)"
 
-# Run application from backend directory
-WORKDIR /app/backend
-CMD ["sh", "-c", "python -m uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8080}"]
+# Run FastAPI application
+# app.main:app resolves to backend/app/main.py because we are in /app
+CMD ["python", "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8080"]

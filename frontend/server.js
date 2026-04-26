@@ -1,168 +1,62 @@
 const http = require('http');
-const https = require('https');
 const fs = require('fs');
 const path = require('path');
 
 const PORT = process.env.PORT || 3000;
 
-function normalizeBackendUrl(rawUrl) {
+function normalizeApiBaseUrl(rawUrl) {
   if (!rawUrl) return '';
-  const trimmed = rawUrl.trim().replace(/\/+$/, '');
+  const trimmed = String(rawUrl).trim().replace(/\/+$/, '');
   return trimmed.replace(/\/api$/i, '');
 }
 
-function normalizeHost(value) {
-  if (!value) return '';
-  return String(value).trim().toLowerCase().replace(/:\d+$/, '');
-}
+function resolveRuntimeApiBaseUrl() {
+  const candidates = [
+    process.env.BACKEND_INTERNAL_URL,
+    process.env.BACKEND_INTERNAL_URI,
+    process.env.BACKEND_URL,
+    process.env.BACKEND_URI,
+    process.env.REACT_APP_API_URL,
+    process.env.REACT_APP_API_URI,
+    process.env.API_URL,
+    process.env.API_URI,
+    process.env.BACKEND_API_URL,
+    process.env.BACKEND_API_URI
+  ];
 
-function resolveBackendConfig() {
-  const candidates = {
-    BACKEND_URL: process.env.BACKEND_URL || '',
-    REACT_APP_API_URL: process.env.REACT_APP_API_URL || '',
-    API_URL: process.env.API_URL || '',
-    BACKEND_API_URL: process.env.BACKEND_API_URL || ''
-  };
-
-  let selectedRaw =
-    candidates.BACKEND_URL ||
-    candidates.REACT_APP_API_URL ||
-    candidates.API_URL ||
-    candidates.BACKEND_API_URL ||
-    '';
-
-  // Emergency production fallback for mixed Railway instances where
-  // one replica may not receive latest env vars during rolling deploy.
-  if (!selectedRaw) {
-    selectedRaw = process.env.DEFAULT_BACKEND_URL || '';
-  }
-
-  if (!selectedRaw) {
-    selectedRaw = 'https://hallucination-watchdog-production-e39c.up.railway.app';
-  }
-
-  const source = candidates.BACKEND_URL
-    ? 'BACKEND_URL'
-    : candidates.REACT_APP_API_URL
-    ? 'REACT_APP_API_URL'
-    : candidates.API_URL
-    ? 'API_URL'
-    : candidates.BACKEND_API_URL
-    ? 'BACKEND_API_URL'
-    : process.env.DEFAULT_BACKEND_URL
-    ? 'DEFAULT_BACKEND_URL'
-    : selectedRaw
-    ? 'HARDCODED_PROD_FALLBACK'
-    : null;
-
-  const backendBaseUrl = normalizeBackendUrl(selectedRaw);
-  return { candidates, selectedRaw, source, backendBaseUrl };
-}
-
-function getBackendConfigDebug() {
-  const { selectedRaw, source, backendBaseUrl } = resolveBackendConfig();
-  const instance = process.env.RAILWAY_REPLICA_ID || process.env.HOSTNAME || `pid-${process.pid}`;
-  let backendHost = '';
-  try {
-    backendHost = backendBaseUrl ? new URL(backendBaseUrl).host : '';
-  } catch (_) {
-    backendHost = '';
-  }
-
-  return {
-    configured: !!backendBaseUrl,
-    instance,
-    selected_source: source,
-    selected_value_present: !!selectedRaw,
-    selected_value_preview: selectedRaw ? `${selectedRaw.slice(0, 28)}...` : null,
-    normalized_preview: backendBaseUrl ? `${backendBaseUrl.slice(0, 28)}...` : null,
-    backend_host: backendHost,
-    backend_base_url: backendBaseUrl || null
-  };
-}
-
-function proxyApiRequest(req, res) {
-  const { backendBaseUrl } = resolveBackendConfig();
-
-  if (!backendBaseUrl) {
-    const instance = process.env.RAILWAY_REPLICA_ID || process.env.HOSTNAME || `pid-${process.pid}`;
-    res.writeHead(503, {
-      'Content-Type': 'application/json',
-      'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate'
-    });
-    res.end(JSON.stringify({
-      error: 'Backend URL is not configured',
-      detail: 'Set BACKEND_URL, REACT_APP_API_URL, API_URL, or BACKEND_API_URL to your backend service URL',
-      instance
-    }));
-    return;
-  }
-
-  let target;
-  try {
-    target = new URL(req.url, backendBaseUrl);
-  } catch (e) {
-    res.writeHead(500, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ error: 'Invalid backend URL configuration', detail: String(e) }));
-    return;
-  }
-
-  // Guard against recursive proxy loops (e.g. BACKEND_URL accidentally set to frontend URL).
-  const incomingHost = normalizeHost(req.headers.host);
-  const targetHost = normalizeHost(target.host);
-  if (incomingHost && targetHost && incomingHost === targetHost) {
-    res.writeHead(500, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({
-      error: 'Proxy loop detected',
-      detail: 'BACKEND_URL points to the frontend host. Set it to the backend Railway URL.'
-    }));
-    return;
-  }
-
-  const transport = target.protocol === 'https:' ? https : http;
-  const headers = { ...req.headers, host: target.host };
-
-  const proxyReq = transport.request(
-    {
-      protocol: target.protocol,
-      hostname: target.hostname,
-      port: target.port || (target.protocol === 'https:' ? 443 : 80),
-      method: req.method,
-      path: `${target.pathname}${target.search}`,
-      headers,
-    },
-    (proxyRes) => {
-      res.writeHead(proxyRes.statusCode || 502, proxyRes.headers);
-      proxyRes.pipe(res);
+  for (const rawUrl of candidates) {
+    if (!rawUrl) {
+      continue;
     }
-  );
 
-  proxyReq.on('error', (error) => {
-    res.writeHead(502, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({
-      error: 'Failed to reach backend service',
-      detail: String(error)
-    }));
-  });
+    const normalized = normalizeApiBaseUrl(rawUrl);
+    if (normalized) {
+      return normalized;
+    }
+  }
 
-  req.pipe(proxyReq);
+  return '';
+}
+
+function injectRuntimeConfig(html) {
+  const runtimeConfig = {
+    API_BASE_URL: resolveRuntimeApiBaseUrl()
+  };
+
+  const script = `<script>window.__WATCHDOG_RUNTIME_CONFIG__ = ${JSON.stringify(runtimeConfig)};</script>`;
+  if (html.includes('</head>')) {
+    return html.replace('</head>', `${script}\n</head>`);
+  }
+
+  return `${script}\n${html}`;
+}
+
+function sendHtmlWithRuntimeConfig(res, html) {
+  res.writeHead(200, { 'Content-Type': 'text/html' });
+  res.end(injectRuntimeConfig(html));
 }
 
 http.createServer((req, res) => {
-  if (req.url === '/api/_proxy-debug') {
-    res.writeHead(200, {
-      'Content-Type': 'application/json',
-      'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate'
-    });
-    res.end(JSON.stringify(getBackendConfigDebug()));
-    return;
-  }
-
-  if (req.url.startsWith('/api/')) {
-    proxyApiRequest(req, res);
-    return;
-  }
-
   let filePath = path.join(__dirname, req.url === '/' ? 'index.html' : req.url);
   const ext = path.extname(filePath);
   
@@ -170,8 +64,12 @@ http.createServer((req, res) => {
     if (err) {
       // For SPA, serve index.html on 404
       fs.readFile(path.join(__dirname, 'index.html'), (err2, data2) => {
-        res.writeHead(200, {'Content-Type': 'text/html'});
-        res.end(data2 || 'Not found');
+        if (data2) {
+          sendHtmlWithRuntimeConfig(res, data2.toString());
+        } else {
+          res.writeHead(200, {'Content-Type': 'text/html'});
+          res.end('Not found');
+        }
       });
     } else {
       const contentType = {
@@ -185,6 +83,11 @@ http.createServer((req, res) => {
         '.svg': 'image/svg+xml'
       }[ext] || 'application/octet-stream';
       
+      if (ext === '.html') {
+        sendHtmlWithRuntimeConfig(res, data.toString());
+        return;
+      }
+
       res.writeHead(200, {'Content-Type': contentType});
       res.end(data);
     }

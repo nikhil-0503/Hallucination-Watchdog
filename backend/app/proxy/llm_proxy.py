@@ -13,7 +13,7 @@ Features:
 import os
 import asyncio
 import logging
-from typing import Dict, Optional, List
+from typing import Dict, Optional
 from dotenv import load_dotenv
 import httpx
 
@@ -38,18 +38,11 @@ class LLMProxy:
     def __init__(self):
         self.mock_mode = os.getenv("MOCK_LLM", "false").lower() == "true"
         self.provider = os.getenv("LLM_PROVIDER", "gemini").lower()
-        provider_order_raw = os.getenv("LLM_PROVIDER_ORDER", "gemini,groq,openrouter")
-        self.provider_order = [p.strip().lower() for p in provider_order_raw.split(",") if p.strip()]
 
         # OpenRouter config
         self.api_key = os.getenv("OPENROUTER_API_KEY", "")
         self.model = os.getenv("OPENROUTER_MODEL", "meta-llama/llama-3.1-8b-instruct:free")
         self.openrouter_base_url = "https://openrouter.ai/api/v1/chat/completions"
-
-        # Groq config
-        self.groq_api_key = os.getenv("GROQ_API_KEY", "")
-        self.groq_model = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
-        self.groq_base_url = "https://api.groq.com/openai/v1/chat/completions"
 
         # Google Gemini config
         self.gemini_api_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_GENERATIVEAI_API_KEY", "")
@@ -59,7 +52,13 @@ class LLMProxy:
         self.timeout = int(os.getenv("LLM_TIMEOUT", "30"))
         self.max_retries = int(os.getenv("LLM_MAX_RETRIES", "2"))
         self.fallback_enabled = os.getenv("FALLBACK_TO_MOCK", "false").lower() == "true"
-        self.auto_failover = os.getenv("LLM_AUTO_FAILOVER", "true").lower() == "true"
+
+        # Startup diagnostics
+        logger.info(
+            f"LLMProxy initialized — provider={self.provider}, mock_mode={self.mock_mode}, "
+            f"gemini_key_set={bool(self.gemini_api_key)}, openrouter_key_set={bool(self.api_key)}, "
+            f"fallback_enabled={self.fallback_enabled}"
+        )
         
     async def forward_prompt(self, prompt: str, domain: str = "general") -> str:
         """
@@ -81,34 +80,14 @@ class LLMProxy:
             logger.info("Using mock LLM responses (MOCK_LLM=true)")
             return await self._mock_llm_call(prompt, domain)
         
-        # Try real LLM providers with optional failover
+        # Try real LLM with fallback
         try:
-            provider_sequence = self._get_provider_sequence()
-            last_error = None
-
-            for idx, provider in enumerate(provider_sequence):
-                try:
-                    if provider == "gemini":
-                        logger.info(f"Attempting Gemini API call (model: {self.gemini_model})")
-                        return await self._gemini_llm_call_with_retry(prompt, domain)
-                    if provider == "groq":
-                        logger.info(f"Attempting Groq API call (model: {self.groq_model})")
-                        return await self._groq_llm_call_with_retry(prompt, domain)
-                    if provider == "openrouter":
-                        logger.info(f"Attempting OpenRouter API call (model: {self.model})")
-                        return await self._real_llm_call_with_retry(prompt, domain)
-
-                    raise ValueError(f"Unsupported provider: {provider}")
-                except Exception as provider_error:
-                    last_error = provider_error
-                    is_last = idx == len(provider_sequence) - 1
-                    logger.error(f"Provider '{provider}' failed: {provider_error}")
-                    if not is_last:
-                        logger.warning(f"Falling back to next provider in order: {provider_sequence[idx + 1]}")
-                        continue
-                    break
-
-            raise Exception(f"All configured providers failed: {last_error}")
+            if self.provider == "gemini":
+                logger.info(f"Attempting Gemini API call (model: {self.gemini_model})")
+                return await self._gemini_llm_call_with_retry(prompt, domain)
+            else:
+                logger.info(f"Attempting real LLM call via OpenRouter (model: {self.model})")
+                return await self._real_llm_call_with_retry(prompt, domain)
         except Exception as e:
             logger.error(f"Real LLM call failed: {str(e)}")
             
@@ -118,31 +97,6 @@ class LLMProxy:
             else:
                 logger.critical("Fallback disabled - raising error")
                 raise
-
-    def _get_provider_sequence(self) -> List[str]:
-        """Build ordered provider list with failover preference."""
-        supported = {"gemini", "groq", "openrouter"}
-
-        if self.provider == "auto":
-            base_sequence = [p for p in self.provider_order if p in supported]
-            return base_sequence or ["gemini", "groq", "openrouter"]
-
-        if self.provider not in supported:
-            raise ValueError(f"Invalid LLM_PROVIDER '{self.provider}'. Expected one of: gemini, groq, openrouter, auto")
-
-        if not self.auto_failover:
-            return [self.provider]
-
-        sequence = [self.provider]
-        for provider in self.provider_order:
-            if provider in supported and provider not in sequence:
-                sequence.append(provider)
-
-        # Ensure every supported provider appears at most once when failover is enabled.
-        for provider in ["gemini", "groq", "openrouter"]:
-            if provider not in sequence:
-                sequence.append(provider)
-        return sequence
     
     async def _mock_llm_call(self, prompt: str, domain: str) -> str:
         """
@@ -402,81 +356,6 @@ class LLMProxy:
                 logger.error(f"Unexpected Gemini response format: {data}")
                 raise Exception(f"Invalid response structure from Gemini: {e}")
 
-    async def _groq_llm_call_with_retry(self, prompt: str, domain: str) -> str:
-        """Call Groq API with retry logic."""
-        last_error = None
-
-        for attempt in range(self.max_retries + 1):
-            try:
-                if attempt > 0:
-                    wait_time = 2 ** (attempt - 1)
-                    logger.info(f"Retry attempt {attempt}/{self.max_retries} after {wait_time}s wait")
-                    await asyncio.sleep(wait_time)
-
-                return await self._groq_llm_call(prompt, domain)
-
-            except (httpx.TimeoutException, httpx.ConnectError, httpx.ReadError) as e:
-                last_error = e
-                logger.warning(f"Network error on attempt {attempt + 1}: {type(e).__name__}")
-                continue
-
-            except Exception as e:
-                logger.error(f"Non-retryable error: {str(e)}")
-                raise
-
-        raise Exception(f"Groq call failed after {self.max_retries + 1} attempts: {last_error}")
-
-    async def _groq_llm_call(self, prompt: str, domain: str) -> str:
-        """Call Groq API directly (OpenAI-compatible chat endpoint)."""
-        if not self.groq_api_key:
-            raise ValueError("GROQ_API_KEY not set")
-
-        system_messages = {
-            "health": "You are a helpful assistant answering health-related questions. Always remind users to consult healthcare professionals.",
-            "finance": "You are a helpful assistant answering finance-related questions. Always include appropriate risk disclaimers.",
-            "general": "You are a helpful assistant providing accurate and reliable information."
-        }
-
-        system_content = system_messages.get(domain, system_messages["general"])
-
-        payload = {
-            "model": self.groq_model,
-            "messages": [
-                {"role": "system", "content": system_content},
-                {"role": "user", "content": prompt}
-            ],
-            "temperature": 0.7,
-            "max_tokens": 500
-        }
-
-        headers = {
-            "Authorization": f"Bearer {self.groq_api_key}",
-            "Content-Type": "application/json"
-        }
-
-        async with httpx.AsyncClient(timeout=self.timeout) as client:
-            logger.debug(f"Sending request to Groq: model={self.groq_model}")
-            response = await client.post(self.groq_base_url, json=payload, headers=headers)
-
-            if response.status_code != 200:
-                error_detail = response.text
-                logger.error(f"Groq API error {response.status_code}: {error_detail}")
-                if response.status_code == 401:
-                    raise ValueError("Invalid Groq API key")
-                if response.status_code == 429:
-                    raise Exception("Groq rate limit exceeded - try again later")
-                raise Exception(f"Groq API request failed: {response.status_code} - {error_detail}")
-
-            data = response.json()
-
-            try:
-                llm_response = data["choices"][0]["message"]["content"]
-                logger.info(f"✓ Groq response received ({len(llm_response)} chars)")
-                return llm_response
-            except (KeyError, IndexError) as e:
-                logger.error(f"Unexpected Groq response format: {data}")
-                raise Exception(f"Invalid response structure from Groq: {e}")
-
 
 # ============================================
 # SINGLETON INSTANCE
@@ -484,6 +363,19 @@ class LLMProxy:
 
 # Global proxy instance (initialized once)
 llm_proxy = LLMProxy()
+
+
+def get_llm_config_status() -> dict:
+    """Return safe configuration status for diagnostics."""
+    return {
+        "provider": llm_proxy.provider,
+        "mock_mode": llm_proxy.mock_mode,
+        "gemini_api_key_configured": bool(llm_proxy.gemini_api_key),
+        "openrouter_api_key_configured": bool(llm_proxy.api_key),
+        "gemini_model": llm_proxy.gemini_model,
+        "openrouter_model": llm_proxy.model,
+        "fallback_enabled": llm_proxy.fallback_enabled,
+    }
 
 
 async def get_llm_response(prompt: str, domain: str = "general") -> str:

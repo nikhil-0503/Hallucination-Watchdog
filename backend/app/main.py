@@ -7,6 +7,7 @@ Entry point for the WATCHDOG backend infrastructure.
 
 import os
 import time
+import logging
 from datetime import datetime
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -15,6 +16,9 @@ from dotenv import load_dotenv
 import uvicorn
 
 from .api.routes import router
+from .proxy.llm_proxy import llm_proxy
+
+logger = logging.getLogger(__name__)
 
 # Import demo_handler using absolute path (relative .. fails when app is imported as top-level)
 import sys
@@ -61,31 +65,75 @@ RATE_LIMIT = int(os.getenv("RATE_LIMIT", "100"))  # requests per minute
 RATE_WINDOW = 60  # seconds
 
 
+def _clean_origin_value(raw: str) -> str:
+    cleaned = raw.strip().strip('"').strip("'").rstrip("/")
+    return cleaned
+
+
 def _parse_cors_origins(raw: str | None) -> list[str]:
     if raw is None:
-        return ["*"]
+        return []
+
     raw = raw.strip()
     if not raw:
+        return []
+    if raw == "*":
         return ["*"]
-    origins = [o.strip() for o in raw.split(",")]
-    cleaned: list[str] = []
-    for origin in origins:
-        if not origin:
-            continue
-        # Normalize common Railway/env-var formatting issues
-        if (origin.startswith('"') and origin.endswith('"')) or (origin.startswith("'") and origin.endswith("'")):
-            origin = origin[1:-1].strip()
-        origin = origin.rstrip("/")
-        if origin:
-            cleaned.append(origin)
-    origins = cleaned
-    return origins or ["*"]
+
+    origins: list[str] = []
+    for origin in raw.split(","):
+        cleaned = _clean_origin_value(origin)
+        if cleaned:
+            origins.append(cleaned)
+    return origins
 
 
-def _parse_bool(raw: str | None, default: bool = False) -> bool:
-    if raw is None:
-        return default
-    return raw.strip().lower() in {"1", "true", "yes", "y", "on"}
+def _resolve_cors_allowlist() -> list[str]:
+    configured = _parse_cors_origins(os.getenv("CORS_ORIGINS"))
+
+    # FRONTEND_URL is commonly used on Railway and should be accepted even when
+    # CORS_ORIGINS is omitted or contains malformed values.
+    frontend_url = _clean_origin_value(os.getenv("FRONTEND_URL", ""))
+    if frontend_url and frontend_url not in configured:
+        configured.append(frontend_url)
+
+    # Always include the known Railway frontend URL for this deployment
+    railway_frontend = "https://hallucination-watchdog-frontend-production.up.railway.app"
+    if railway_frontend not in configured:
+        configured.append(railway_frontend)
+
+    if configured:
+        return configured
+
+    # Default to permissive CORS. This is safe because allow_credentials=False.
+    # Set CORS_ORIGINS env var explicitly if you need strict origin checking.
+    return ["*"]
+
+# ============================================
+# CORS MIDDLEWARE CONFIGURATION
+# ============================================
+# NOTE: In Starlette/FastAPI, middleware registered via add_middleware() is
+# applied in LIFO order (last registered = outermost = executes first).
+# @app.middleware("http") decorators are inserted before add_middleware() calls
+# in the stack, meaning they execute AFTER add_middleware middlewares.
+#
+# By registering CORSMiddleware BEFORE the rate-limiting @app.middleware("http")
+# decorator, CORS becomes the outermost layer and runs first — ensuring
+# Access-Control-Allow-Origin headers are present on every response, including
+# 429 errors and OPTIONS preflight responses.
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=_resolve_cors_allowlist(),
+    allow_origin_regex=r"https://.*\.railway\.app",
+    allow_credentials=False,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# ============================================
+# RATE LIMITING MIDDLEWARE
+# ============================================
 
 @app.middleware("http")
 async def rate_limit_middleware(request: Request, call_next):
@@ -93,15 +141,11 @@ async def rate_limit_middleware(request: Request, call_next):
     Rate limiting middleware: 100 requests per minute per IP.
     Returns 429 Too Many Requests if limit exceeded.
     """
-    # Skip rate limiting for health checks
-    if request.url.path == "/api/health":
-        return await call_next(request)
-
-    # Skip rate limiting for CORS preflight requests
-    if request.method.upper() == "OPTIONS":
+    # Skip rate limiting for health checks and CORS preflight requests.
+    if request.url.path == "/api/health" or request.method.upper() == "OPTIONS":
         return await call_next(request)
     
-    client_ip = request.client.host
+    client_ip = request.client.host if request.client else "unknown"
     now = time.time()
     
     # Clean old entries
@@ -130,18 +174,6 @@ async def rate_limit_middleware(request: Request, call_next):
     response = await call_next(request)
     return response
 
-# ============================================
-# CORS MIDDLEWARE CONFIGURATION
-# ============================================
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=_parse_cors_origins(os.getenv("CORS_ORIGINS")),
-    # Default to False so '*' works safely; enable only if you need cookie-based auth.
-    allow_credentials=_parse_bool(os.getenv("CORS_ALLOW_CREDENTIALS"), default=False),
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 
 # ============================================
 # ROUTE REGISTRATION
@@ -203,6 +235,15 @@ async def get_metrics():
         },
         "version": "1.0.0"
     }
+
+
+# ============================================
+# STARTUP DIAGNOSTICS
+# ============================================
+
+_cors_origins = _resolve_cors_allowlist()
+logger.info(f"WATCHDOG starting — CORS origins: {_cors_origins}")
+logger.info(f"LLM provider: {llm_proxy.provider}, mock_mode: {llm_proxy.mock_mode}, api_key_configured: {bool(llm_proxy.gemini_api_key or llm_proxy.api_key)}")
 
 
 # ============================================
