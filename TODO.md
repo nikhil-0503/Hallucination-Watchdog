@@ -34,7 +34,8 @@
    - [x] `backend/app/proxy/enforcement.py` — Pass `sensitive_topic_detected`, `sensitive_topic_types`, `sensitive_topic_desc` through metadata and `get_enforcement_metadata()`
    - [x] `frontend/src/pages/AdminAnalysis.js` — Display "Sensitive Topic Detected" banner with topic tags when present
 
-## Testing Checklist
+8. **Truncated responses on user side**
+   - [x] `backend/app/proxy/llm_proxy.py` — Increased `LLM_MAX_OUTPUT_TOKENS` default from `1200` to `4096` so ALLOW/WARN responses are no longer abruptly cut off
 - [x] Test signup with matching passwords
 - [x] Test AdminAnalysis page load (no glitch)
 - [x] Test export JSON/CSV/TXT from ActivityLogs and AdminDashboard

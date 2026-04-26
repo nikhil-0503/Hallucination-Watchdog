@@ -52,7 +52,7 @@ class LLMProxy:
         self.timeout = int(os.getenv("LLM_TIMEOUT", "30"))
         self.max_retries = int(os.getenv("LLM_MAX_RETRIES", "2"))
         self.fallback_enabled = os.getenv("FALLBACK_TO_MOCK", "false").lower() == "true"
-        self.max_output_tokens = int(os.getenv("LLM_MAX_OUTPUT_TOKENS", "1200"))
+        self.max_output_tokens = int(os.getenv("LLM_MAX_OUTPUT_TOKENS", "4096"))
 
         # Startup diagnostics
         logger.info(
