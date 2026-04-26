@@ -1,164 +1,113 @@
-# Railway Deployment Guide
+# Railway Deployment Guide — WATCHDOG
 
-## Prerequisites
-- GitHub repository connected to Railway
-- Railway account set up
+## The Problem (Why CORS Was Broken)
 
----
+Railway was building the **frontend Dockerfile** for the **backend service**.
+The backend URL (`hallucination-watchdog-production-e39c.up.railway.app`) was serving
+React HTML instead of FastAPI JSON. No code change can fix CORS when the backend
+isn't even running.
 
-## Deployment Steps
+## Root Cause
 
-### Step 1: Connect Repository to Railway
+The backend `Dockerfile` had `WORKDIR /app/backend` at the end, but when Railway
+builds from the `backend/` directory (Root Directory = "backend"), files are copied
+to `/app/`, not `/app/backend/`. This caused the backend container to fail on startup,
+and Railway fell back to the root `railway.toml` which runs `node server.js` (frontend).
 
-1. Go to [Railway Dashboard](https://railway.app)
-2. Create new project → Import GitHub repo
-3. Select `Hallucination-Watchdog`
-4. Railway will auto-detect the configuration
+## The Fix (What Was Changed in Code)
 
-### Step 2: Configure Environment Variables
+1. **backend/Dockerfile** — Removed broken `WORKDIR /app/backend`. Now runs from `/app`.
+2. **backend/railway.toml** — Explicitly declares this is the backend service config.
+3. **railway.toml** (root) — Explicitly declares this is the frontend service config.
+4. **docker-compose.yml** — Uses `context: ./backend` for the backend service.
 
-In Railway Dashboard, set these variables:
+## What YOU Must Do in Railway Dashboard
 
-**For Frontend Service:**
+### Step 1: Open Railway Dashboard
+Go to https://railway.app/dashboard and open your WATCHDOG project.
+
+### Step 2: Configure the BACKEND Service
+
+1. Click the **backend service** (the one with URL `hallucination-watchdog-production-e39c...`)
+2. Go to **Settings** tab
+3. Find **Root Directory**
+4. Change it from `.` to: `backend`
+5. Click **Save**
+6. Go to **Deployments** tab
+7. Click **Deploy Latest** (or wait for auto-deploy)
+
+### Step 3: Configure the FRONTEND Service
+
+1. Click the **frontend service** (the one with URL `hallucination-watchdog-frontend-production...`)
+2. Go to **Settings** tab
+3. Find **Root Directory**
+4. Make sure it is set to: `.` (project root)
+5. Click **Save**
+
+### Step 4: Set Environment Variables
+
+In the **backend service** → **Variables** tab, add:
+
 ```
-REACT_APP_API_URL=https://your-backend.railway.app
+GEMINI_API_KEY = your_actual_google_ai_key_here
 ```
 
-**Replace `your-backend` with your actual backend service URL**
+Get your key at: https://ai.google.dev
 
-### Step 3: Deploy
+Optional but recommended:
+```
+CORS_ORIGINS = https://hallucination-watchdog-frontend-production.up.railway.app
+MOCK_LLM = false
+```
 
-Railroad will automatically:
-1. Detect `frontend/Dockerfile`
-2. Build the React application
-3. Serve it on port 3000
+### Step 5: Verify
 
----
+Wait ~3 minutes for the backend to deploy, then test:
 
-## Connecting Frontend to Backend
+```bash
+curl https://hallucination-watchdog-production-e39c.up.railway.app/api/health
+```
 
-### If Backend is on Same Railway Project:
+**Expected result (JSON):**
+```json
+{"status":"healthy","service":"WATCHDOG AI Safety Gateway","version":"1.0.0"}
+```
 
-1. Create a new service for backend
-2. Deploy backend with `backend/Dockerfile`
-3. Get backend URL from Railway dashboard
-4. Set `REACT_APP_API_URL` to backend URL in frontend variables
-5. Redeploy frontend
+If you see HTML/JS instead, the backend service is still building the wrong Dockerfile.
+Double-check Step 2 (Root Directory must be `backend`).
 
-### If Backend is on Different Railway Project:
+## Architecture Summary
 
-1. Get the backend service URL
-2. Set `REACT_APP_API_URL` to that URL in frontend variables
-3. Deploy frontend
-
----
-
-## Verification
-
-After deployment:
-
-1. Open your Railway app URL
-2. Open DevTools (F12) → Console
-3. Check for network errors
-4. Try navigating to different pages:
-   - What-If Scenarios
-   - Impact Dashboard
-   - Bias Analysis
-   - Explainability
-   - Community Hub
-
----
+```
+Project Root
+├── railway.toml          ← Frontend service config (Root Directory = ".")
+├── Dockerfile            ← Frontend Dockerfile (Node.js + React build)
+├── frontend/             ← React source code
+│   └── ...
+├── backend/              ← FastAPI source code
+│   ├── railway.toml      ← Backend service config (Root Directory = "backend")
+│   ├── Dockerfile        ← Backend Dockerfile (Python + uvicorn)
+│   └── app/
+│       └── main.py       ← FastAPI entry point
+```
 
 ## Troubleshooting
 
-### Build Fails
+| Symptom | Cause | Fix |
+|---------|-------|-----|
+| `/api/health` returns HTML | Backend service building frontend Dockerfile | Set backend Root Directory = `backend` |
+| CORS errors in browser | Backend not running or wrong CORS config | Verify backend health endpoint returns JSON |
+| "GEMINI_API_KEY not set" | API key missing in Railway Variables | Add `GEMINI_API_KEY` to backend service |
+| "Module not found" errors | Backend Dockerfile using wrong WORKDIR | Already fixed in latest commit — redeploy |
 
-**Check logs in Railway dashboard:**
-- Look for Node.js/npm errors
-- Verify `REACT_APP_API_URL` is set before build
-
-**Solution:**
-```bash
-# Ensure build is triggered with correct variables
-# Railway auto-rebuilds on git push
-git push origin main
-```
-
-### App Shows "Cannot reach backend"
-
-**Cause:** `REACT_APP_API_URL` not set or incorrect
-
-**Solution:**
-1. Check Railway Variables
-2. Verify backend URL is correct
-3. Redeploy frontend (push to main or manually trigger)
-
-### Blank Page
-
-**Cause:** Build failed silently
-
-**Solution:**
-1. Check Railway logs for errors
-2. Ensure all dependencies are in `package.json`
-3. Verify `npm run build` works locally
-
----
-
-## Health Check
-
-Test your deployment:
+## Local Development (Docker Compose)
 
 ```bash
-# Frontend health
-curl https://your-app.railway.app/
+cd Hallucination-Watchdog
+docker-compose up --build
 
-# Check if backend is configured
-# Open DevTools Console and check for API errors
+# Frontend: http://localhost:3000
+# Backend:  http://localhost:8080
+# API Docs: http://localhost:8080/docs
 ```
 
----
-
-## Rollback
-
-If something breaks:
-
-```bash
-# Check Railway dashboard for previous builds
-# Select "Deploy" option for a previous successful build
-```
-
----
-
-## Local Testing Before Deployment
-
-```bash
-# Build locally
-cd frontend
-REACT_APP_API_URL=http://localhost:8000 npm run build
-
-# Serve locally
-npm install -g serve
-serve -s build -l 3000
-
-# Should be available at http://localhost:3000
-```
-
----
-
-## Environment Variables Reference
-
-| Variable | Required | Example |
-|----------|----------|---------|
-| `REACT_APP_API_URL` | Yes | `https://backend.railway.app` |
-
----
-
-## Support
-
-For issues:
-1. Check Railway logs
-2. Verify environment variables
-3. Ensure backend is running and accessible
-4. Check browser DevTools console
-
-See `QUICK_FIX.md` and `FRONTEND_SETUP.md` for additional help.
