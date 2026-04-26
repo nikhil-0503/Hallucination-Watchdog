@@ -14,7 +14,7 @@ import {
   Loader2
 } from 'lucide-react';
 import AdminLayout from '../components/AdminLayout';
-import { analyzeBias, auditDataset } from '../services/api';
+import { analyzeBias, auditDataset, getAllPrompts } from '../services/api';
 
 const BiasAnalysisDashboard = () => {
   const [activeTab, setActiveTab] = useState('single');
@@ -48,6 +48,35 @@ const BiasAnalysisDashboard = () => {
     }
   };
 
+  const handleAnalyzeAllPrompts = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const prompts = await getAllPrompts();
+      if (!prompts || prompts.length === 0) {
+        setError('No prompts available to analyze. Process some prompts first.');
+        setLoading(false);
+        return;
+      }
+      const decisions = prompts.map(p => ({
+        id: p.id,
+        prompt: p.prompt,
+        action: p.action,
+        confidence: p.confidence,
+        risk_score: p.risk_score,
+        rag_status: p.rag_status,
+        contradiction_check: p.contradiction_check,
+        decision: p.action === 'ALLOW' ? 'approved' : p.action === 'BLOCK' ? 'denied' : 'pending'
+      }));
+      const data = await auditDataset(decisions, 'decision');
+      setBiasAnalysis(data);
+    } catch (err) {
+      setError(err.message || 'Failed to analyze all prompts');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <AdminLayout>
       <div>
@@ -64,7 +93,9 @@ const BiasAnalysisDashboard = () => {
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="glass-card" style={{ marginBottom: '1rem' }}>
           <h3 style={{ margin: '0 0 0.5rem', fontSize: '1rem', color: 'var(--text-primary)' }}>How To Use This Panel</h3>
           <p style={{ margin: 0, color: 'var(--text-secondary)', lineHeight: 1.6 }}>
-            Use Single Decision to inspect one case, then use Dataset Audit for systemic fairness patterns.
+            <strong>Single Decision</strong> — Inspect one manually-entered case for bias against protected attributes.<br/>
+            <strong>Dataset Audit</strong> — Upload a CSV of many decisions to detect systemic fairness patterns across gender, age, race, etc.<br/>
+            <strong>Analyze All Prompts</strong> — Run a fairness audit on every prompt already stored in WATCHDOG.
             Focus on disparity gaps, recommendation, and protected attributes to decide policy changes.
           </p>
         </motion.div>
@@ -77,6 +108,9 @@ const BiasAnalysisDashboard = () => {
             <button className={`tab-btn ${activeTab === 'dataset' ? 'active' : ''}`} onClick={() => setActiveTab('dataset')}>
               <Users size={14} /> Dataset Audit
             </button>
+            <button className={`tab-btn ${activeTab === 'all' ? 'active' : ''}`} onClick={() => setActiveTab('all')}>
+              <FileSpreadsheet size={14} /> Analyze All Prompts
+            </button>
           </div>
         </motion.div>
 
@@ -88,6 +122,11 @@ const BiasAnalysisDashboard = () => {
         {activeTab === 'dataset' && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
             <DatasetAuditForm onSubmit={handleAuditDataset} />
+          </motion.div>
+        )}
+        {activeTab === 'all' && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+            <AnalyzeAllPromptsForm onSubmit={handleAnalyzeAllPrompts} />
           </motion.div>
         )}
 
@@ -113,6 +152,9 @@ const BiasAnalysisDashboard = () => {
           )}
           {biasAnalysis && activeTab === 'dataset' && (
             <DatasetAuditDisplay key="dataset" analysis={biasAnalysis} />
+          )}
+          {biasAnalysis && activeTab === 'all' && (
+            <DatasetAuditDisplay key="all" analysis={biasAnalysis} />
           )}
         </AnimatePresence>
       </div>
@@ -511,6 +553,24 @@ const DatasetAuditDisplay = ({ analysis }) => {
           </div>
         )}
       </div>
+    </motion.div>
+  );
+};
+
+const AnalyzeAllPromptsForm = ({ onSubmit }) => {
+  return (
+    <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="glass-card">
+      <h3 style={{ margin: '0 0 1.25rem', fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+        <FileSpreadsheet size={18} style={{ verticalAlign: 'middle', marginRight: 8 }} />
+        Analyze All Stored Prompts
+      </h3>
+      <p style={{ color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: '1rem' }}>
+        This will fetch every prompt record stored in WATCHDOG and run a fairness audit across all decisions.
+        It treats ALLOW as "approved", BLOCK as "denied", and WARN as "pending" to check for systemic bias.
+      </p>
+      <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={onSubmit} className="btn btn-primary">
+        <Scale size={16} /> Run Audit on All Prompts
+      </motion.button>
     </motion.div>
   );
 };

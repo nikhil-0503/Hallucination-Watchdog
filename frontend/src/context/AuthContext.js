@@ -66,10 +66,6 @@ export const AuthProvider = ({ children }) => {
     try {
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      if (password !== confirmPassword) {
-        return { success: false, error: 'Passwords do not match' };
-      }
-      
       if (email && password) {
         const userData = {
           id: Math.random().toString(36).substr(2, 9),

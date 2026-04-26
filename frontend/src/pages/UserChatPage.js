@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
+import { toISTTime } from '../utils/timezone';
 import ParticleBackground from '../components/ParticleBackground';
 import {
   Shield,
@@ -200,7 +201,7 @@ const UserChatPage = () => {
                         {msg.role === 'user' ? 'You' : 'WATCHDOG AI'}
                       </span>
                       <span className="message-bubble-time">
-                        {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      {toISTTime(msg.timestamp)}
                       </span>
                     </div>
                   </div>

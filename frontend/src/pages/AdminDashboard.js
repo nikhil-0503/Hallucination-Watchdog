@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { useData } from '../context/DataContext';
 import { useNavigate } from 'react-router-dom';
+import { toISTTime } from '../utils/timezone';
 import AdminLayout from '../components/AdminLayout';
 
 const AdminDashboard = () => {
@@ -309,7 +310,7 @@ const AdminDashboard = () => {
                           </div>
                         </td>
                         <td style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                          {new Date(prompt.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        {toISTTime(prompt.timestamp)}
                         </td>
                         <td style={{ color: 'var(--brand-blue-light)', opacity: 0, transition: 'opacity 0.2s' }} className="row-hover-show">
                           <ArrowUpRight size={16} />

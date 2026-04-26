@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { useData } from '../context/DataContext';
 import { useNavigate, useParams } from 'react-router-dom';
+import { toIST } from '../utils/timezone';
 import AdminLayout from '../components/AdminLayout';
 
 const AdminAnalysis = () => {
@@ -28,13 +29,11 @@ const AdminAnalysis = () => {
       if (id) {
         const data = await getPromptById(parseInt(id));
         setPrompt(data);
-      } else if (prompts && prompts.length > 0) {
-        setPrompt(prompts[0]);
       }
       setLoading(false);
     };
     loadPrompt();
-  }, [id, getPromptById, prompts]);
+  }, [id, getPromptById]);
 
   const handleCopy = (text, field) => {
     navigator.clipboard.writeText(text);
@@ -153,7 +152,7 @@ const AdminAnalysis = () => {
               <div>
                 <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 700 }}>Timestamp</div>
                 <div style={{ fontSize: '0.9rem', color: 'var(--text-primary)', marginTop: 2, fontWeight: 500 }}>
-                  {new Date(prompt.timestamp).toLocaleString()}
+                  {toIST(prompt.timestamp)}
                 </div>
               </div>
             </div>
