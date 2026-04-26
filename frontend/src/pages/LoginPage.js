@@ -41,7 +41,7 @@ const LoginPage = () => {
 
   const demoUsers = [
     { email: 'user@watchdog.ai', password: 'User123', role: 'user' },
-    { email: 'admin@watchdog.ai', password: 'Admin123', role: 'admin' }
+    { email: 'admin@watchdog.ai', password: 'admin123', role: 'admin' }
   ];
 
   return (
