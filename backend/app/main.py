@@ -97,6 +97,11 @@ def _resolve_cors_allowlist() -> list[str]:
     if frontend_url and frontend_url not in configured:
         configured.append(frontend_url)
 
+    # Always include the known Railway frontend URL for this deployment
+    railway_frontend = "https://hallucination-watchdog-frontend-production.up.railway.app"
+    if railway_frontend not in configured:
+        configured.append(railway_frontend)
+
     if configured:
         return configured
 
