@@ -65,6 +65,11 @@ RATE_LIMIT = int(os.getenv("RATE_LIMIT", "100"))  # requests per minute
 RATE_WINDOW = 60  # seconds
 
 
+def _clean_origin_value(raw: str) -> str:
+    cleaned = raw.strip().strip('"').strip("'").rstrip("/")
+    return cleaned
+
+
 def _parse_cors_origins(raw: str | None) -> list[str]:
     if raw is None:
         return []
@@ -77,7 +82,7 @@ def _parse_cors_origins(raw: str | None) -> list[str]:
 
     origins: list[str] = []
     for origin in raw.split(","):
-        cleaned = origin.strip().rstrip("/")
+        cleaned = _clean_origin_value(origin)
         if cleaned:
             origins.append(cleaned)
     return origins
@@ -85,6 +90,13 @@ def _parse_cors_origins(raw: str | None) -> list[str]:
 
 def _resolve_cors_allowlist() -> list[str]:
     configured = _parse_cors_origins(os.getenv("CORS_ORIGINS"))
+
+    # FRONTEND_URL is commonly used on Railway and should be accepted even when
+    # CORS_ORIGINS is omitted or contains malformed values.
+    frontend_url = _clean_origin_value(os.getenv("FRONTEND_URL", ""))
+    if frontend_url and frontend_url not in configured:
+        configured.append(frontend_url)
+
     if configured:
         return configured
 
