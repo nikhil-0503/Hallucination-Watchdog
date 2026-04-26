@@ -109,6 +109,32 @@ def _resolve_cors_allowlist() -> list[str]:
     # Set CORS_ORIGINS env var explicitly if you need strict origin checking.
     return ["*"]
 
+# ============================================
+# CORS MIDDLEWARE CONFIGURATION
+# ============================================
+# NOTE: In Starlette/FastAPI, middleware registered via add_middleware() is
+# applied in LIFO order (last registered = outermost = executes first).
+# @app.middleware("http") decorators are inserted before add_middleware() calls
+# in the stack, meaning they execute AFTER add_middleware middlewares.
+#
+# By registering CORSMiddleware BEFORE the rate-limiting @app.middleware("http")
+# decorator, CORS becomes the outermost layer and runs first — ensuring
+# Access-Control-Allow-Origin headers are present on every response, including
+# 429 errors and OPTIONS preflight responses.
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=_resolve_cors_allowlist(),
+    allow_origin_regex=r"https://.*\.railway\.app",
+    allow_credentials=False,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# ============================================
+# RATE LIMITING MIDDLEWARE
+# ============================================
+
 @app.middleware("http")
 async def rate_limit_middleware(request: Request, call_next):
     """
@@ -148,18 +174,6 @@ async def rate_limit_middleware(request: Request, call_next):
     response = await call_next(request)
     return response
 
-# ============================================
-# CORS MIDDLEWARE CONFIGURATION
-# ============================================
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=_resolve_cors_allowlist(),
-    allow_origin_regex=r"https://.*\.railway\.app",
-    allow_credentials=False,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 
 # ============================================
 # ROUTE REGISTRATION
