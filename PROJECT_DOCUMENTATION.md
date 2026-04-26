@@ -14,7 +14,7 @@ WATCHDOG intercepts AI model outputs in real-time:
 ## Login Credentials
 
 ```
-Admin: admin@watchdog.ai / Admin123!
+Admin: admin@watchdog.ai / admin123
 User:  user@watchdog.ai / User123!
 ```
 

@@ -192,7 +192,7 @@ After deployment, judges can login with:
 ```
 🔐 Admin Dashboard
 Email: admin@watchdog.ai
-Password: Admin123!
+Password: admin123
 
 👤 User Portal  
 Email: user@watchdog.ai

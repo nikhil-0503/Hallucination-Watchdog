@@ -63,7 +63,7 @@ OVERCONFIDENCE_PATTERNS = [
     r'\balways\b',
     r'\bnever\b',
     r'\bimpossible\b',
-    r'\bprovided?\b',
+    r'\bproven?\b',
     r'\bmust be\b',
     r'\bwill definitely\b',
     r'\bno question\b',
@@ -95,7 +95,7 @@ SENSITIVE_TOPIC_PATTERNS = {
         "keywords": [
             r'\bcaste\b', r'\bcasteism\b', r'\bcasteist\b', r'\binter[- ]?caste\b',
             r'\bscheduled caste\b', r'\bbackward class\b', r'\bobc\b', r'\bsc/st\b',
-            r'\b Brahmin\b', r'\bDalit\b', r'\bKshatriya\b', r'\bVaishya\b', r'\bShudra\b',
+            r'\bbrahmin\b', r'\bdalit\b', r'\bkshatriya\b', r'\bvaishya\b', r'\bshudra\b',
         ],
         "risk_boost": 40,
         "description": "Prompt involves caste — highly sensitive social structure in India",
@@ -239,6 +239,20 @@ BIAS_CATEGORY_PATTERNS = {
         "bias": [
             r'\breligious[- ]?bias\b', r'\bprefer.*\breligion\b', r'\bnot trust.*\breligion\b',
             r'\bmuslim.*\b(inferior|dangerous|unfit)\b',
+        ],
+    },
+    "caste bias": {
+        "protected": [
+            r'\bcaste\b', r'\bdalit\b', r'\bbrahmin\b', r'\bshudra\b', r'\bkshatriya\b', r'\bvaishya\b',
+            r'\blower caste\b', r'\bupper caste\b', r'\bsc/st\b', r'\bobc\b', r'\bscheduled caste\b',
+        ],
+        "bias": [
+            r'\blower caste\b.*\b(less intelligent|inferior|unfit|less capable|stupid)\b',
+            r'\bupper caste\b.*\b(superior|more intelligent|better)\b',
+            r'\bcaste[- ]?based\b.*\b(superiority|inferiority|discrimination)\b',
+            r'\bprefer\b.*\bupper caste\b',
+            r'\bdiscrim\w+\b.*\bcaste\b',
+            r'\buntouchable\b',
         ],
     },
 }
@@ -848,7 +862,8 @@ STRICT_HIGH_PATTERNS = [
     # Violence / terrorism / weapons
     r'\bkill\b', r'\bkill\s+.+', r'\bbomb\b', r'\bnuke\b', r'\bnuclear attack\b',
     r'\bblow\s+up\b', r'\bexplode\b', r'\bmassacre\b', r'\bgenocide\b',
-    r'\bterrorist\b', r'\bterrorism\b', r'\bassassinate\b', r'\beliminate\b',
+    r'\bterrorist\b', r'\bterrorism\b', r'\bassassinate\b',
+    r'\beliminate\b\s+(them|him|her|people|person|target|enemy)\b',
     r'how to (build|make|create).+bomb', r'how to .+kill', r'how to .+attack',
     # Psychological manipulation / coercion
     r'how (can|to) .*pressure .*psychologically',
@@ -932,7 +947,7 @@ def decide_auto_block(context: Dict) -> Tuple[bool, List[str]]:
 
     Rules (simple, conservative):
     - Any HIGH strict violation -> auto-block
-    - >1 claim contradiction OR any internal contradiction in sensitive domains -> auto-block
+    - Any internal contradiction in sensitive domains -> auto-block
     - Overconfidence + many UNVERIFIED claims in sensitive domain -> auto-block
     Returns (auto_block_bool, reasons[])
     """
@@ -952,10 +967,9 @@ def decide_auto_block(context: Dict) -> Tuple[bool, List[str]]:
             reasons.append(f"Strict pattern matched: {v.get('pattern')}")
             return True, reasons
 
-    # Rule 2: Multiple claim contradictions
+    # Rule 2: Multiple claim contradictions are diagnostic, not hard block by themselves.
     if len(claim_contradictions) > 1:
         reasons.append(f"Multiple claim contradictions detected: {len(claim_contradictions)}")
-        return True, reasons
 
     # Rule 3: Internal contradiction in sensitive domain or time-sensitive content
     if internal_contradiction and domain in ('health', 'legal', 'finance'):

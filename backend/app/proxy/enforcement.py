@@ -70,6 +70,8 @@ async def get_risk_report(prompt: str, llm_response: str, domain: str) -> RiskRe
         metadata = risk_analysis.get('metadata', {}) or {}
         metadata['auto_block'] = risk_analysis.get('auto_block', False)
         metadata['auto_block_reasons'] = risk_analysis.get('auto_block_reasons', [])
+        metadata['strict_violations'] = risk_analysis.get('strict_violations', [])
+        metadata['claim_contradictions'] = risk_analysis.get('claim_contradictions', [])
         metadata['bias_detected'] = bias_detected
         metadata['bias_types'] = bias_types
         metadata['bias_reason'] = bias_reason
@@ -183,6 +185,10 @@ def apply_enforcement(risk_report: RiskReport, llm_response: str, user_context: 
             r'\bfilter out\b',
             r'\bunfit\b',
             r'\bless capable\b',
+            r'\bless intelligent\b',
+            r'\binferior\b',
+            r'\blower caste\b',
+            r'\bupper caste\b',
         ]
 
         has_discriminatory_intent = bool(bias_types) and any(
@@ -190,7 +196,11 @@ def apply_enforcement(risk_report: RiskReport, llm_response: str, user_context: 
             for pattern in discriminatory_intent_patterns
         )
 
-        if risk_metadata.get("auto_block"):
+        strict_violations = risk_metadata.get("strict_violations", []) or []
+        has_high_strict_violation = any(v.get("severity") == "HIGH" for v in strict_violations)
+
+        # Only force auto-block on explicit strict high-severity violations.
+        if risk_metadata.get("auto_block") and has_high_strict_violation:
             action = ActionType.BLOCK
 
         if has_discriminatory_intent:
