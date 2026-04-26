@@ -54,6 +54,9 @@ async def get_risk_report(prompt: str, llm_response: str, domain: str) -> RiskRe
         # Convert to our schema format
         risk_score = risk_analysis.get('risk_score', 30)
         explanation = risk_analysis.get('explanation', 'Risk analysis completed')
+        bias_detected = risk_analysis.get('bias_detected', False)
+        bias_types = risk_analysis.get('bias_types', [])
+        bias_reason = risk_analysis.get('bias_reason', '')
 
         # Extract signals
         signals = RiskSignals(
@@ -66,6 +69,12 @@ async def get_risk_report(prompt: str, llm_response: str, domain: str) -> RiskRe
         metadata = risk_analysis.get('metadata', {}) or {}
         metadata['auto_block'] = risk_analysis.get('auto_block', False)
         metadata['auto_block_reasons'] = risk_analysis.get('auto_block_reasons', [])
+        metadata['bias_detected'] = bias_detected
+        metadata['bias_types'] = bias_types
+        metadata['bias_reason'] = bias_reason
+        metadata['claim_count'] = risk_analysis.get('claim_count', 0)
+        metadata['response_length'] = risk_analysis.get('response_length', len(llm_response))
+        metadata['sentence_count'] = risk_analysis.get('sentence_count', 0)
 
         return RiskReport(
             risk_score=risk_score,
@@ -214,7 +223,9 @@ def get_enforcement_metadata(
             "signals": {
                 "rag_unverified": risk_report.signals.rag_unverified,
                 "internal_contradiction": risk_report.signals.internal_contradiction,
-                "overconfidence": risk_report.signals.overconfidence
+                    "overconfidence": risk_report.signals.overconfidence,
+                    "bias_detected": bool((risk_report.metadata or {}).get("bias_detected", False)),
+                    "bias_types": (risk_report.metadata or {}).get("bias_types", []),
             }
         },
         "was_blocked": action == ActionType.BLOCK,

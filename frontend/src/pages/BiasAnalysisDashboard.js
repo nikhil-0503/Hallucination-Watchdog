@@ -244,6 +244,10 @@ const DatasetAuditForm = ({ onSubmit }) => {
 
 const BiasScoreDisplay = ({ analysis }) => {
   const { bias_score, demographics, recommendation, confidence, gemini_analysis } = analysis;
+  const likelyBiasAreas = Object.entries(demographics || {})
+    .filter(([, info]) => info?.detected)
+    .map(([attr]) => attr.replace(/_/g, ' '));
+
   const getLevelColor = (level) => {
     switch (level) {
       case 'LOW': return { color: 'var(--success)', bg: 'rgba(16,185,129,0.12)' };
@@ -291,6 +295,21 @@ const BiasScoreDisplay = ({ analysis }) => {
             </div>
           </div>
         </div>
+
+        {likelyBiasAreas.length > 0 && (
+          <div className="glass-card" style={{ marginBottom: '1.5rem', borderColor: 'rgba(239,68,68,0.22)' }}>
+            <h4 style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '0.75rem' }}>
+              Likely Bias Areas
+            </h4>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+              {likelyBiasAreas.map((biasArea) => (
+                <span key={biasArea} className="badge badge-danger">
+                  {biasArea} bias
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
 
         {bias_score?.factors && (
           <div style={{ marginBottom: '1.5rem' }}>

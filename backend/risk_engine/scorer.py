@@ -26,6 +26,7 @@ RISK_WEIGHTS = {
     "rag_contradiction": 35,
     "rag_unverified": 15,
     "overconfidence": 20,
+    "bias_detected": 25,
 }
 
 # Domain risk multipliers for trust scoring
@@ -80,6 +81,9 @@ def calculate_risk_score(signals: Dict) -> int:
     
     if signals.get("overconfidence", False):
         score += RISK_WEIGHTS["overconfidence"]
+
+    if signals.get("bias_detected", False):
+        score += RISK_WEIGHTS["bias_detected"]
     
     # Cap at 100
     return min(score, 100)
@@ -125,6 +129,16 @@ def generate_explanation(signals: Dict, score: int) -> str:
             issues.append(f"Overconfidence detected: {reason}")
         else:
             issues.append("High confidence language without supporting evidence")
+
+    if signals.get("bias_detected", False):
+        bias_types = signals.get("bias_types", [])
+        bias_reason = signals.get("bias_reason", "")
+        if bias_types:
+            issues.append(f"Bias detected: {', '.join(bias_types)}")
+        elif bias_reason:
+            issues.append(f"Bias detected: {bias_reason}")
+        else:
+            issues.append("Bias detected")
     
     # Generate explanation based on score level
     if score >= 70:
@@ -258,12 +272,21 @@ def calculate_trust_score(
     # Apply time sensitivity penalty
     time_penalty = TIME_SENSITIVITY_IMPACT.get(time_sensitivity, 0.10)
     trust_after_time = trust_after_domain - time_penalty
+
+    response_length = int(signals.get("response_length", 0) or 0)
+    claim_count = int(signals.get("claim_count", 0) or 0)
+    length_factor = min(response_length / 700.0, 1.0)
+    claim_factor = min(claim_count / 6.0, 1.0)
     
     # Factor in average claim confidence
     if claim_confidences:
         avg_confidence = sum(claim_confidences.values()) / len(claim_confidences)
-        # Blend with claim confidence (60% trust calculation, 40% claim confidence for more spread)
-        trust_after_time = (trust_after_time * 0.6) + (avg_confidence * 0.4)
+        quality_signal = avg_confidence
+    else:
+        quality_signal = trust_after_domain
+
+    content_quality = 0.25 + (quality_signal * 0.45) + (length_factor * 0.15) + (claim_factor * 0.15)
+    trust_after_time = (trust_after_time * 0.45) + (content_quality * 0.55)
 
     # Additional penalties based on detailed signals to increase variance
     if signals:
@@ -275,6 +298,8 @@ def calculate_trust_score(
             trust_after_time -= 0.20
         if signals.get("overconfidence"):
             trust_after_time -= 0.10
+        if signals.get("bias_detected"):
+            trust_after_time -= 0.12
         # If auto_block was triggered anywhere upstream, force very low trust
         if signals.get("auto_block"):
             trust_after_time = min(trust_after_time, 0.05)

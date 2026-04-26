@@ -83,6 +83,8 @@ const AdminAnalysis = () => {
   }
 
   const confidencePercent = Math.round((prompt.confidence || 0) * 100);
+  const biasTypes = Array.isArray(prompt.metadata?.bias_types) ? prompt.metadata.bias_types : [];
+  const biasDetected = Boolean(prompt.metadata?.bias_detected && biasTypes.length > 0);
 
   const metrics = [
     {
@@ -215,6 +217,35 @@ const AdminAnalysis = () => {
             </motion.div>
           ))}
         </div>
+
+        {biasDetected && (
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.25 }}
+            className="glass-card"
+            style={{ marginBottom: '1.5rem', borderColor: 'rgba(239,68,68,0.25)' }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem' }}>
+              <AlertTriangle size={18} style={{ color: 'var(--danger)' }} />
+              <h3 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+                Bias Detected
+              </h3>
+            </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '0.75rem' }}>
+              {biasTypes.map((biasType) => (
+                <span key={biasType} className="badge badge-danger">
+                  {biasType}
+                </span>
+              ))}
+            </div>
+            {prompt.metadata?.bias_reason && (
+              <p style={{ color: 'var(--text-secondary)', margin: 0, lineHeight: 1.6 }}>
+                {prompt.metadata.bias_reason}
+              </p>
+            )}
+          </motion.div>
+        )}
 
         {/* Prompt & Response */}
         <div className="grid-2" style={{ marginBottom: '1.5rem' }}>

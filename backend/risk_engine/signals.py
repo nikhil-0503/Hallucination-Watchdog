@@ -77,6 +77,47 @@ SENSITIVE_DOMAINS = [
     r'\bsafety\b', r'\bemergency\b',
 ]
 
+BIAS_CATEGORY_PATTERNS = {
+    "age bias": {
+        "protected": [r'\bage\b', r'\byoung\b', r'\byounger\b', r'\bold\b', r'\bsenior\b'],
+        "bias": [
+            r'\btoo young\b', r'\btoo old\b', r'\bage[- ]?based\b',
+            r'\bage.*\b(reject|deny|inferior|unfit|less capable|prefer)\b',
+            r'\bprefer.*\b(young|older)\b',
+        ],
+    },
+    "gender bias": {
+        "protected": [r'\bgender\b', r'\bmale\b', r'\bfemale\b', r'\bwomen?\b', r'\bmen?\b', r'\bhe\b', r'\bshe\b'],
+        "bias": [
+            r'\bwomen are\b', r'\bmen are\b', r'\bgirls? are\b', r'\bboys? are\b',
+            r'\bgender[- ]?based\b', r'\bsex[- ]?based\b', r'\bnot fit\b.*\bgender\b',
+            r'\bprefer.*\b(male|female|men|women)\b',
+        ],
+    },
+    "racial bias": {
+        "protected": [r'\brace\b', r'\bethnic\w*\b', r'\bblack\b', r'\bwhite\b', r'\basian\b', r'\bhispanic\b', r'\blatino\b', r'\bminority\b'],
+        "bias": [
+            r'\brace[- ]?based\b', r'\bethnic[- ]?based\b', r'\bblack people are\b',
+            r'\bwhite people are\b', r'\bminorities are\b', r'\bprefer.*\brace\b',
+            r'\bdiscrim\w+\b.*\brace\b',
+        ],
+    },
+    "disability bias": {
+        "protected": [r'\bdisabilit\w*\b', r'\bdisabled\b', r'\bblind\b', r'\bdeaf\b', r'\bwheelchair\b', r'\bautis\w*\b'],
+        "bias": [
+            r'\bnot capable\b', r'\bunfit\b', r'\bshould not accommodate\b',
+            r'\bdisabled.*\b(inferior|less capable|reject|deny)\b',
+        ],
+    },
+    "religious bias": {
+        "protected": [r'\breligion\b', r'\breligious\b', r'\bmuslim\b', r'\bchristian\b', r'\bjewish\b', r'\bhindu\b'],
+        "bias": [
+            r'\breligious[- ]?bias\b', r'\bprefer.*\breligion\b', r'\bnot trust.*\breligion\b',
+            r'\bmuslim.*\b(inferior|dangerous|unfit)\b',
+        ],
+    },
+}
+
 
 def detect_overconfidence(llm_response: str, prompt: str = "") -> Tuple[bool, str]:
     """
@@ -120,6 +161,31 @@ def detect_overconfidence(llm_response: str, prompt: str = "") -> Tuple[bool, st
             return True, "Confident advice in sensitive domain"
     
     return False, ""
+
+
+def detect_bias_signals(prompt: str, llm_response: str) -> Tuple[bool, List[str], str]:
+    """
+    Detect explicit bias language tied to protected attributes.
+
+    Returns:
+        Tuple of (bias_detected, bias_types, reason)
+    """
+    combined_text = f"{prompt} {llm_response}"
+    bias_types: List[str] = []
+    reason_parts: List[str] = []
+
+    for label, patterns in BIAS_CATEGORY_PATTERNS.items():
+        protected_hit = any(re.search(pattern, combined_text, re.IGNORECASE) for pattern in patterns["protected"])
+        bias_hit = any(re.search(pattern, combined_text, re.IGNORECASE) for pattern in patterns["bias"])
+
+        if protected_hit and bias_hit:
+            bias_types.append(label)
+            reason_parts.append(f"{label} language detected")
+
+    if not bias_types:
+        return False, [], ""
+
+    return True, bias_types, "; ".join(reason_parts)
 
 
 # ============================================================================
@@ -557,6 +623,9 @@ def extract_all_signals(
         rag_status = claim_verification.get(claim, "UNVERIFIED")
         confidence = calculate_claim_confidence(claim, rag_status, llm_response)
         claim_confidences[claim] = confidence
+
+    response_length = len(llm_response)
+    sentence_count = len([segment for segment in re.split(r'[.!?]+', llm_response) if segment.strip()])
     
     # TRUST INTELLIGENCE: Detect claim dependencies
     claim_dependencies = detect_claim_dependencies(claims)
@@ -569,6 +638,9 @@ def extract_all_signals(
     
     # Detect overconfidence
     is_overconfident, overconfidence_reason = detect_overconfidence(llm_response, prompt)
+
+    # Detect explicit bias language tied to protected attributes
+    bias_detected, bias_types, bias_reason = detect_bias_signals(prompt, llm_response)
     
     # Detect internal contradictions
     has_contradiction, contradiction_details = detect_internal_contradictions(llm_response)
@@ -596,6 +668,7 @@ def extract_all_signals(
         "rag_unverified": rag_unverified,
         "internal_contradiction": has_contradiction,
         "overconfidence": is_overconfident,
+        "bias_detected": bias_detected,
         "domain": domain,
         "time_sensitivity": time_sensitivity,
         "claim_confidences": claim_confidences,
@@ -611,6 +684,9 @@ def extract_all_signals(
         "contradiction_details": contradiction_details,
         "overconfidence": is_overconfident,
         "overconfidence_reason": overconfidence_reason,
+        "bias_detected": bias_detected,
+        "bias_types": bias_types,
+        "bias_reason": bias_reason,
         "strict_violations": strict_violations,
         "claim_contradictions": claim_contradictions,
         "auto_block": auto_block,
@@ -618,6 +694,9 @@ def extract_all_signals(
         
         # TRUST INTELLIGENCE (new)
         "claim_confidences": claim_confidences,
+        "claim_count": len(claims),
+        "response_length": response_length,
+        "sentence_count": sentence_count,
         "claim_dependencies": claim_dependencies,
         "time_sensitivity": time_sensitivity,
         "domain": domain,

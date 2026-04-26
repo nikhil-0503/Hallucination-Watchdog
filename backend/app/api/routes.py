@@ -596,6 +596,7 @@ async def get_community_patterns():
     """
     records = get_all_prompts()
     total = len(records)
+    stats = get_stats()
     
     if total == 0:
         return {
@@ -608,23 +609,58 @@ async def get_community_patterns():
     # Derive patterns from actual action distribution
     blocked = sum(1 for r in records if r.get("action") == "BLOCK")
     warned = sum(1 for r in records if r.get("action") == "WARN")
+    allowed = sum(1 for r in records if r.get("action") == "ALLOW")
     
     patterns = []
     if blocked > 0:
         patterns.append({
+            "name": "High-Risk Output Detection",
             "title": "High-Risk Output Detection",
             "domain": "General",
-            "avg_gap": f"{min(50, blocked * 2)}%",
+            "description": f"{blocked} blocked decisions out of {total} analyzed. This pattern usually reflects unsupported claims or policy-violating output.",
+            "frequency": blocked,
+            "avg_gap": f"{round((blocked / total) * 100, 1)}%",
             "datasets_analyzed": total,
-            "severity": "HIGH" if blocked > warned else "MEDIUM"
+            "severity": "HIGH" if blocked > warned else "MEDIUM",
+            "recommendation": "Review prompts generating unsafe or unsupported outputs.",
         })
     if warned > 0:
         patterns.append({
+            "name": "Overconfidence / Unverified Claims",
             "title": "Overconfidence / Unverified Claims",
             "domain": "General",
-            "avg_gap": f"{min(30, warned)}%",
+            "description": f"{warned} warned decisions out of {total} analyzed. Responses frequently contain unverified claims or overly certain language.",
+            "frequency": warned,
+            "avg_gap": f"{round((warned / total) * 100, 1)}%",
             "datasets_analyzed": total,
-            "severity": "MEDIUM"
+            "severity": "MEDIUM",
+            "recommendation": "Tighten grounding and surface confidence cues in these workflows.",
+        })
+
+    if allowed > 0:
+        patterns.append({
+            "name": "Safe Response Baseline",
+            "title": "Safe Response Baseline",
+            "domain": "General",
+            "description": f"{allowed} allowed decisions with an average confidence of {round(stats.get('avg_confidence', 0) * 100)}%.",
+            "frequency": allowed,
+            "avg_gap": f"{round((allowed / total) * 100, 1)}%",
+            "datasets_analyzed": total,
+            "severity": "LOW",
+            "recommendation": "Continue monitoring to preserve the current safety baseline.",
+        })
+
+    if not patterns:
+        patterns.append({
+            "name": "Stable Safety Baseline",
+            "title": "Stable Safety Baseline",
+            "domain": "General",
+            "description": "The current dataset does not show a dominant risk pattern yet.",
+            "frequency": total,
+            "avg_gap": "0%",
+            "datasets_analyzed": total,
+            "severity": "LOW",
+            "recommendation": "Keep collecting decisions to reveal emerging community patterns.",
         })
     
     return {
