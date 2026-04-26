@@ -130,9 +130,15 @@ def analyze(
         "internal_contradiction": signals["internal_contradiction"],
         "overconfidence": signals["overconfidence"],
         "bias_detected": signals.get("bias_detected", False),
+        "sensitive_topic_detected": signals.get("sensitive_topic_detected", False),
     }
     
     base_risk_score = calculate_risk_score(signal_flags)
+
+    # Add prompt-level sensitive topic boost directly to risk score
+    sensitive_topic_boost = signals.get("sensitive_topic_boost", 0)
+    if sensitive_topic_boost > 0:
+        base_risk_score = min(base_risk_score + sensitive_topic_boost, 100)
     
     # Step 3: TRUST INTELLIGENCE - Extract trust features (needed for multiplier)
     domain = signals.get("domain", "general")

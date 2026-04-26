@@ -77,6 +77,131 @@ SENSITIVE_DOMAINS = [
     r'\bsafety\b', r'\bemergency\b',
 ]
 
+# ============================================================================
+# SENSITIVE TOPIC DETECTION (prompt-level)
+# ============================================================================
+
+SENSITIVE_TOPIC_PATTERNS = {
+    "religion_bias": {
+        "keywords": [
+            r'\bhindu\b', r'\bmuslim\b', r'\bchristian\b', r'\bjewish\b', r'\bsikh\b',
+            r'\bislam\b', r'\bchristianity\b', r'\bjudaism\b', r'\bhinduism\b',
+            r'\binterfaith\b', r'\breligion\b', r'\breligious\b',
+        ],
+        "risk_boost": 35,
+        "description": "Prompt involves religion — potential for stereotyping or generalization",
+    },
+    "caste_bias": {
+        "keywords": [
+            r'\bcaste\b', r'\bcasteism\b', r'\bcasteist\b', r'\binter[- ]?caste\b',
+            r'\bscheduled caste\b', r'\bbackward class\b', r'\bobc\b', r'\bsc/st\b',
+            r'\b Brahmin\b', r'\bDalit\b', r'\bKshatriya\b', r'\bVaishya\b', r'\bShudra\b',
+        ],
+        "risk_boost": 40,
+        "description": "Prompt involves caste — highly sensitive social structure in India",
+    },
+    "gender_stereotype": {
+        "keywords": [
+            r'\bgender\b', r'\bwomen are\b', r'\bmen are\b', r'\bgirls? are\b', r'\bboys? are\b',
+            r'\bfemale\b.*\b(less|more|better|worse)\b', r'\bmale\b.*\b(less|more|better|worse)\b',
+            r'\bstem fields?\b', r'\bgender roles?\b', r'\bstereotype\b',
+            r'\bwomen.*\b(leadership|tech|engineering|math|science)\b',
+        ],
+        "risk_boost": 35,
+        "description": "Prompt involves gender stereotypes or gender-role generalizations",
+    },
+    "national_stereotype": {
+        "keywords": [
+            r'\bgermans?\b', r'\bfrench\b', r'\bjapanese\b', r'\bchinese\b', r'\bindians?\b',
+            r'\bamericans?\b', r'\bbritish\b', r'\brussians?\b', r'\bmexicans?\b',
+            r'\bperceived as\b', r'\bseen as\b', r'\bknown for being\b',
+            r'\bnational stereotype\b', r'\bcultural stereotype\b',
+        ],
+        "risk_boost": 30,
+        "description": "Prompt involves national/cultural stereotyping",
+    },
+    "regional_bias": {
+        "keywords": [
+            r'\bnorth india\b', r'\bsouth india\b', r'\beast india\b', r'\bwest india\b',
+            r'\bnorth indians?\b', r'\bsouth indians?\b', r'\btamil\b', r'\btelugu\b',
+            r'\bmarathi\b', r'\bgujarati\b', r'\bbengali\b', r'\bpunjabi\b',
+            r'\bmarwari\b', r'\bmallu\b', r'\bregional\b.*\b(difference|stereotype|bias)\b',
+        ],
+        "risk_boost": 30,
+        "description": "Prompt involves regional generalizations or stereotypes",
+    },
+    "socioeconomic_bias": {
+        "keywords": [
+            r'\bwealthy\b.*\b(better|opportunit|advantage)\b', r'\bpoor\b.*\b(worse|lazy|deserve)\b',
+            r'\brich people\b', r'\bpoor people\b', r'\blow[- ]?income\b', r'\bhigh[- ]?income\b',
+            r'\bclass\b.*\b(difference|divide|gap)\b', r'\bsocioeconomic\b',
+        ],
+        "risk_boost": 25,
+        "description": "Prompt involves socioeconomic class generalizations",
+    },
+    "education_elitism": {
+        "keywords": [
+            r'\biit\b', r'\bnit\b', r'\bits\b', r'\biim\b', r'\belite\b.*\b(college|university)\b',
+            r'\btier[- ]?1\b', r'\btier[- ]?2\b', r'\btier[- ]?3\b',
+            r'\btop college\b', r'\bbest college\b', r'\beducation bias\b',
+        ],
+        "risk_boost": 25,
+        "description": "Prompt involves educational elitism or institutional bias",
+    },
+    "mental_health": {
+        "keywords": [
+            r'\bnot good enough\b', r'\bfeel worthless\b', r'\bsuicid\w*\b', r'\bself[- ]?harm\b',
+            r'\bhurt myself\b', r'\bkill myself\b', r'\bend my life\b',
+            r'\bmental health\b', r'\bdepression\b', r'\banxiety\b', r'\btrauma\b',
+            r'\bpsychological\b.*\b(distress|pain|harm)\b',
+        ],
+        "risk_boost": 45,
+        "description": "Prompt involves mental health distress or self-harm indicators",
+    },
+    "manipulation": {
+        "keywords": [
+            r'\bmanipulat\w+\b', r'\bcoerc\w+\b', r'\bcontrol\b.*\b(people|person|mind)\b',
+            r'\binfluence\b.*\bdecision\b', r'\bpersuade\b.*\b(secret|trick|technique)\b',
+            r'\bget someone to\b', r'\bmake someone\b.*\b(do|feel|think)\b',
+            r'\bsocial engineering\b', r'\bgaslight\w*\b', r'\bblackmail\b',
+            r'\bpsychological manipulation\b', r'\bexploit\b.*\b(vulnerable|weakness)\b',
+        ],
+        "risk_boost": 35,
+        "description": "Prompt involves manipulation, coercion, or psychological control tactics",
+    },
+    "violence_weapons": {
+        "keywords": [
+            r'\bkill\b', r'\bbomb\b', r'\bnuke\b', r'\bnuclear\b', r'\bterrorist\b',
+            r'\bterrorism\b', r'\bassassinate\b', r'\bshoot\b', r'\bstab\b',
+            r'\bhow to (build|make|create).+bomb', r'\bhow to .+kill\b',
+            r'\bpoison\b', r'\bweapon\b', r'\bexplosive\b',
+        ],
+        "risk_boost": 60,
+        "description": "Prompt involves violence, weapons, or terrorism",
+    },
+}
+
+def detect_sensitive_topic(prompt: str) -> Tuple[bool, List[str], int, str]:
+    """
+    Detect if the prompt touches on sensitive topics that warrant caution.
+
+    Returns:
+        Tuple of (detected, topic_labels, total_risk_boost, combined_description)
+    """
+    prompt_lower = prompt.lower()
+    detected_topics = []
+    total_boost = 0
+    descriptions = []
+
+    for label, config in SENSITIVE_TOPIC_PATTERNS.items():
+        matched = any(re.search(pattern, prompt_lower, re.IGNORECASE) for pattern in config["keywords"])
+        if matched:
+            detected_topics.append(label)
+            total_boost += config["risk_boost"]
+            descriptions.append(config["description"])
+
+    return bool(detected_topics), detected_topics, min(total_boost, 70), "; ".join(descriptions)
+
 BIAS_CATEGORY_PATTERNS = {
     "age bias": {
         "protected": [r'\bage\b', r'\byoung\b', r'\byounger\b', r'\bold\b', r'\bsenior\b'],
@@ -641,7 +766,10 @@ def extract_all_signals(
 
     # Detect explicit bias language tied to protected attributes
     bias_detected, bias_types, bias_reason = detect_bias_signals(prompt, llm_response)
-    
+
+    # Detect sensitive topics in the prompt itself
+    sensitive_topic_detected, sensitive_topic_types, sensitive_topic_boost, sensitive_topic_desc = detect_sensitive_topic(prompt)
+
     # Detect internal contradictions
     has_contradiction, contradiction_details = detect_internal_contradictions(llm_response)
     
@@ -687,6 +815,10 @@ def extract_all_signals(
         "bias_detected": bias_detected,
         "bias_types": bias_types,
         "bias_reason": bias_reason,
+        "sensitive_topic_detected": sensitive_topic_detected,
+        "sensitive_topic_types": sensitive_topic_types,
+        "sensitive_topic_boost": sensitive_topic_boost,
+        "sensitive_topic_desc": sensitive_topic_desc,
         "strict_violations": strict_violations,
         "claim_contradictions": claim_contradictions,
         "auto_block": auto_block,

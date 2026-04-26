@@ -27,6 +27,7 @@ RISK_WEIGHTS = {
     "rag_unverified": 15,
     "overconfidence": 20,
     "bias_detected": 25,
+    "sensitive_topic": 30,
 }
 
 # Domain risk multipliers for trust scoring
@@ -139,6 +140,16 @@ def generate_explanation(signals: Dict, score: int) -> str:
             issues.append(f"Bias detected: {bias_reason}")
         else:
             issues.append("Bias detected")
+
+    if signals.get("sensitive_topic_detected", False):
+        sensitive_desc = signals.get("sensitive_topic_desc", "")
+        sensitive_types = signals.get("sensitive_topic_types", [])
+        if sensitive_desc:
+            issues.append(f"Sensitive topic: {sensitive_desc}")
+        elif sensitive_types:
+            issues.append(f"Sensitive topic detected: {', '.join(sensitive_types)}")
+        else:
+            issues.append("Sensitive topic detected in prompt")
     
     # Generate explanation based on score level
     if score >= 70:
@@ -189,6 +200,9 @@ def get_risk_breakdown(signals: Dict, score: int) -> Dict:
     
     if signals.get("overconfidence", False):
         breakdown["components"]["overconfidence"] = RISK_WEIGHTS["overconfidence"]
+
+    if signals.get("sensitive_topic_detected", False):
+        breakdown["components"]["sensitive_topic"] = RISK_WEIGHTS["sensitive_topic"]
     
     # Calculate raw total before capping
     raw_total = sum(breakdown["components"].values())

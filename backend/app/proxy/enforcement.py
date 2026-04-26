@@ -73,6 +73,9 @@ async def get_risk_report(prompt: str, llm_response: str, domain: str) -> RiskRe
         metadata['bias_detected'] = bias_detected
         metadata['bias_types'] = bias_types
         metadata['bias_reason'] = bias_reason
+        metadata['sensitive_topic_detected'] = risk_analysis.get('sensitive_topic_detected', False)
+        metadata['sensitive_topic_types'] = risk_analysis.get('sensitive_topic_types', [])
+        metadata['sensitive_topic_desc'] = risk_analysis.get('sensitive_topic_desc', '')
         metadata['claim_count'] = risk_analysis.get('claim_count', 0)
         metadata['response_length'] = risk_analysis.get('response_length', len(llm_response))
         metadata['sentence_count'] = risk_analysis.get('sentence_count', 0)
@@ -258,9 +261,11 @@ def get_enforcement_metadata(
             "signals": {
                 "rag_unverified": risk_report.signals.rag_unverified,
                 "internal_contradiction": risk_report.signals.internal_contradiction,
-                    "overconfidence": risk_report.signals.overconfidence,
-                    "bias_detected": bool((risk_report.metadata or {}).get("bias_detected", False)),
-                    "bias_types": (risk_report.metadata or {}).get("bias_types", []),
+                "overconfidence": risk_report.signals.overconfidence,
+                "bias_detected": bool((risk_report.metadata or {}).get("bias_detected", False)),
+                "bias_types": (risk_report.metadata or {}).get("bias_types", []),
+                "sensitive_topic_detected": bool((risk_report.metadata or {}).get("sensitive_topic_detected", False)),
+                "sensitive_topic_types": (risk_report.metadata or {}).get("sensitive_topic_types", []),
             }
         },
         "was_blocked": action == ActionType.BLOCK,

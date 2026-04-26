@@ -246,6 +246,35 @@ const AdminAnalysis = () => {
           </motion.div>
         )}
 
+        {prompt.metadata?.sensitive_topic_detected && (
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.28 }}
+            className="glass-card"
+            style={{ marginBottom: '1.5rem', borderColor: 'rgba(245,158,11,0.25)' }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem' }}>
+              <AlertTriangle size={18} style={{ color: 'var(--warning)' }} />
+              <h3 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+                Sensitive Topic Detected
+              </h3>
+            </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '0.75rem' }}>
+              {(prompt.metadata?.sensitive_topic_types || []).map((topic) => (
+                <span key={topic} className="badge badge-warning">
+                  {topic}
+                </span>
+              ))}
+            </div>
+            {prompt.metadata?.sensitive_topic_desc && (
+              <p style={{ color: 'var(--text-secondary)', margin: 0, lineHeight: 1.6 }}>
+                {prompt.metadata.sensitive_topic_desc}
+              </p>
+            )}
+          </motion.div>
+        )}
+
         {/* Prompt & Response */}
         <div className="grid-2" style={{ marginBottom: '1.5rem' }}>
           <motion.div

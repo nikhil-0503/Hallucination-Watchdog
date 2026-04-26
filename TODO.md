@@ -27,12 +27,20 @@
    - [x] `ActivityLogs.js` — Replaced `toLocaleString()` with `toISTString()`
    - [x] `UserChatPage.js` — Replaced `toLocaleTimeString()` with `toISTTimeString()`
 
+7. **Sensitive topic detection (religion, caste, gender, mental health, manipulation)**
+   - [x] `backend/risk_engine/signals.py` — Added `detect_sensitive_topic()` with keyword lists for religion, caste, gender, mental health, manipulation, stereotypes
+   - [x] `backend/risk_engine/analyzer.py` — Wired `detect_sensitive_topic()` into `extract_all_signals()`; included results in returned dict
+   - [x] `backend/risk_engine/scorer.py` — Added `sensitive_topic` to `RISK_WEIGHTS` (+30); updated `calculate_risk_score()`, `generate_explanation()`, `get_risk_breakdown()`, and `calculate_trust_score()` to account for sensitive topics
+   - [x] `backend/app/proxy/enforcement.py` — Pass `sensitive_topic_detected`, `sensitive_topic_types`, `sensitive_topic_desc` through metadata and `get_enforcement_metadata()`
+   - [x] `frontend/src/pages/AdminAnalysis.js` — Display "Sensitive Topic Detected" banner with topic tags when present
+
 ## Testing Checklist
-- [ ] Test signup with matching passwords
-- [ ] Test AdminAnalysis page load (no glitch)
-- [ ] Test export JSON/CSV/TXT from ActivityLogs and AdminDashboard
-- [ ] Verify timestamps show IST
-- [ ] Test "Analyze All Prompts" tab with stored prompts
+- [x] Test signup with matching passwords
+- [x] Test AdminAnalysis page load (no glitch)
+- [x] Test export JSON/CSV/TXT from ActivityLogs and AdminDashboard
+- [x] Verify timestamps show IST
+- [x] Test "Analyze All Prompts" tab with stored prompts
+- [x] Verify sensitive prompts (religion, caste, gender, mental health, manipulation) trigger WARN instead of ALLOW
 
 ## README Update
 - [x] Updated README.md with complete feature list capturing all app capabilities
