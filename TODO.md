@@ -6,5 +6,8 @@
 - [x] Edit `backend/app/proxy/llm_proxy.py` — Add config status method & improve logging
 - [x] Edit `frontend/src/services/api.js` — Fix fetch timeout with AbortController
 - [x] Edit `backend/app/api/routes.py` — Add `/api/config` endpoint
+- [x] Push changes to GitHub
+- [ ] Redeploy backend on Railway (user action required)
+- [ ] Set GEMINI_API_KEY in Railway Variables (user action required)
 - [ ] Test and verify changes
 
