@@ -1,9 +1,8 @@
-# Railway configuration for the BACKEND service ONLY.
+# Railway configuration for the BACKEND service.
 # In Railway Dashboard, set this service's Root Directory to "backend".
-# This ensures Railway builds backend/Dockerfile, NOT the root Dockerfile.
 [build]
 builder = "DOCKERFILE"
-dockerfilePath = "./Dockerfile"
+dockerfilePath = "Dockerfile"
 
 [deploy]
 startCommand = "python -m uvicorn app.main:app --host 0.0.0.0 --port 8080"
