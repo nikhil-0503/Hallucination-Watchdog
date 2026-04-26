@@ -187,11 +187,12 @@ def apply_enforcement(risk_report: RiskReport, llm_response: str, user_context: 
             r'\bless capable\b',
             r'\bless intelligent\b',
             r'\binferior\b',
-            r'\blower caste\b',
-            r'\bupper caste\b',
+            r'\blower castes?\b',
+            r'\bupper castes?\b',
+            r'\bcaste[- ]?based\b.*\b(superiority|inferiority)\b',
         ]
 
-        has_discriminatory_intent = bool(bias_types) and any(
+        has_discriminatory_intent = any(
             re.search(pattern, prompt_text_lower, re.IGNORECASE)
             for pattern in discriminatory_intent_patterns
         )
