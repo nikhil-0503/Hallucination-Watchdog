@@ -1,162 +1,165 @@
 # WATCHDOG — Unbiased AI Decision System
+## Google Solution Challenge: Ensuring Fairness and Detecting Bias in Automated Decisions
 
-> **Production-grade AI safety platform that detects bias, prevents hallucinations, and enforces fairness in automated decisions before they harm real people.**
+**Powered by Google Gemini API** | **Deployed on Railway with Docker**
 
-[![Python](https://img.shields.io/badge/Python-3.11-blue)](https://python.org)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.104-green)](https://fastapi.tiangolo.com)
-[![React](https://img.shields.io/badge/React-19-blue)](https://react.dev)
-[![License](https://img.shields.io/badge/License-MIT-yellow)](LICENSE)
+A comprehensive fairness audit platform that inspects datasets and AI models for hidden discrimination. Build a clear, accessible solution to thoroughly inspect data sets and software models for hidden unfairness or discrimination—then help organizations measure, flag, and fix harmful bias before it impacts real people.
 
 ---
 
-## 🎯 The Problem
+## Overview
 
-AI systems make millions of decisions daily — loan approvals, hiring screenings, medical prioritization, content moderation. Yet these systems routinely discriminate:
+WATCHDOG is a **fairness audit platform powered by Google Gemini API** that helps organizations **measure, flag, and fix bias** in their automated decision systems. Computer programs now make life-changing decisions about job offers, bank loans, and medical care. If these programs learn from biased historical data, they amplify those discriminatory mistakes. WATCHDOG solves this by providing:
 
-- **Lending:** Women denied loans 18% more often than men with identical credentials  
-- **Hiring:** Candidates over 45 receive 45% fewer callbacks due to age-biased screening  
-- **Healthcare:** Minority patients 25% less likely to receive critical ICU allocation  
-- **LLMs:** Hallucinated medical or financial advice putting lives and assets at risk  
+1. **Clear inspection** of datasets and models for hidden discrimination
+2. **Accessible explanations** via Google Gemini (non-technical stakeholders understand findings)
+3. **Easy measurement** - Upload CSV → Get fairness report in seconds
+4. **Actionable remediation** - Concrete steps to fix bias before it impacts real people
 
-Most existing "AI safety" tools are **post-hoc dashboards** — they analyze bias *after* the damage is done. WATCHDOG is different.
-
----
-
-## 💡 Our Solution
-
-WATCHDOG is a **real-time AI safety gateway** that intercepts decisions *before* they reach users. It combines five protective layers:
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    WATCHDOG Safety Stack                     │
-├─────────────────────────────────────────────────────────────┤
-│  1. HALLUCINATION DETECTION  → Catch false facts in LLMs   │
-│  2. BIAS DETECTION           → Spot discrimination patterns │
-│  3. RISK SCORING             → Quantify threat level        │
-│  4. POLICY ENFORCEMENT       → ALLOW / WARN / BLOCK         │
-│  5. AUDIT LOGGING            → Full transparency & trace    │
-└─────────────────────────────────────────────────────────────┘
-```
-
-### How It Works
-
-1. **Intercept** — Every AI output passes through WATCHDOG before reaching the user  
-2. **Analyze** — Risk engine checks for hallucinations + Bias engine checks for discrimination  
-3. **Score** — Combined risk score (0–100) with explainable factor breakdown  
-4. **Enforce** — Policy engine decides: `ALLOW` (safe), `WARN` (flagged), or `BLOCK` (dangerous)  
-5. **Log** — Immutable audit trail for compliance, debugging, and continuous improvement  
+Unlike post-hoc dashboards, WATCHDOG provides **pre-deployment bias inspection** to catch discrimination before models go live.
 
 ---
 
-## 🚀 What Makes WATCHDOG Different
+## Core Capabilities
 
-| Existing Solutions | WATCHDOG |
+| Capability | Description |
 |---|---|
-| Post-hoc bias reports (after damage) | **Real-time interception** (prevents harm) |
-| Static rule-based filters | **AI-powered analysis** (Gemini + statistical metrics) |
-| Single-metric fairness checks | **Multi-dimensional fairness** (5+ metrics combined) |
-| Separate bias & safety tools | **Unified gateway** (bias + hallucination + policy) |
-| Black-box scoring | **Explainable decisions** (Gemini-generated human insights) |
-| Requires retraining models | **Model-agnostic wrapper** (works with any AI system) |
-| No enforcement action | **Active enforcement** (BLOCK dangerous outputs) |
-
-### Unique Selling Propositions (USPs)
-
-1. **Enforcement-First Design** — Doesn't just *detect* bias; it *prevents* biased outputs from ever reaching users via real-time ALLOW/WARN/BLOCK actions.
-
-2. **Model-Agnostic Wrapper** — Works with any LLM or decision system (OpenAI, Gemini, Claude, custom models) without retraining or architecture changes.
-
-3. **Gemini-Powered Explainability** — Uses Google Generative AI to generate human-readable explanations of *why* a decision was flagged, not just scores.
-
-4. **Dual-Threat Detection** — The only system that simultaneously catches **discrimination** (fairness bias) and **hallucinations** (factual errors) in a single pipeline.
-
-5. **Production-Ready Infrastructure** — Dockerized, auto-scaling on Google Cloud Run, with health checks, structured logging, and 99.99% uptime.
+| **Bias Detection** | Detects protected-attribute discrimination (age, gender, race, ethnicity, disability, religion) in datasets. |
+| **Fairness Metrics** | Demographic parity, equal opportunity, equalized odds, calibration, individual fairness. |
+| **Google Gemini Analysis** | AI-powered explanations of *why* bias exists and how to fix it. |
+| **Dataset Auditing** | Upload historical decisions; get comprehensive fairness reports with actionable insights. |
+| **Remediation Guidance** | Google Gemini generates concrete steps to reduce bias (reweight data, adjust thresholds, etc.). |
+| **Audit Logging** | Immutable JSON-based decision trail for compliance and accountability. |
 
 ---
 
-## 📊 Real-World Impact
-
-| Industry | Bias Detected | People Protected | Harm Prevented |
-|---|---|---|---|
-| **Banking** | 18% gender gap in loans | 325 women | $24.4M wrongful denials |
-| **Hiring** | 33% gender + 45% age bias | 5,500 candidates | $10M+ lost opportunities |
-| **Healthcare** | 25% racial ICU disparity | 25 patients | Lives saved |
-| **Total** | — | **1,925+ people** | **$84M+ discrimination prevented** |
-
----
-
-## ✨ Feature List
-
-### Core Safety Features
-- ✅ **Hallucination Detection** — RAG verification, internal contradiction detection, overconfidence flagging
-- ✅ **Bias Detection** — Protected attribute detection (age, gender, race, ethnicity, disability, religion)
-- ✅ **Fairness Metrics** — Demographic parity, equal opportunity, equalized odds, calibration, 4/5ths rule
-- ✅ **Risk Scoring** — Composite 0–100 score with weighted factor breakdown
-- ✅ **Policy Enforcement** — `ALLOW` / `WARN` / `BLOCK` with configurable thresholds
-- ✅ **Audit Logging** — Immutable decision trail with full metadata
-
-### AI & Analysis Features
-- ✅ **Gemini Integration** — Intelligent bias reasoning and natural-language explanations
-- ✅ **Dataset Auditing** — Upload CSVs for comprehensive fairness reports on historical decisions
-- ✅ **Single Decision Analysis** — Real-time bias check on individual decisions
-- ✅ **Explainable AI** — Human-readable explanations of *why* bias was detected
-- ✅ **What-If Simulator** — Project fairness improvements from interventions (future)
-
-### Technical Features
-- ✅ **Model Agnostic** — Works with any LLM or decision API
-- ✅ **FastAPI Backend** — Async Python with OpenAPI/Swagger docs
-- ✅ **React Frontend** — Modern dashboard with bias visualizations
-- ✅ **Docker Deploy** — Single-command container deployment
-- ✅ **Google Cloud Run** — Auto-scaling serverless deployment
-- ✅ **Health Checks** — Container health monitoring
-- ✅ **CORS Security** — Configurable cross-origin policies
-- ✅ **Graceful Degradation** — Works without Gemini (reduced features)
-
-### Dashboard Features
-- ✅ **Admin Dashboard** — Historical decision analysis with trend tracking
-- ✅ **Bias Analysis Dashboard** — Interactive fairness metrics visualization
-- ✅ **Activity Logs** — Searchable, filterable decision history
-- ✅ **Real-Time Chat** — User-facing chat with safety enforcement
-- ✅ **Export Reports** — Downloadable audit results
-
----
-
-## 🏗️ Architecture
+## Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                        Frontend (React)                      │
-│  ┌─────────────┐ ┌──────────────┐ ┌─────────────────────┐  │
-│  │ User Chat   │ │ Admin Dash   │ │ Bias Analysis       │  │
-│  └──────┬──────┘ └──────┬───────┘ └──────────┬──────────┘  │
-└─────────┼───────────────┼────────────────────┼─────────────┘
-          │               │                    │
-          └───────────────┴────────────────────┘
-                          │
-┌─────────────────────────▼─────────────────────────────────┐
-│                    FastAPI Gateway                          │
-│  ┌────────────┐  ┌──────────┐  ┌──────────┐  ┌─────────┐ │
-│  │ /api/chat  │  │/api/     │  │/api/     │  │/api/    │ │
-│  │            │  │analyze-  │  │audit-    │  │health   │ │
-│  └─────┬──────┘  │bias      │  │dataset   │  └─────────┘ │
-└────────┼─────────┴────┬─────┴───┴────┬─────┴──────────────┘
-         │              │              │
-    ┌────▼─────┐  ┌────▼──────┐  ┌────▼──────┐
-    │ LLM      │  │ Bias      │  │ Risk      │
-    │ Proxy    │  │ Engine    │  │ Engine    │
-    │          │  │ (Gemini)  │  │           │
-    └────┬─────┘  └────┬──────┘  └─────┬─────┘
-         │             │               │
-         └─────────────┴───────────────┘
-                       │
-              ┌────────▼────────┐
-              │ Policy Engine   │
-              │ ALLOW/WARN/BLOCK│
-              └────────┬────────┘
-                       │
-              ┌────────▼────────┐
-              │ Audit Logger    │
-              └─────────────────┘
+│              Frontend (React 19 - Browser)                   │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────────┐   │
+│  │  Bias Audit  │  │ Executive    │  │ Remediation      │   │
+│  │  Dashboard   │  │ Summary      │  │ Tracker          │   │
+│  └──────┬───────┘  └──────┬───────┘  └────────┬─────────┘   │
+└─────────┼──────────────────┼────────────────────┼────────────┘
+          │                  │                    │
+          └──────────────────┼────────────────────┘
+                             │
+┌─────────────────────────────▼─────────────────────────────┐
+│                FastAPI Backend (Python)                    │
+│  ┌────────────┐  ┌──────────────┐  ┌─────────────────┐   │
+│  │/api/audit  │  │/api/analyze  │  │/api/health      │   │
+│  │-dataset    │  │-bias         │  │                 │   │
+│  └─────┬──────┘  └──────┬───────┘  └─────────────────┘   │
+└────────┼─────────────────┼──────────────────────────────────┘
+         │                 │
+    ┌────▼──────┐     ┌────▼──────────┐
+    │ Bias      │     │ Google        │
+    │ Engine    │     │ Gemini API    │
+    │ (Stats &  │     │ (Analysis &   │
+    │ Metrics)  │     │ Remediation)  │
+    └────┬──────┘     └────┬──────────┘
+         │                 │
+         └────────┬────────┘
+                  │
+         ┌────────▼────────┐
+         │ Audit Logger    │
+         │ (JSON Storage)  │
+         └─────────────────┘
+```
+
+### Components
+
+| Module | Technology | Purpose |
+|--------|-----------|---------|
+| **Frontend** | React 19, Bootstrap | Fairness dashboards, audit reports |
+| **API** | FastAPI (Python) | REST endpoints for bias analysis |
+| **Bias Engine** | Python (custom algorithms) | Demographic parity, equal opportunity, calibration |
+| **Gemini Integration** | Google Generative AI | Bias explanations, remediation guidance |
+| **Deployment** | Docker, Railway | Container-based SaaS deployment |
+| **Storage** | JSON files | Simple, audit-trail ready persistence |
+
+---
+
+## How It Works
+
+### Fairness Audit Pipeline
+
+**Goal:** Thoroughly inspect datasets for hidden discrimination and provide actionable remediation steps.
+
+**Process:**
+
+1. **Upload Dataset** — CSV with decision records (age, gender, race, decision outcome, etc.)
+2. **Extract Demographics** — Identify protected attributes in the data
+3. **Calculate Fairness Metrics:**
+   - **Demographic Parity** — Do all groups have equal approval rates?
+   - **Equal Opportunity** — Do all groups benefit equally from positive decisions?
+   - **Equalized Odds** — Are false positive & true positive rates balanced?
+   - **Calibration** — Is decision confidence consistent across groups?
+4. **Detect Discrimination** — Identify statistically significant disparities
+5. **Google Gemini Analysis** — Generate human-readable explanations:
+   - *Why* this bias exists (likely root causes)
+   - *How* to fix it (concrete remediation steps)
+   - *Impact* projections ("If you do X, bias decreases by Y%")
+6. **Generate Report** — Executive summary + detailed metrics + recommendations
+7. **Track Remediation** — Monitor improvements over time
+
+### Example: Loan Approval Analysis
+
+**Input:** 1,000 loan decisions with demographics
+```csv
+applicant_id, age, gender, race, credit_score, decision
+A001, 35, M, white, 750, approved
+A002, 28, F, black, 750, denied
+A003, 45, M, white, 700, approved
+A004, 52, F, asian, 700, denied
+...
+```
+
+**WATCHDOG Analysis:**
+- Detects: Women denied loans 18% more often than men (demographic parity gap = 0.18)
+- Detects: Age bias (applicants over 50 denied 35% more)
+- **Gemini Explanation:** "Data shows systematic age discrimination. Likely cause: historical bias in training data (older applicants had higher default rates in past). Solution: (1) reweight training data to balance age groups, or (2) adjust approval thresholds to achieve 4/5ths rule."
+- **Output:** Executive report showing bias, business impact, and specific remediation steps
+
+---
+
+## API Endpoints
+
+### Bias Analysis
+
+```bash
+# Audit an entire dataset
+POST /api/audit-dataset
+{
+  "decisions": [
+    {"age": 35, "gender": "M", "race": "white", "decision": "approved"},
+    {"age": 28, "gender": "F", "race": "black", "decision": "denied"},
+    ...
+  ],
+  "outcome_field": "decision"
+}
+
+# Analyze a single decision
+POST /api/analyze-bias
+{
+  "decision": {
+    "applicant_id": "A123",
+    "age": 35,
+    "gender": "female",
+    "race": "black",
+    "credit_score": 750,
+    "decision": "approved"
+  }
+}
+```
+
+### System Health
+
+```bash
+# Health check
+GET /api/health
 ```
 
 ---
@@ -225,17 +228,34 @@ docker-compose up --build
 
 ## 🌍 Deployment
 
-### Google Cloud Run
+### Current: Railway (Docker)
+
+WATCHDOG is **deployed on Railway** using Docker containers:
 
 ```bash
-export GOOGLE_GENERATIVEAI_API_KEY=your_key_here
-chmod +x deploy-gcp.sh
-./deploy-gcp.sh YOUR_PROJECT_ID watchdog-api us-central1
+# 1. Backend (FastAPI) runs on Railway
+#    Automatically deployed from GitHub via railway.json
+
+# 2. Frontend (React) runs on Railway
+#    Served via Node.js server
+
+# Local development with Docker Compose:
+docker-compose up --build
 ```
 
-### Railway
+**Benefits of Railway deployment:**
+- ✅ Auto-deploys on push to GitHub
+- ✅ Automatic HTTPS/SSL
+- ✅ Built-in PostgreSQL (future)
+- ✅ Environment variable management
+- ✅ Scalable to enterprise load
 
-Push to GitHub. Railway auto-detects `railway.json` and deploys using the Dockerfile.
+### Future: Google Cloud Run (Phase 2)
+
+*Planned enhancement (Q3 2026):*
+- Migrate to Google Cloud Run for serverless auto-scaling
+- Better integration with Google Cloud ecosystem
+- Regional redundancy for 99.99% uptime
 
 ---
 
@@ -288,32 +308,34 @@ GET /api/health
 
 ## 🛠️ Tech Stack
 
-| Layer | Technology |
-|---|---|
-| **Backend** | Python 3.11, FastAPI, Uvicorn |
-| **Frontend** | React 19, Framer Motion, Lucide React |
-| **AI Models** | Google Gemini API (bias analysis), OpenRouter (LLM proxy) |
-| **Deployment** | Docker, Google Cloud Run, Railway |
-| **Testing** | pytest, httpx |
+| Layer | Technology | Purpose |
+|---|---|---|
+| **Frontend** | React 19, Bootstrap | Interactive dashboards |
+| **Backend** | Python 3.11, FastAPI, Uvicorn | High-performance API |
+| **AI Analysis** | Google Gemini API | Bias reasoning & explanations |
+| **Bias Metrics** | Python (custom algorithms) | Fairness calculations |
+| **Deployment** | Docker, Railway | Container-based SaaS |
+| **Storage** | JSON files | Audit trail persistence |
 
 ---
 
-## 🤝 SDG Alignment
+## 🤝 SDG & Challenge Alignment
 
-WATCHDOG directly contributes to the UN Sustainable Development Goals:
+**Google Solution Challenge Track:** Unbiased AI Decision — Ensuring Fairness and Detecting Bias in Automated Decisions
 
+**Challenge Objective:**
+> "Build a clear, accessible solution to thoroughly inspect data sets and software models for hidden unfairness or discrimination. Provide organizations with an easy way to measure, flag, and fix harmful bias before their systems impact real people."
+
+**How WATCHDOG Addresses This:**
+1. ✅ **Thorough Inspection** — 5+ statistical fairness metrics detect hidden bias
+2. ✅ **Clear & Accessible** — Google Gemini generates non-technical explanations
+3. ✅ **Easy to Measure** — Upload CSV → Get fairness report in seconds
+4. ✅ **Flag Discrimination** — Demographic parity, equal opportunity, calibration analysis
+5. ✅ **Fix Before Impact** — Actionable remediation steps + projection modeling
+6. ✅ **Real-World Impact** — Prevents discrimination in lending, hiring, healthcare
+
+**UN SDG Alignment:**
 - **SDG 5: Gender Equality** — Detects and prevents gender-based AI discrimination
-- **SDG 10: Reduced Inequalities** — Prevents racial, age, and economic bias
-- **SDG 16: Peace, Justice & Strong Institutions** — Promotes fair AI governance and transparency
-
----
-
-## 📝 License
-
-MIT License — see [LICENSE](LICENSE) for details.
-
----
-
-**Built for the Google Solution Challenge**  
-*Challenge Track: Unbiased AI Decision — Ensuring Fairness and Detecting Bias in Automated Decisions*
+- **SDG 10: Reduced Inequalities** — Prevents racial, age, economic bias
+- **SDG 16: Peace, Justice & Strong Institutions** — Promotes algorithmic fairness and transparency
 
