@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { useData } from '../context/DataContext';
 import { useNavigate } from 'react-router-dom';
+import { toISTTime } from '../utils/timezone';
 import AdminLayout from '../components/AdminLayout';
 
 const AdminDashboard = () => {
@@ -26,6 +27,52 @@ const AdminDashboard = () => {
   const [sortBy, setSortBy] = useState('recent');
   const { prompts } = useData();
   const navigate = useNavigate();
+
+  const orderedPrompts = useMemo(
+    () => [...prompts].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)),
+    [prompts]
+  );
+
+  const batchInsights = useMemo(() => {
+    const midpoint = Math.max(1, Math.ceil(orderedPrompts.length / 2));
+    const recentBatch = orderedPrompts.slice(0, midpoint);
+    const previousBatch = orderedPrompts.slice(midpoint);
+
+    const countAction = (list, action) => list.filter((prompt) => prompt.action === action).length;
+    const avgConfidence = (list) => (
+      list.length > 0
+        ? Math.round((list.reduce((sum, prompt) => sum + (Number(prompt.confidence) || 0), 0) / list.length) * 100)
+        : 0
+    );
+
+    const formatTrend = (current, previous, suffix = '') => {
+      if (previous === 0) {
+        return current === 0 ? `0${suffix ? ` ${suffix}` : ''}`.trim() : `new${suffix ? ` ${suffix}` : ''}`;
+      }
+
+      const delta = current - previous;
+      const sign = delta >= 0 ? '+' : '';
+      return `${sign}${Math.abs(delta)}${suffix ? ` ${suffix}` : ''}`;
+    };
+
+    const recentBlocked = countAction(recentBatch, 'BLOCK');
+    const previousBlocked = countAction(previousBatch, 'BLOCK');
+    const recentWarned = countAction(recentBatch, 'WARN');
+    const previousWarned = countAction(previousBatch, 'WARN');
+    const recentConfidence = avgConfidence(recentBatch);
+    const previousConfidence = avgConfidence(previousBatch);
+
+    return {
+      totalTrend: formatTrend(recentBatch.length, previousBatch.length, 'prompts'),
+      blockedTrend: formatTrend(recentBlocked, previousBlocked, 'cases'),
+      warnedTrend: formatTrend(recentWarned, previousWarned, 'cases'),
+      confidenceTrend: formatTrend(recentConfidence, previousConfidence, 'pts'),
+      totalUp: recentBatch.length >= previousBatch.length,
+      blockedUp: recentBlocked >= previousBlocked,
+      warnedUp: recentWarned >= previousWarned,
+      confidenceUp: recentConfidence >= previousConfidence,
+    };
+  }, [orderedPrompts]);
 
   useEffect(() => {
     if (!autoRefresh) return;
@@ -69,10 +116,10 @@ const AdminDashboard = () => {
   ];
 
   const statCards = [
-    { icon: Activity, label: 'Total Prompts', value: stats.total, trend: '+12%', trendUp: true, color: '#10b981' },
-    { icon: XCircle, label: 'Blocked', value: stats.blocked, subtext: `${stats.blockRate}% block rate`, trend: stats.blockRate > 20 ? 'High' : 'Normal', trendUp: stats.blockRate > 20 },
-    { icon: AlertTriangle, label: 'Warnings', value: stats.warned, trend: '-5%', trendUp: false, color: '#f59e0b' },
-    { icon: TrendingUp, label: 'Avg Confidence', value: `${stats.avgConfidence}%`, trend: '+3%', trendUp: true, color: '#3b82f6' },
+    { icon: Activity, label: 'Total Prompts', value: stats.total, trend: batchInsights.totalTrend, trendUp: batchInsights.totalUp, color: '#10b981' },
+    { icon: XCircle, label: 'Blocked', value: stats.blocked, subtext: `${stats.blockRate}% block rate`, trend: batchInsights.blockedTrend, trendUp: batchInsights.blockedUp, color: '#ef4444' },
+    { icon: AlertTriangle, label: 'Warnings', value: stats.warned, trend: batchInsights.warnedTrend, trendUp: batchInsights.warnedUp, color: '#f59e0b' },
+    { icon: TrendingUp, label: 'Avg Confidence', value: `${stats.avgConfidence}%`, trend: batchInsights.confidenceTrend, trendUp: batchInsights.confidenceUp, color: '#3b82f6' },
   ];
 
   return (
@@ -263,7 +310,7 @@ const AdminDashboard = () => {
                           </div>
                         </td>
                         <td style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                          {new Date(prompt.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        {toISTTime(prompt.timestamp)}
                         </td>
                         <td style={{ color: 'var(--brand-blue-light)', opacity: 0, transition: 'opacity 0.2s' }} className="row-hover-show">
                           <ArrowUpRight size={16} />

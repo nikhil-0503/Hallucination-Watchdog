@@ -6,6 +6,7 @@ THIS IS THE CRITICAL COMPONENT - WHERE WATCHDOG PROVES ITS VALUE
 """
 
 import asyncio
+import re
 from typing import Dict, Tuple
 import sys
 import os
@@ -54,6 +55,9 @@ async def get_risk_report(prompt: str, llm_response: str, domain: str) -> RiskRe
         # Convert to our schema format
         risk_score = risk_analysis.get('risk_score', 30)
         explanation = risk_analysis.get('explanation', 'Risk analysis completed')
+        bias_detected = risk_analysis.get('bias_detected', False)
+        bias_types = risk_analysis.get('bias_types', [])
+        bias_reason = risk_analysis.get('bias_reason', '')
 
         # Extract signals
         signals = RiskSignals(
@@ -66,6 +70,17 @@ async def get_risk_report(prompt: str, llm_response: str, domain: str) -> RiskRe
         metadata = risk_analysis.get('metadata', {}) or {}
         metadata['auto_block'] = risk_analysis.get('auto_block', False)
         metadata['auto_block_reasons'] = risk_analysis.get('auto_block_reasons', [])
+        metadata['strict_violations'] = risk_analysis.get('strict_violations', [])
+        metadata['claim_contradictions'] = risk_analysis.get('claim_contradictions', [])
+        metadata['bias_detected'] = bias_detected
+        metadata['bias_types'] = bias_types
+        metadata['bias_reason'] = bias_reason
+        metadata['sensitive_topic_detected'] = risk_analysis.get('sensitive_topic_detected', False)
+        metadata['sensitive_topic_types'] = risk_analysis.get('sensitive_topic_types', [])
+        metadata['sensitive_topic_desc'] = risk_analysis.get('sensitive_topic_desc', '')
+        metadata['claim_count'] = risk_analysis.get('claim_count', 0)
+        metadata['response_length'] = risk_analysis.get('response_length', len(llm_response))
+        metadata['sentence_count'] = risk_analysis.get('sentence_count', 0)
 
         return RiskReport(
             risk_score=risk_score,
@@ -154,11 +169,54 @@ def apply_enforcement(risk_report: RiskReport, llm_response: str, user_context: 
         )
         
         action = ActionType(policy_decision['action'])
+        risk_metadata = risk_report.metadata or {}
+        bias_types = risk_metadata.get('bias_types', []) or []
+        bias_summary = ", ".join(bias_types)
+        prompt_text = (user_context or {}).get("prompt", "")
+        prompt_text_lower = prompt_text.lower()
+
+        discriminatory_intent_patterns = [
+            r'\bdeny\b',
+            r'\breject\b',
+            r'\bexclude\b',
+            r'\bdo not hire\b',
+            r'\bnot hire\b',
+            r'\bprefer\b',
+            r'\bfilter out\b',
+            r'\bunfit\b',
+            r'\bless capable\b',
+            r'\bless intelligent\b',
+            r'\binferior\b',
+            r'\blower castes?\b',
+            r'\bupper castes?\b',
+            r'\bcaste[- ]?based\b.*\b(superiority|inferiority)\b',
+        ]
+
+        has_discriminatory_intent = any(
+            re.search(pattern, prompt_text_lower, re.IGNORECASE)
+            for pattern in discriminatory_intent_patterns
+        )
+
+        strict_violations = risk_metadata.get("strict_violations", []) or []
+        has_high_strict_violation = any(v.get("severity") == "HIGH" for v in strict_violations)
+
+        # Only force auto-block on explicit strict high-severity violations.
+        if risk_metadata.get("auto_block") and has_high_strict_violation:
+            action = ActionType.BLOCK
+
+        if has_discriminatory_intent:
+            action = ActionType.BLOCK
         
         # Apply enforcement based on policy decision
         if action == ActionType.BLOCK:
             # BLOCK: User never sees the LLM output - core safety feature
-            final_response = "The output cannot be displayed."
+            if bias_summary:
+                final_response = (
+                    "The output cannot be displayed. "
+                    f"Detected bias categories: {bias_summary}."
+                )
+            else:
+                final_response = "The output cannot be displayed due to high-risk safety signals."
             
         elif action == ActionType.WARN:
             # WARN: Allow but mark as potentially risky
@@ -214,7 +272,11 @@ def get_enforcement_metadata(
             "signals": {
                 "rag_unverified": risk_report.signals.rag_unverified,
                 "internal_contradiction": risk_report.signals.internal_contradiction,
-                "overconfidence": risk_report.signals.overconfidence
+                "overconfidence": risk_report.signals.overconfidence,
+                "bias_detected": bool((risk_report.metadata or {}).get("bias_detected", False)),
+                "bias_types": (risk_report.metadata or {}).get("bias_types", []),
+                "sensitive_topic_detected": bool((risk_report.metadata or {}).get("sensitive_topic_detected", False)),
+                "sensitive_topic_types": (risk_report.metadata or {}).get("sensitive_topic_types", []),
             }
         },
         "was_blocked": action == ActionType.BLOCK,

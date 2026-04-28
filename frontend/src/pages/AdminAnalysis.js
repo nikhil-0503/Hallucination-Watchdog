@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { useData } from '../context/DataContext';
 import { useNavigate, useParams } from 'react-router-dom';
+import { toIST } from '../utils/timezone';
 import AdminLayout from '../components/AdminLayout';
 
 const AdminAnalysis = () => {
@@ -28,13 +29,11 @@ const AdminAnalysis = () => {
       if (id) {
         const data = await getPromptById(parseInt(id));
         setPrompt(data);
-      } else if (prompts && prompts.length > 0) {
-        setPrompt(prompts[0]);
       }
       setLoading(false);
     };
     loadPrompt();
-  }, [id, getPromptById, prompts]);
+  }, [id, getPromptById]);
 
   const handleCopy = (text, field) => {
     navigator.clipboard.writeText(text);
@@ -83,6 +82,8 @@ const AdminAnalysis = () => {
   }
 
   const confidencePercent = Math.round((prompt.confidence || 0) * 100);
+  const biasTypes = Array.isArray(prompt.metadata?.bias_types) ? prompt.metadata.bias_types : [];
+  const biasDetected = Boolean(prompt.metadata?.bias_detected && biasTypes.length > 0);
 
   const metrics = [
     {
@@ -151,7 +152,7 @@ const AdminAnalysis = () => {
               <div>
                 <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 700 }}>Timestamp</div>
                 <div style={{ fontSize: '0.9rem', color: 'var(--text-primary)', marginTop: 2, fontWeight: 500 }}>
-                  {new Date(prompt.timestamp).toLocaleString()}
+                  {toIST(prompt.timestamp)}
                 </div>
               </div>
             </div>
@@ -215,6 +216,64 @@ const AdminAnalysis = () => {
             </motion.div>
           ))}
         </div>
+
+        {biasDetected && (
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.25 }}
+            className="glass-card"
+            style={{ marginBottom: '1.5rem', borderColor: 'rgba(239,68,68,0.25)' }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem' }}>
+              <AlertTriangle size={18} style={{ color: 'var(--danger)' }} />
+              <h3 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+                Bias Detected
+              </h3>
+            </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '0.75rem' }}>
+              {biasTypes.map((biasType) => (
+                <span key={biasType} className="badge badge-danger">
+                  {biasType}
+                </span>
+              ))}
+            </div>
+            {prompt.metadata?.bias_reason && (
+              <p style={{ color: 'var(--text-secondary)', margin: 0, lineHeight: 1.6 }}>
+                {prompt.metadata.bias_reason}
+              </p>
+            )}
+          </motion.div>
+        )}
+
+        {prompt.metadata?.sensitive_topic_detected && (
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.28 }}
+            className="glass-card"
+            style={{ marginBottom: '1.5rem', borderColor: 'rgba(245,158,11,0.25)' }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem' }}>
+              <AlertTriangle size={18} style={{ color: 'var(--warning)' }} />
+              <h3 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+                Sensitive Topic Detected
+              </h3>
+            </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '0.75rem' }}>
+              {(prompt.metadata?.sensitive_topic_types || []).map((topic) => (
+                <span key={topic} className="badge badge-warning">
+                  {topic}
+                </span>
+              ))}
+            </div>
+            {prompt.metadata?.sensitive_topic_desc && (
+              <p style={{ color: 'var(--text-secondary)', margin: 0, lineHeight: 1.6 }}>
+                {prompt.metadata.sensitive_topic_desc}
+              </p>
+            )}
+          </motion.div>
+        )}
 
         {/* Prompt & Response */}
         <div className="grid-2" style={{ marginBottom: '1.5rem' }}>

@@ -52,7 +52,7 @@ export const DataProvider = ({ children }) => {
     loadStats();
   }, [loadPrompts, loadStats]);
 
-  const getPromptById = async (id) => {
+  const getPromptById = useCallback(async (id) => {
     try {
       const record = await fetchPromptById(id);
       setCurrentPrompt(record);
@@ -61,7 +61,7 @@ export const DataProvider = ({ children }) => {
       console.error('Error loading prompt:', error);
       return null;
     }
-  };
+  }, []);
 
   const submitUserPrompt = async (message, userRole = 'user') => {
     setIsProcessing(true);

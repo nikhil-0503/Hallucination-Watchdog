@@ -81,19 +81,21 @@ const CommunityHub = () => {
                 transition={{ delay: idx * 0.1 }}
               >
                 <div className="section-card-header">
-                  <h3 className="section-card-title">{p.name}</h3>
+                  <h3 className="section-card-title">{p.name || p.title || 'Community Pattern'}</h3>
                   <span className={`badge badge-${p.severity}`}>{p.severity}</span>
                 </div>
                 <div className="section-card-body">
-                  <p style={{ color: "var(--text-secondary)", marginBottom: "1rem" }}>{p.description}</p>
+                  <p style={{ color: "var(--text-secondary)", marginBottom: "1rem" }}>
+                    {p.description || 'A live pattern derived from stored WATCHDOG decisions.'}
+                  </p>
                   <div className="stack-item-meta">
-                    <span><TrendingUp size={14} /> {p.frequency} reports</span>
-                    <span><BookOpen size={14} /> {p.datasets_analyzed} datasets</span>
+                    <span><TrendingUp size={14} /> {p.frequency ?? p.datasets_analyzed ?? 0} reports</span>
+                    <span><BookOpen size={14} /> {p.datasets_analyzed ?? 0} datasets</span>
                   </div>
                   <div style={{ marginTop: "1rem" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.5rem" }}>
                       <CheckCircle size={16} style={{ color: "var(--success)" }} />
-                      <span style={{ fontSize: "0.875rem", color: "var(--text-secondary)" }}>{p.recommendation}</span>
+                      <span style={{ fontSize: "0.875rem", color: "var(--text-secondary)" }}>{p.recommendation || 'Continue monitoring'}</span>
                     </div>
                   </div>
                 </div>

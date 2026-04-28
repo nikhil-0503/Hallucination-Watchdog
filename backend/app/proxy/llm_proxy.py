@@ -52,6 +52,7 @@ class LLMProxy:
         self.timeout = int(os.getenv("LLM_TIMEOUT", "30"))
         self.max_retries = int(os.getenv("LLM_MAX_RETRIES", "2"))
         self.fallback_enabled = os.getenv("FALLBACK_TO_MOCK", "false").lower() == "true"
+        self.max_output_tokens = int(os.getenv("LLM_MAX_OUTPUT_TOKENS", "4096"))
 
         # Startup diagnostics
         logger.info(
@@ -226,7 +227,7 @@ class LLMProxy:
                 {"role": "user", "content": prompt}
             ],
             "temperature": 0.7,
-            "max_tokens": 500
+            "max_tokens": self.max_output_tokens
         }
         
         headers = {
@@ -322,7 +323,7 @@ class LLMProxy:
             }],
             "generationConfig": {
                 "temperature": 0.7,
-                "maxOutputTokens": 500
+                "maxOutputTokens": self.max_output_tokens
             }
         }
         

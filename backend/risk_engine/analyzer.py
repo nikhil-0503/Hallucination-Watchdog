@@ -103,6 +103,7 @@ def analyze(
                 "rag_unverified": False,
                 "internal_contradiction": False,
                 "overconfidence": False,
+                "bias_detected": False,
             },
             "explanation": "Empty response - no risk detected",
             "claims": [],
@@ -111,6 +112,12 @@ def analyze(
             "time_sensitivity": "LOW",
             "domain_multiplier": 1.0,
             "business_impact": "No content to assess - neutral trust",
+            "bias_detected": False,
+            "bias_types": [],
+            "bias_reason": "",
+            "claim_count": 0,
+            "response_length": 0,
+            "sentence_count": 0,
         }
     
     # Step 1: Extract all signals (including trust intelligence)
@@ -122,9 +129,16 @@ def analyze(
         "rag_unverified": signals["rag_unverified"],
         "internal_contradiction": signals["internal_contradiction"],
         "overconfidence": signals["overconfidence"],
+        "bias_detected": signals.get("bias_detected", False),
+        "sensitive_topic_detected": signals.get("sensitive_topic_detected", False),
     }
     
     base_risk_score = calculate_risk_score(signal_flags)
+
+    # Add prompt-level sensitive topic boost directly to risk score
+    sensitive_topic_boost = signals.get("sensitive_topic_boost", 0)
+    if sensitive_topic_boost > 0:
+        base_risk_score = min(base_risk_score + sensitive_topic_boost, 100)
     
     # Step 3: TRUST INTELLIGENCE - Extract trust features (needed for multiplier)
     domain = signals.get("domain", "general")
@@ -197,6 +211,13 @@ def analyze(
         # Auto-block fields
         "auto_block": signals.get('auto_block', False),
         "auto_block_reasons": signals.get('auto_block_reasons', []),
+        # Bias + diagnostics metadata
+        "bias_detected": signals.get("bias_detected", False),
+        "bias_types": signals.get("bias_types", []),
+        "bias_reason": signals.get("bias_reason", ""),
+        "claim_count": len(claims_output),
+        "response_length": len(llm_response),
+        "sentence_count": signals.get("sentence_count", 0),
     }
 
 

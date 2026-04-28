@@ -63,7 +63,7 @@ OVERCONFIDENCE_PATTERNS = [
     r'\balways\b',
     r'\bnever\b',
     r'\bimpossible\b',
-    r'\bprovided?\b',
+    r'\bproven?\b',
     r'\bmust be\b',
     r'\bwill definitely\b',
     r'\bno question\b',
@@ -76,6 +76,185 @@ SENSITIVE_DOMAINS = [
     r'\bfinancial\b', r'\binvest\w+\b', r'\bstock\b', r'\bmoney\b',
     r'\bsafety\b', r'\bemergency\b',
 ]
+
+# ============================================================================
+# SENSITIVE TOPIC DETECTION (prompt-level)
+# ============================================================================
+
+SENSITIVE_TOPIC_PATTERNS = {
+    "religion_bias": {
+        "keywords": [
+            r'\bhindu\b', r'\bmuslim\b', r'\bchristian\b', r'\bjewish\b', r'\bsikh\b',
+            r'\bislam\b', r'\bchristianity\b', r'\bjudaism\b', r'\bhinduism\b',
+            r'\binterfaith\b', r'\breligion\b', r'\breligious\b',
+        ],
+        "risk_boost": 35,
+        "description": "Prompt involves religion — potential for stereotyping or generalization",
+    },
+    "caste_bias": {
+        "keywords": [
+            r'\bcaste\b', r'\bcasteism\b', r'\bcasteist\b', r'\binter[- ]?caste\b',
+            r'\bscheduled caste\b', r'\bbackward class\b', r'\bobc\b', r'\bsc/st\b',
+            r'\bbrahmin\b', r'\bdalit\b', r'\bkshatriya\b', r'\bvaishya\b', r'\bshudra\b',
+        ],
+        "risk_boost": 40,
+        "description": "Prompt involves caste — highly sensitive social structure in India",
+    },
+    "gender_stereotype": {
+        "keywords": [
+            r'\bgender\b', r'\bwomen are\b', r'\bmen are\b', r'\bgirls? are\b', r'\bboys? are\b',
+            r'\bfemale\b.*\b(less|more|better|worse)\b', r'\bmale\b.*\b(less|more|better|worse)\b',
+            r'\bstem fields?\b', r'\bgender roles?\b', r'\bstereotype\b',
+            r'\bwomen.*\b(leadership|tech|engineering|math|science)\b',
+        ],
+        "risk_boost": 35,
+        "description": "Prompt involves gender stereotypes or gender-role generalizations",
+    },
+    "national_stereotype": {
+        "keywords": [
+            r'\bgermans?\b', r'\bfrench\b', r'\bjapanese\b', r'\bchinese\b', r'\bindians?\b',
+            r'\bamericans?\b', r'\bbritish\b', r'\brussians?\b', r'\bmexicans?\b',
+            r'\bperceived as\b', r'\bseen as\b', r'\bknown for being\b',
+            r'\bnational stereotype\b', r'\bcultural stereotype\b',
+        ],
+        "risk_boost": 30,
+        "description": "Prompt involves national/cultural stereotyping",
+    },
+    "regional_bias": {
+        "keywords": [
+            r'\bnorth india\b', r'\bsouth india\b', r'\beast india\b', r'\bwest india\b',
+            r'\bnorth indians?\b', r'\bsouth indians?\b', r'\btamil\b', r'\btelugu\b',
+            r'\bmarathi\b', r'\bgujarati\b', r'\bbengali\b', r'\bpunjabi\b',
+            r'\bmarwari\b', r'\bmallu\b', r'\bregional\b.*\b(difference|stereotype|bias)\b',
+        ],
+        "risk_boost": 30,
+        "description": "Prompt involves regional generalizations or stereotypes",
+    },
+    "socioeconomic_bias": {
+        "keywords": [
+            r'\bwealthy\b.*\b(better|opportunit|advantage)\b', r'\bpoor\b.*\b(worse|lazy|deserve)\b',
+            r'\brich people\b', r'\bpoor people\b', r'\blow[- ]?income\b', r'\bhigh[- ]?income\b',
+            r'\bclass\b.*\b(difference|divide|gap)\b', r'\bsocioeconomic\b',
+        ],
+        "risk_boost": 25,
+        "description": "Prompt involves socioeconomic class generalizations",
+    },
+    "education_elitism": {
+        "keywords": [
+            r'\biit\b', r'\bnit\b', r'\bits\b', r'\biim\b', r'\belite\b.*\b(college|university)\b',
+            r'\btier[- ]?1\b', r'\btier[- ]?2\b', r'\btier[- ]?3\b',
+            r'\btop college\b', r'\bbest college\b', r'\beducation bias\b',
+        ],
+        "risk_boost": 25,
+        "description": "Prompt involves educational elitism or institutional bias",
+    },
+    "mental_health": {
+        "keywords": [
+            r'\bnot good enough\b', r'\bfeel worthless\b', r'\bsuicid\w*\b', r'\bself[- ]?harm\b',
+            r'\bhurt myself\b', r'\bkill myself\b', r'\bend my life\b',
+            r'\bmental health\b', r'\bdepression\b', r'\banxiety\b', r'\btrauma\b',
+            r'\bpsychological\b.*\b(distress|pain|harm)\b',
+        ],
+        "risk_boost": 45,
+        "description": "Prompt involves mental health distress or self-harm indicators",
+    },
+    "manipulation": {
+        "keywords": [
+            r'\bmanipulat\w+\b', r'\bcoerc\w+\b', r'\bcontrol\b.*\b(people|person|mind)\b',
+            r'\binfluence\b.*\bdecision\b', r'\bpersuade\b.*\b(secret|trick|technique)\b',
+            r'\bget someone to\b', r'\bmake someone\b.*\b(do|feel|think)\b',
+            r'\bsocial engineering\b', r'\bgaslight\w*\b', r'\bblackmail\b',
+            r'\bpsychological manipulation\b', r'\bexploit\b.*\b(vulnerable|weakness)\b',
+        ],
+        "risk_boost": 35,
+        "description": "Prompt involves manipulation, coercion, or psychological control tactics",
+    },
+    "violence_weapons": {
+        "keywords": [
+            r'\bkill\b', r'\bbomb\b', r'\bnuke\b', r'\bnuclear\b', r'\bterrorist\b',
+            r'\bterrorism\b', r'\bassassinate\b', r'\bshoot\b', r'\bstab\b',
+            r'\bhow to (build|make|create).+bomb', r'\bhow to .+kill\b',
+            r'\bpoison\b', r'\bweapon\b', r'\bexplosive\b',
+        ],
+        "risk_boost": 60,
+        "description": "Prompt involves violence, weapons, or terrorism",
+    },
+}
+
+def detect_sensitive_topic(prompt: str) -> Tuple[bool, List[str], int, str]:
+    """
+    Detect if the prompt touches on sensitive topics that warrant caution.
+
+    Returns:
+        Tuple of (detected, topic_labels, total_risk_boost, combined_description)
+    """
+    prompt_lower = prompt.lower()
+    detected_topics = []
+    total_boost = 0
+    descriptions = []
+
+    for label, config in SENSITIVE_TOPIC_PATTERNS.items():
+        matched = any(re.search(pattern, prompt_lower, re.IGNORECASE) for pattern in config["keywords"])
+        if matched:
+            detected_topics.append(label)
+            total_boost += config["risk_boost"]
+            descriptions.append(config["description"])
+
+    return bool(detected_topics), detected_topics, min(total_boost, 70), "; ".join(descriptions)
+
+BIAS_CATEGORY_PATTERNS = {
+    "age bias": {
+        "protected": [r'\bage\b', r'\byoung\b', r'\byounger\b', r'\bold\b', r'\bsenior\b'],
+        "bias": [
+            r'\btoo young\b', r'\btoo old\b', r'\bage[- ]?based\b',
+            r'\bage.*\b(reject|deny|inferior|unfit|less capable|prefer)\b',
+            r'\bprefer.*\b(young|older)\b',
+        ],
+    },
+    "gender bias": {
+        "protected": [r'\bgender\b', r'\bmale\b', r'\bfemale\b', r'\bwomen?\b', r'\bmen?\b', r'\bhe\b', r'\bshe\b'],
+        "bias": [
+            r'\blower castes?\b', r'\bupper castes?\b', r'\bsc/st\b', r'\bobc\b', r'\bscheduled castes?\b',
+            r'\bgender[- ]?based\b', r'\bsex[- ]?based\b', r'\bnot fit\b.*\bgender\b',
+            r'\bprefer.*\b(male|female|men|women)\b',
+            r'\blower castes?\b.*\b(less intelligent|inferior|unfit|less capable|stupid)\b',
+            r'\bupper castes?\b.*\b(superior|more intelligent|better)\b',
+            r'\bcaste[- ]?based\b.*\b(superiority|inferiority)\b',
+            r'\bprefer\b.*\bupper castes?\b',
+            r'\bdiscriminat\w+\b.*\bagainst\b.*\bcaste\b',
+            r'\brace[- ]?based\b', r'\bethnic[- ]?based\b', r'\bblack people are\b',
+            r'\bwhite people are\b', r'\bminorities are\b', r'\bprefer.*\brace\b',
+            r'\bdiscrim\w+\b.*\brace\b',
+        ],
+    },
+    "disability bias": {
+        "protected": [r'\bdisabilit\w*\b', r'\bdisabled\b', r'\bblind\b', r'\bdeaf\b', r'\bwheelchair\b', r'\bautis\w*\b'],
+        "bias": [
+            r'\bnot capable\b', r'\bunfit\b', r'\bshould not accommodate\b',
+            r'\bdisabled.*\b(inferior|less capable|reject|deny)\b',
+        ],
+    },
+    "religious bias": {
+        "protected": [r'\breligion\b', r'\breligious\b', r'\bmuslim\b', r'\bchristian\b', r'\bjewish\b', r'\bhindu\b'],
+        "bias": [
+            r'\breligious[- ]?bias\b', r'\bprefer.*\breligion\b', r'\bnot trust.*\breligion\b',
+            r'\bmuslim.*\b(inferior|dangerous|unfit)\b',
+        ],
+    },
+    "caste bias": {
+        "protected": [
+            r'\bcaste\b', r'\bdalit\b', r'\bbrahmin\b', r'\bshudra\b', r'\bkshatriya\b', r'\bvaishya\b',
+            r'\blower castes?\b', r'\bupper castes?\b', r'\bsc/st\b', r'\bobc\b', r'\bscheduled caste\b',
+        ],
+        "bias": [
+            r'\blower castes?\b.*\b(less intelligent|inferior|unfit|less capable|stupid)\b',
+            r'\bupper castes?\b.*\b(superior|more intelligent|better)\b',
+            r'\bcaste[- ]?based\b.*\b(superiority|inferiority)\b',
+            r'\bprefer\b.*\bupper castes?\b',
+            r'\b(do not|don\'t|cannot|can\'t)\s+(hire|trust|allow)\b.*\blower castes?\b',
+        ],
+    },
+}
 
 
 def detect_overconfidence(llm_response: str, prompt: str = "") -> Tuple[bool, str]:
@@ -120,6 +299,52 @@ def detect_overconfidence(llm_response: str, prompt: str = "") -> Tuple[bool, st
             return True, "Confident advice in sensitive domain"
     
     return False, ""
+
+
+def detect_bias_signals(prompt: str, llm_response: str) -> Tuple[bool, List[str], str]:
+    """
+    Detect explicit bias language tied to protected attributes.
+
+    Returns:
+        Tuple of (bias_detected, bias_types, reason)
+    """
+    prompt_text = prompt or ""
+    response_text = llm_response or ""
+    combined_text = f"{prompt_text} {response_text}"
+    bias_types: List[str] = []
+    reason_parts: List[str] = []
+
+    # Refusal/anti-bias phrasing should not itself trigger bias labels.
+    refusal_patterns = [
+        r'\bno scientific basis\b',
+        r'\bnot determined by\b',
+        r'\bharmful myth\b',
+        r'\bdiscriminatory\b',
+        r'\bno evidence\b',
+        r'\bequal\b',
+        r'\bshould not discriminate\b',
+    ]
+    response_is_refusal = any(re.search(pat, response_text, re.IGNORECASE) for pat in refusal_patterns)
+
+    for label, patterns in BIAS_CATEGORY_PATTERNS.items():
+        protected_in_prompt = any(re.search(pattern, prompt_text, re.IGNORECASE) for pattern in patterns["protected"])
+        bias_in_prompt = any(re.search(pattern, prompt_text, re.IGNORECASE) for pattern in patterns["bias"])
+
+        protected_in_response = any(re.search(pattern, response_text, re.IGNORECASE) for pattern in patterns["protected"])
+        bias_in_response = any(re.search(pattern, response_text, re.IGNORECASE) for pattern in patterns["bias"])
+
+        # Prompt intent takes precedence; response-only bias hits are ignored when response is a refusal.
+        protected_hit = protected_in_prompt or protected_in_response
+        bias_hit = bias_in_prompt or (bias_in_response and not response_is_refusal)
+
+        if protected_hit and bias_hit:
+            bias_types.append(label)
+            reason_parts.append(f"{label} language detected")
+
+    if not bias_types:
+        return False, [], ""
+
+    return True, bias_types, "; ".join(reason_parts)
 
 
 # ============================================================================
@@ -557,6 +782,9 @@ def extract_all_signals(
         rag_status = claim_verification.get(claim, "UNVERIFIED")
         confidence = calculate_claim_confidence(claim, rag_status, llm_response)
         claim_confidences[claim] = confidence
+
+    response_length = len(llm_response)
+    sentence_count = len([segment for segment in re.split(r'[.!?]+', llm_response) if segment.strip()])
     
     # TRUST INTELLIGENCE: Detect claim dependencies
     claim_dependencies = detect_claim_dependencies(claims)
@@ -569,7 +797,13 @@ def extract_all_signals(
     
     # Detect overconfidence
     is_overconfident, overconfidence_reason = detect_overconfidence(llm_response, prompt)
-    
+
+    # Detect explicit bias language tied to protected attributes
+    bias_detected, bias_types, bias_reason = detect_bias_signals(prompt, llm_response)
+
+    # Detect sensitive topics in the prompt itself
+    sensitive_topic_detected, sensitive_topic_types, sensitive_topic_boost, sensitive_topic_desc = detect_sensitive_topic(prompt)
+
     # Detect internal contradictions
     has_contradiction, contradiction_details = detect_internal_contradictions(llm_response)
     
@@ -596,6 +830,7 @@ def extract_all_signals(
         "rag_unverified": rag_unverified,
         "internal_contradiction": has_contradiction,
         "overconfidence": is_overconfident,
+        "bias_detected": bias_detected,
         "domain": domain,
         "time_sensitivity": time_sensitivity,
         "claim_confidences": claim_confidences,
@@ -611,6 +846,13 @@ def extract_all_signals(
         "contradiction_details": contradiction_details,
         "overconfidence": is_overconfident,
         "overconfidence_reason": overconfidence_reason,
+        "bias_detected": bias_detected,
+        "bias_types": bias_types,
+        "bias_reason": bias_reason,
+        "sensitive_topic_detected": sensitive_topic_detected,
+        "sensitive_topic_types": sensitive_topic_types,
+        "sensitive_topic_boost": sensitive_topic_boost,
+        "sensitive_topic_desc": sensitive_topic_desc,
         "strict_violations": strict_violations,
         "claim_contradictions": claim_contradictions,
         "auto_block": auto_block,
@@ -618,6 +860,9 @@ def extract_all_signals(
         
         # TRUST INTELLIGENCE (new)
         "claim_confidences": claim_confidences,
+        "claim_count": len(claims),
+        "response_length": response_length,
+        "sentence_count": sentence_count,
         "claim_dependencies": claim_dependencies,
         "time_sensitivity": time_sensitivity,
         "domain": domain,
@@ -637,8 +882,17 @@ STRICT_HIGH_PATTERNS = [
     # Violence / terrorism / weapons
     r'\bkill\b', r'\bkill\s+.+', r'\bbomb\b', r'\bnuke\b', r'\bnuclear attack\b',
     r'\bblow\s+up\b', r'\bexplode\b', r'\bmassacre\b', r'\bgenocide\b',
-    r'\bterrorist\b', r'\bterrorism\b', r'\bassassinate\b', r'\beliminate\b',
+    r'\bterrorist\b', r'\bterrorism\b', r'\bassassinate\b',
+    r'\beliminate\b\s+(them|him|her|people|person|target|enemy)\b',
     r'how to (build|make|create).+bomb', r'how to .+kill', r'how to .+attack',
+    # Psychological manipulation / coercion
+    r'how (can|to) .*pressure .*psychologically',
+    r'how (can|to) .*manipulat(e|ing) .*decision',
+    r'how (can|to) .*coerc(e|ion)',
+    r'\bpsychological manipulation\b',
+    r'\bsocial engineering\b',
+    r'\bgaslight\b',
+    r'\bblackmail\b',
 ]
 
 # Medium severity patterns
@@ -713,7 +967,7 @@ def decide_auto_block(context: Dict) -> Tuple[bool, List[str]]:
 
     Rules (simple, conservative):
     - Any HIGH strict violation -> auto-block
-    - >1 claim contradiction OR any internal contradiction in sensitive domains -> auto-block
+    - Any internal contradiction in sensitive domains -> auto-block
     - Overconfidence + many UNVERIFIED claims in sensitive domain -> auto-block
     Returns (auto_block_bool, reasons[])
     """
@@ -733,10 +987,9 @@ def decide_auto_block(context: Dict) -> Tuple[bool, List[str]]:
             reasons.append(f"Strict pattern matched: {v.get('pattern')}")
             return True, reasons
 
-    # Rule 2: Multiple claim contradictions
+    # Rule 2: Multiple claim contradictions are diagnostic, not hard block by themselves.
     if len(claim_contradictions) > 1:
         reasons.append(f"Multiple claim contradictions detected: {len(claim_contradictions)}")
-        return True, reasons
 
     # Rule 3: Internal contradiction in sensitive domain or time-sensitive content
     if internal_contradiction and domain in ('health', 'legal', 'finance'):

@@ -35,7 +35,7 @@ const SignupPage = () => {
       return;
     }
     try {
-      const result = await signup(email, password);
+      const result = await signup(email, password, confirmPassword);
       if (result.success) {
         navigate('/chat');
       } else {

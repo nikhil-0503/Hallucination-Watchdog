@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { useData } from '../context/DataContext';
 import { useNavigate } from 'react-router-dom';
+import { toIST } from '../utils/timezone';
 import AdminLayout from '../components/AdminLayout';
 
 const ActivityLogs = () => {
@@ -21,6 +22,8 @@ const ActivityLogs = () => {
   const [timeRange, setTimeRange] = useState('all');
   const [sortBy, setSortBy] = useState('timestamp');
   const [sortOrder, setSortOrder] = useState('desc');
+
+  const [exportFormat, setExportFormat] = useState('json');
 
   const { prompts } = useData();
   const navigate = useNavigate();
@@ -88,14 +91,46 @@ const ActivityLogs = () => {
   };
 
   const handleExport = () => {
-    const dataStr = JSON.stringify(filteredPrompts, null, 2);
-    const blob = new Blob([dataStr], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `watchdog-logs-${new Date().toISOString().slice(0,10)}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
+    const timestamp = new Date().toISOString().slice(0,10);
+    if (exportFormat === 'json') {
+      const dataStr = JSON.stringify(filteredPrompts, null, 2);
+      const blob = new Blob([dataStr], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `watchdog-logs-${timestamp}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } else if (exportFormat === 'csv') {
+      const headers = ['id','timestamp','prompt','gpt_raw_answer','user_visible_answer','confidence','rag_status','contradiction_check','action','risk_score'];
+      const rows = filteredPrompts.map(p => headers.map(h => {
+        const val = p[h] ?? '';
+        if (typeof val === 'string' && (val.includes(',') || val.includes('"') || val.includes('\n'))) {
+          return `"${val.replace(/"/g, '""')}"`;
+        }
+        return val;
+      }).join(','));
+      const csv = [headers.join(','), ...rows].join('\n');
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `watchdog-logs-${timestamp}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } else if (exportFormat === 'txt') {
+      const lines = filteredPrompts.map((p, i) => {
+        return `Record #${p.id}\nTimestamp: ${toIST(p.timestamp)}\nStatus: ${p.action}\nConfidence: ${Math.round((p.confidence||0)*100)}%\nRAG: ${p.rag_status}\nContradiction: ${p.contradiction_check}\nPrompt: ${p.prompt}\nResponse: ${p.user_visible_answer}\n---`;
+      });
+      const txt = lines.join('\n\n');
+      const blob = new Blob([txt], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `watchdog-logs-${timestamp}.txt`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
   };
 
   return (
@@ -143,6 +178,11 @@ const ActivityLogs = () => {
               <option value="week">This Week</option>
               <option value="month">This Month</option>
             </select>
+            <select className="form-select" style={{ width: 'auto' }} value={exportFormat} onChange={(e) => setExportFormat(e.target.value)}>
+              <option value="json">JSON</option>
+              <option value="csv">CSV</option>
+              <option value="txt">TXT</option>
+            </select>
             <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={handleExport} className="btn btn-secondary btn-icon-only" title="Export">
               <Download size={16} />
             </motion.button>
@@ -189,7 +229,7 @@ const ActivityLogs = () => {
                     >
                       <td>
                         <span className="badge badge-neutral font-mono">
-                          {new Date(prompt.timestamp).toLocaleString()}
+                          {toIST(prompt.timestamp)}
                         </span>
                       </td>
                       <td className="truncate" style={{ maxWidth: 200 }} title={prompt.prompt}>

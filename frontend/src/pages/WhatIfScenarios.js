@@ -4,11 +4,52 @@ import { FlaskConical, ArrowRight, CheckCircle, TrendingDown } from 'lucide-reac
 import AdminLayout from '../components/AdminLayout';
 import { getWhatIfState } from '../services/api';
 
+const PRESETS = [
+  { id: 'baseline', label: 'Baseline', gap: 15, approval: 80, intervention: 'none' },
+  { id: 'high-risk', label: 'High Bias Scenario', gap: 32, approval: 58, intervention: 'remove_criteria' },
+  { id: 'balanced', label: 'Balanced Org', gap: 8, approval: 76, intervention: 'stratified' },
+];
+
+const INTERVENTION_DETAILS = {
+  none: {
+    title: 'No Change',
+    summary: 'Keeps current policy and model behavior unchanged.',
+    strengths: 'Fastest to operate, zero engineering overhead.',
+    tradeoffs: 'Bias gap remains and can compound at scale.',
+  },
+  remove_criteria: {
+    title: 'Remove Biased Criteria',
+    summary: 'Drops fields strongly correlated with protected attributes.',
+    strengths: 'Immediate gap reduction and easier compliance explanation.',
+    tradeoffs: 'Can reduce model precision if useful proxy features are removed.',
+  },
+  retrain: {
+    title: 'Retrain with Fair Data',
+    summary: 'Retrains the model using debiased or reweighted historical data.',
+    strengths: 'Best long-term fairness and consistency across cohorts.',
+    tradeoffs: 'Requires data prep, MLOps support, and validation cycles.',
+  },
+  stratified: {
+    title: 'Stratified Sampling',
+    summary: 'Balances training and evaluation samples by demographic groups.',
+    strengths: 'Improves fairness monitoring and metric stability.',
+    tradeoffs: 'May underrepresent edge-case populations if poorly tuned.',
+  },
+  all: {
+    title: 'All Interventions',
+    summary: 'Combines criteria cleanup, retraining, and sampling controls.',
+    strengths: 'Largest fairness lift and strongest governance story.',
+    tradeoffs: 'Highest implementation complexity and rollout effort.',
+  },
+};
+
 const WhatIfScenarios = () => {
   const [scenario, setScenario] = useState({
     current_gender_gap: 15,
     current_approval_rate: 80,
-    intervention: 'none'
+    intervention: 'none',
+    total_decisions: 0,
+    has_data: false,
   });
   const [simulation, setSimulation] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -25,7 +66,9 @@ const WhatIfScenarios = () => {
           setScenario({
             current_gender_gap: d.current_gender_gap || 15,
             current_approval_rate: d.current_approval_rate || 80,
-            intervention: scenario.intervention
+            intervention: scenario.intervention,
+            total_decisions: d.total_decisions || 0,
+            has_data: Boolean(d.has_data),
           });
         }
       } catch (e) {
@@ -59,6 +102,8 @@ const WhatIfScenarios = () => {
         : intervention === 'remove_criteria' ? 4
         : 0;
       const newApproval = Math.min(100, current_approval_rate + approvalBoost);
+      const affectedDecisions = Math.round((scenario.total_decisions || 500) * (improvement / 100));
+      const fairnessScore = Math.min(100, Math.max(0, Math.round(100 - newGap * 1.8)));
 
       setSimulation({
         original_gap: current_gender_gap,
@@ -66,6 +111,9 @@ const WhatIfScenarios = () => {
         improvement,
         original_approval: current_approval_rate,
         new_approval: newApproval,
+        affected_decisions: affectedDecisions,
+        projected_fairness_score: fairnessScore,
+        implementation_confidence: intervention === 'all' ? 0.76 : intervention === 'retrain' ? 0.72 : intervention === 'stratified' ? 0.69 : intervention === 'remove_criteria' ? 0.81 : 0.65,
         recommendation: improvement > 0
           ? `This intervention reduces the gender gap by ${improvement}pp and raises approvals to ${newApproval}%. Deploy recommended.`
           : 'No intervention selected. Consider removing biased criteria or retraining for measurable improvement.'
@@ -84,6 +132,18 @@ const WhatIfScenarios = () => {
       </AdminLayout>
     );
   }
+
+  const applyPreset = (preset) => {
+    setScenario((prev) => ({
+      ...prev,
+      current_gender_gap: preset.gap,
+      current_approval_rate: preset.approval,
+      intervention: preset.intervention,
+    }));
+    setSimulation(null);
+  };
+
+  const interventionInfo = INTERVENTION_DETAILS[scenario.intervention] || INTERVENTION_DETAILS.none;
 
   return (
     <AdminLayout>
@@ -104,12 +164,47 @@ const WhatIfScenarios = () => {
           </motion.div>
         )}
 
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="glass-card"
+          style={{ marginBottom: '1.5rem' }}
+        >
+          <h3 style={{ margin: '0 0 0.75rem', fontSize: '1rem', color: 'var(--text-primary)' }}>How This Simulator Works</h3>
+          <p style={{ margin: 0, color: 'var(--text-secondary)', lineHeight: 1.6 }}>
+            The simulator estimates fairness lift by applying intervention-specific reduction factors to your current gap,
+            then projects approval and impact at your current decision volume.
+          </p>
+          {scenario.has_data && (
+            <p style={{ margin: '0.5rem 0 0', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+              Using live baseline from {scenario.total_decisions} stored decisions.
+            </p>
+          )}
+        </motion.div>
+
         <div className="grid-2">
           <motion.div className="section-card" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
             <div className="section-card-header">
               <h3 className="section-card-title">Scenario Controls</h3>
             </div>
             <div className="section-card-body">
+              <div className="form-group">
+                <label className="form-label">Quick Presets</label>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                  {PRESETS.map((preset) => (
+                    <button
+                      key={preset.id}
+                      type="button"
+                      className="btn btn-secondary"
+                      style={{ padding: '0.35rem 0.6rem', fontSize: '0.75rem' }}
+                      onClick={() => applyPreset(preset)}
+                    >
+                      {preset.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               <div className="form-group">
                 <label className="form-label">Current Gender Approval Gap: <strong>{scenario.current_gender_gap}%</strong></label>
                 <input type="range" className="form-control" min="0" max="50" step="1" value={scenario.current_gender_gap} onChange={(e) => { setScenario({ ...scenario, current_gender_gap: parseInt(e.target.value) }); setSimulation(null); }} />
@@ -128,6 +223,14 @@ const WhatIfScenarios = () => {
                   <option value="all">All Interventions</option>
                 </select>
               </div>
+
+              <div className="glass-card" style={{ marginBottom: '1rem' }}>
+                <h4 style={{ margin: '0 0 0.4rem', fontSize: '0.9rem', color: 'var(--text-primary)' }}>{interventionInfo.title}</h4>
+                <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '0.85rem', lineHeight: 1.5 }}>{interventionInfo.summary}</p>
+                <p style={{ margin: '0.5rem 0 0', color: 'var(--success-light)', fontSize: '0.78rem' }}>Strength: {interventionInfo.strengths}</p>
+                <p style={{ margin: '0.25rem 0 0', color: 'var(--warning-light)', fontSize: '0.78rem' }}>Tradeoff: {interventionInfo.tradeoffs}</p>
+              </div>
+
               <button className="btn btn-primary w-100" onClick={runSimulation} disabled={loading}>
                 {loading ? (<span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}><span className="spinner" style={{ width: 18, height: 18, borderWidth: 2, marginRight: 8 }} />Simulating...</span>) : (<span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}><FlaskConical size={18} style={{ marginRight: 8 }} />Run Simulation</span>)}
               </button>
@@ -182,6 +285,18 @@ const WhatIfScenarios = () => {
                           <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>After</div>
                         </div>
                       </div>
+                    </div>
+                  </div>
+                  <div className="stack-item">
+                   <div className="stack-item-main">
+                      <div className="stack-item-title-row">
+                        <span className="stack-item-title">Projected Fairness Score</span>
+                        <span className="badge badge-info">{simulation.projected_fairness_score}/100</span>
+                      </div>
+                      <p style={{ margin: '0.45rem 0 0', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
+                        Estimated impacted decisions: {simulation.affected_decisions.toLocaleString()}<br />
+                        Simulation confidence: {(simulation.implementation_confidence * 100).toFixed(0)}%
+                      </p>
                     </div>
                   </div>
                   <motion.div className="glass-card" style={{ borderLeft: '4px solid var(--success)' }} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
